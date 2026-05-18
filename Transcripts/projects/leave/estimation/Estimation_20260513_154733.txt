@@ -1,0 +1,24 @@
+ESTIMATION REPORT
+============================================================
+
+Project: Leave
+Date: 2026-05-13 15:47
+
+EXECUTIVE SUMMARY
+------------------------------------------------------------
+PROJECT SIZE     : M
+INVESTMENT RANGE : $170,000
+
+SCOPE PROFILE
+------------------------------------------------------------
+Full sub-system, complex workflows
+
+EFFORT BREAKDOWN
+------------------------------------------------------------
+Frontend Development    :  708 hours
+Backend Development     :  620 hours
+Testing & QA            :  270 hours
+Documentation           :  183 hours
+------------------------------------------------------------
+TOTAL EFFORT            : 1781 hours
+  (Original: 1750 hours)

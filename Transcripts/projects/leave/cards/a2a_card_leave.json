@@ -1,0 +1,175 @@
+{
+  "a2a_version": "1.0",
+  "card_id": "90106ec5-6475-484c-a6c4-4b49c54e239c",
+  "created_at": "2026-05-12T22:53:59.254911",
+  "updated_at": "2026-05-13T15:52:53.442544",
+  "source_agent": {
+    "name": "RequirementsAgent",
+    "version": "1.0",
+    "script": "Requirements.py"
+  },
+  "target_agent": {
+    "name": "EstimationAgent",
+    "version": "1.0",
+    "script": "Estimation.py",
+    "action": "estimate_from_approved_brd"
+  },
+  "project": {
+    "name": "Leave",
+    "source_transcript": "short_transcript.txt",
+    "processed_at": "2026-05-13T15:44:28.468073"
+  },
+  "artifacts": {
+    "brd_docx": "C:\\Users\\dintakur\\Desktop\\Transcripts\\projects\\leave\\brd\\BRD_leave_20260513_154428.docx",
+    "brd_txt": "C:\\Users\\dintakur\\Desktop\\Transcripts\\projects\\leave\\brd\\BRD_leave_20260513_154428.txt",
+    "output_dir": "C:\\Users\\dintakur\\Desktop\\Transcripts\\projects\\leave"
+  },
+  "payload": {
+    "overview": {
+      "PROJECT_NAME": "Leave",
+      "PURPOSE": "The purpose of the project is to develop a mobile application that allows customers to easily order groceries, select delivery time slots, and make online payments. This solution aims to enhance customer convenience and streamline the ordering process for FreshBasket's stores in Hyderabad.",
+      "SCOPE_IN": "Development of a customer-facing mobile app with a product catalog, cart functionality, slot-based delivery, online payment integration, user registration with OTP login, and a lightweight admin panel for store managers to manage orders and inventory.",
+      "SCOPE_OUT": "The project will not include email login options, advanced features beyond inventory management, or any integration with third-party delivery services.",
+      "STAKEHOLDERS": "Ravi Sharma, Priya Mehta, Arjun Reddy",
+      "BACKGROUND": "FreshBasket Grocery Chain aims to modernize its shopping experience by providing an app that allows customers to order groceries conveniently. Currently, customers face challenges in ordering and managing their grocery needs, and the new app seeks to address these pain points by offering a straightforward and user-friendly solution tailored to the needs of both customers and store managers."
+    },
+    "requirements": [
+      {
+        "id": "REQ-001",
+        "category": "Functional",
+        "priority": "High",
+        "description": "The app must allow customers to order groceries from their mobile devices."
+      },
+      {
+        "id": "REQ-002",
+        "category": "Functional",
+        "priority": "High",
+        "description": "The app must provide a product catalog for customers to browse."
+      },
+      {
+        "id": "REQ-003",
+        "category": "Functional",
+        "priority": "High",
+        "description": "The app must include a shopping cart feature for customers to manage their selected items."
+      },
+      {
+        "id": "REQ-004",
+        "category": "Functional",
+        "priority": "High",
+        "description": "The app must enable customers to select a delivery time slot for their orders."
+      },
+      {
+        "id": "REQ-005",
+        "category": "Functional",
+        "priority": "High",
+        "description": "The app must support online payment processing for customer transactions."
+      },
+      {
+        "id": "REQ-006",
+        "category": "Functional",
+        "priority": "High",
+        "description": "The app must implement user registration using OTP login without email."
+      },
+      {
+        "id": "REQ-007",
+        "category": "Functional",
+        "priority": "Medium",
+        "description": "Store managers must have access to view all incoming orders through a lightweight admin panel."
+      },
+      {
+        "id": "REQ-008",
+        "category": "Functional",
+        "priority": "Medium",
+        "description": "Store managers must be able to update the status of orders and indicate out-of-stock items."
+      },
+      {
+        "id": "REQ-009",
+        "category": "Technical",
+        "priority": "High",
+        "description": "The admin panel must be a web-based application that does not require installation."
+      },
+      {
+        "id": "REQ-010",
+        "category": "Non-Functional",
+        "priority": "Medium",
+        "description": "The app must be user-friendly and simple to navigate for customers and store managers."
+      },
+      {
+        "id": "REQ-011",
+        "category": "Security",
+        "priority": "High",
+        "description": "The app must ensure secure handling of customer payment information."
+      },
+      {
+        "id": "REQ-012",
+        "category": "Performance",
+        "priority": "Medium",
+        "description": "The app must load the product catalog within 3 seconds to enhance user experience."
+      },
+      {
+        "id": "REQ-013",
+        "category": "Constraint",
+        "priority": "High",
+        "description": "The app will only be developed for use in five specific stores located in Hyderabad."
+      },
+      {
+        "id": "REQ-014",
+        "category": "Assumption",
+        "priority": "Medium",
+        "description": "Customers are primarily comfortable with using OTP for login instead of email authentication."
+      },
+      {
+        "id": "REQ-015",
+        "category": "Non-Functional",
+        "priority": "Low",
+        "description": "The app must be compatible with both Android and iOS mobile operating systems."
+      }
+    ],
+    "risks": [
+      "There is a risk that customers may face difficulties using the app if it is not user-friendly, especially since many are not tech-savvy.",
+      "There is a risk of potential security breaches concerning the handling of online payment information."
+    ],
+    "assumptions": [
+      "It is assumed that customers will prefer OTP login over email registration for accessing the app.",
+      "It is assumed that store managers will be able to effectively use the lightweight admin panel despite their limited technical skills."
+    ],
+    "constraints": [
+      "The app will only be developed for the FreshBasket stores located in Hyderabad.",
+      "The project scope does not include advanced features beyond basic inventory management for store managers."
+    ],
+    "dependencies": [
+      "The success of the app's payment processing feature depends on the integration with a reliable payment gateway."
+    ]
+  },
+  "stats": {
+    "total_requirements": 15,
+    "total_risks": 2,
+    "total_assumptions": 2,
+    "total_constraints": 2,
+    "total_dependencies": 1
+  },
+  "approval": {
+    "status": "approved",
+    "approved_by": "Arya H",
+    "approver_role": "Business Owner",
+    "approved_at": "2026-05-13T15:44:41.873887",
+    "comments": "Approved via Web UI approval popup."
+  },
+  "status": "fds_generated",
+  "estimation_approval": {
+    "status": "approved",
+    "approved_by": "Web UI",
+    "approver_role": "Web Approval",
+    "approved_at": "2026-05-13T15:47:33.606266",
+    "comments": "Estimation approved in terminal."
+  },
+  "estimation_artifacts": {
+    "docx": "C:\\Users\\dintakur\\Desktop\\Transcripts\\projects\\leave\\estimation\\Estimation_20260513_154733.docx",
+    "txt": "C:\\Users\\dintakur\\Desktop\\Transcripts\\projects\\leave\\estimation\\Estimation_20260513_154733.txt"
+  },
+  "fds_artifacts": {
+    "fds_docx": "C:\\Users\\dintakur\\Desktop\\Transcripts\\projects\\leave\\fds\\FDS_20260513_155253.docx",
+    "fds_txt": "C:\\Users\\dintakur\\Desktop\\Transcripts\\projects\\leave\\fds\\FDS_20260513_155253.txt",
+    "tds_card": "C:\\Users\\dintakur\\Desktop\\Transcripts\\projects\\leave\\cards\\tds_a2a_card_leave.json"
+  }
+}

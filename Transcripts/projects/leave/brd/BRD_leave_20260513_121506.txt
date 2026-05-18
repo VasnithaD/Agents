@@ -1,0 +1,74 @@
+======================================================================
+BUSINESS REQUIREMENTS DOCUMENT
+Project : Leave
+Date    : 2026-05-13
+Source  : pasted_input.txt
+======================================================================
+
+1. EXECUTIVE SUMMARY
+----------------------------------------
+The purpose of the Requirement Agent project is to streamline the process of generating Business Requirements Documents (BRDs) from various input sources such as transcripts, uploaded files, or pasted text. This tool aims to facilitate collaboration among team members while ensuring proper approvals and documentation.
+
+2. PROJECT BACKGROUND
+----------------------------------------
+The project seeks to address the inefficiencies in creating and managing BRDs within the organization. By providing a centralized platform for document generation, approval, and subsequent estimation, the Requirement Agent aims to enhance productivity and ensure that all necessary documentation is maintained effectively.
+
+3. SCOPE
+----------------------------------------
+In Scope  : The project includes the generation of BRDs, approval processes, estimation generation, and the creation of Functional Design Specifications (FDS) from approved BRDs.
+Out Scope : The project does not include the development of the underlying infrastructure for file uploads or advanced user management systems.
+
+4. STAKEHOLDERS
+----------------------------------------
+  - Arya H
+  - Product Owner
+  - BA Lead
+  - BRD team
+
+5. REQUIREMENTS
+----------------------------------------
+ID           Category           Priority   Description
+------------ ------------------ ---------- ----------------------------------------
+REQ-001      Functional         High       The system shall allow users to select an existing project or create a new project from the home tab.
+REQ-002      Functional         High       The system shall enable users to input a transcript file path, upload a transcript file, or paste transcript text for generating a BRD.
+REQ-003      Functional         High       The system shall generate a Business Requirements Document (BRD) based on the provided transcript input.
+REQ-004      Functional         High       The system shall allow users to approve the generated BRD through a modal interface.
+REQ-005      Functional         High       The system shall enable users to send the approved BRD to the estimation process.
+REQ-006      Functional         High       The system shall allow users to input an A2A card path or upload an A2A card file for generating effort estimations.
+REQ-007      Functional         High       The system shall generate effort estimations based on the provided BRD or A2A card.
+REQ-008      Functional         High       The system shall allow users to send approved estimations to the Functional Design Specification (FDS) generation process.
+REQ-009      Non-Functional     Medium     The system shall support file uploads with formats including .pdf, .doc, .docx, .txt, and .md for transcripts.
+REQ-010      Non-Functional     Medium     The system shall provide a user-friendly interface that is responsive and accessible.
+REQ-011      Technical          High       The system shall implement a RESTful API for all backend operations including generating BRDs and estimations.
+REQ-012      Security           High       The system shall ensure that user data, including email addresses and project details, is securely transmitted and stored.
+REQ-013      Performance        Medium     The system shall provide feedback to users within 2 seconds for actions such as generating documents and sending emails.
+REQ-014      Constraint         Medium     The system shall limit the size of uploaded files to 10MB to ensure smooth processing.
+REQ-015      Assumption         Medium     It is assumed that users will have access to the internet to utilize the system's features effectively.
+
+6. RISKS
+----------------------------------------
+  RISK-001: There is a risk that users may encounter errors while uploading files, leading to delays in generating BRDs and estimations.
+  RISK-002: There is a risk of network issues affecting the ability to fetch project data and generate documents from the API.
+
+7. ASSUMPTIONS
+----------------------------------------
+  ASSUMPTION-001: It is assumed that users will have access to the necessary permissions to upload files and access project information.
+  ASSUMPTION-002: It is assumed that the system will have a stable internet connection for API interactions.
+
+8. CONSTRAINTS
+----------------------------------------
+  CONSTRAINT-001: The system is constrained by the file size limit of 10MB for uploads to ensure smooth processing.
+  CONSTRAINT-002: The system must support specific file formats (.pdf, .doc, .docx, .txt, .md) for transcript inputs.
+
+9. DEPENDENCIES
+----------------------------------------
+  DEPENDENCY-001: The functionality of the system depends on the availability and reliability of the backend API for document generation and project management.
+
+10. APPROVAL
+----------------------------------------
+Approval Status : Pending
+Approved By     : Pending
+Approver Role   : Pending
+Approved At     : Pending
+Comments        : Awaiting business approval before estimation.
+

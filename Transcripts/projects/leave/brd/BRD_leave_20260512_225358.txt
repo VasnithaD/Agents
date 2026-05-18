@@ -1,0 +1,74 @@
+======================================================================
+BUSINESS REQUIREMENTS DOCUMENT
+Project : Leave
+Date    : 2026-05-12
+Source  : pasted_input.txt
+======================================================================
+
+1. EXECUTIVE SUMMARY
+----------------------------------------
+The purpose of this project is to develop a simple task management application designed for individual users. The app will allow users to create, view, and update tasks with minimal complexity and a user-friendly interface.
+
+2. PROJECT BACKGROUND
+----------------------------------------
+The project aims to address the need for an uncomplicated task management solution tailored for individuals, ensuring that users can efficiently manage their tasks without the burden of complex functionalities. The team recognizes the importance of a clean user interface and quick system performance to enhance user experience.
+
+3. SCOPE
+----------------------------------------
+In Scope  : Development of a task management app that includes task creation, viewing, updating status, user registration, and login functionalities.
+Out Scope : Excluded from the scope are complex task hierarchies, social login in the initial version, and advanced features such as calendar views and in-progress status updates.
+
+4. STAKEHOLDERS
+----------------------------------------
+  - Priya
+  - Alex
+  - Sam
+  - Raj
+
+5. REQUIREMENTS
+----------------------------------------
+ID           Category           Priority   Description
+------------ ------------------ ---------- ----------------------------------------
+REQ-001      Functional         High       The application shall allow users to create a task with a title, description, due date, and status.
+REQ-002      Functional         High       The application shall allow users to view tasks sorted by due date.
+REQ-003      Functional         High       The application shall allow users to update the status of a task to either "Pending" or "Completed."
+REQ-004      Functional         High       The application shall require user registration and login to access tasks.
+REQ-005      Functional         High       The application shall display tasks immediately after user login.
+REQ-006      Functional         Medium     The application shall provide a minimal user interface with a prominent "Add Task" button.
+REQ-007      Functional         Medium     The application shall implement pagination for task viewing if the number of tasks exceeds a certain limit.
+REQ-008      Non-Functional     High       The application shall ensure a response time of less than 2 seconds for all user actions.
+REQ-009      Non-Functional     Medium     The application shall support at least 50 concurrent users without performance degradation.
+REQ-010      Non-Functional     Medium     The application shall be responsive and provide a consistent user experience across different devices.
+REQ-011      Security           High       User passwords shall have a minimum requirement of 8 characters and include at least one number.
+REQ-012      Technical          High       The application shall have a database schema that includes a Users table and a Tasks table.
+REQ-013      Performance        Medium     The application shall log every task action with a timestamp for auditing purposes.
+REQ-014      Constraint         Medium     The application shall not support complex task hierarchies in the initial version.
+REQ-015      Assumption         Low        It is assumed that social login features will be implemented in later versions of the application.
+
+6. RISKS
+----------------------------------------
+  RISK-001: There is a risk of user dissatisfaction if the application does not meet performance expectations, such as response times greater than 2 seconds.
+  RISK-002: There is a risk that the application may not support the required number of concurrent users, leading to potential service outages or slow performance.
+
+7. ASSUMPTIONS
+----------------------------------------
+  ASSUMPTION-001: It is assumed that users will accept the task status to be limited to "Pending" and "Completed" in the initial version.
+  ASSUMPTION-002: It is assumed that the social login feature will be developed and implemented in a future version of the application.
+
+8. CONSTRAINTS
+----------------------------------------
+  CONSTRAINT-001: The application must not support complex task hierarchies in the initial version as per project scope.
+  CONSTRAINT-002: User passwords must meet specific security requirements, including a minimum of 8 characters and at least one number.
+
+9. DEPENDENCIES
+----------------------------------------
+  DEPENDENCY-001: The functionality for user registration and login is dependent on the successful implementation of the Users table in the database schema.
+
+10. APPROVAL
+----------------------------------------
+Approval Status : Approved
+Approved By     : Web User
+Approver Role   : Business Owner
+Approved At     : 2026-05-12T22:55:14.952675
+Comments        : Approved via Web UI.
+

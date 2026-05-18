@@ -1,0 +1,12 @@
+ESTIMATION REPORT
+==================================================
+
+Project: Leave
+Date: 2026-05-13 11:21
+
+PROJECT SIZE     : S
+INVESTMENT RANGE : $100,000
+
+SCOPE PROFILE
+--------------------------------------------------
+Multi-feature module, 2-3 integrations

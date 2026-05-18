@@ -1,0 +1,119 @@
+ESTIMATION REPORT
+==================================================
+Project: Leave
+Date: 2026-05-12 22:58
+
+SIZE       : S
+INVESTMENT : $100,000
+HOURS LOW  : 390
+HOURS MID  : 870
+HOURS HIGH : 1350
+REQ COUNT  : 15
+
+DETAIL
+--------------------------------------------------
+
+  ID       : REQ-001
+  Category : Functional
+  Priority : High
+  Score    : 0
+  Hours    : 10 - 50 hrs
+  Reason   : The requirement involves basic task creation with straightforward fields, resulting in low complexity across all dimensions.
+
+  ID       : REQ-002
+  Category : Functional
+  Priority : High
+  Score    : 4
+  Hours    : 10 - 50 hrs
+  Reason   : The requirement involves displaying tasks in a sorted manner, which is straightforward but may require handling medium data volume for effective presentation.
+
+  ID       : REQ-003
+  Category : Functional
+  Priority : High
+  Score    : 0
+  Hours    : 10 - 50 hrs
+  Reason   : The requirement involves a straightforward status update with limited options, resulting in low complexity across all dimensions.
+
+  ID       : REQ-004
+  Category : Functional
+  Priority : High
+  Score    : 6
+  Hours    : 50 - 150 hrs
+  Reason   : The requirement involves user authentication, which adds moderate complexity due to security considerations and compliance requirements.
+
+  ID       : REQ-005
+  Category : Functional
+  Priority : High
+  Score    : 4
+  Hours    : 10 - 50 hrs
+  Reason   : The requirement involves displaying tasks after login, which is straightforward but requires managing a medium amount of data for presentation.
+
+  ID       : REQ-006
+  Category : Functional
+  Priority : Medium
+  Score    : 0
+  Hours    : 10 - 50 hrs
+  Reason   : The requirement involves a straightforward user interface design focusing on a single button, resulting in low complexity across all dimensions.
+
+  ID       : REQ-007
+  Category : Functional
+  Priority : Medium
+  Score    : 6
+  Hours    : 50 - 150 hrs
+  Reason   : The requirement introduces pagination, which adds moderate complexity to manage data display and user interface interactions effectively.
+
+  ID       : REQ-008
+  Category : Non-Functional
+  Priority : High
+  Score    : 8
+  Hours    : 50 - 150 hrs
+  Reason   : The requirement focuses on performance, necessitating complex optimizations to achieve a response time of under 2 seconds for all user interactions.
+
+  ID       : REQ-009
+  Category : Non-Functional
+  Priority : Medium
+  Score    : 8
+  Hours    : 50 - 150 hrs
+  Reason   : Supporting 50 concurrent users requires complex architecture and performance optimization to ensure consistent user experience without degradation.
+
+  ID       : REQ-010
+  Category : Non-Functional
+  Priority : Medium
+  Score    : 6
+  Hours    : 50 - 150 hrs
+  Reason   : Ensuring responsiveness and a consistent user experience across devices involves moderate complexity in design and testing for various screen sizes and orientations.
+
+  ID       : REQ-011
+  Category : Security
+  Priority : High
+  Score    : 4
+  Hours    : 10 - 50 hrs
+  Reason   : The requirement involves basic validation of password criteria, which is simple but essential for compliance with security standards.
+
+  ID       : REQ-012
+  Category : Technical
+  Priority : High
+  Score    : 0
+  Hours    : 10 - 50 hrs
+  Reason   : The requirement specifies a basic database schema with two tables, which involves simple design and implementation without significant complexity.
+
+  ID       : REQ-013
+  Category : Performance
+  Priority : Medium
+  Score    : 8
+  Hours    : 50 - 150 hrs
+  Reason   : The requirement involves implementing a logging mechanism which requires moderate complexity to ensure all actions are captured accurately for auditing.
+
+  ID       : REQ-014
+  Category : Constraint
+  Priority : Medium
+  Score    : 0
+  Hours    : 10 - 50 hrs
+  Reason   : The requirement explicitly limits the application's scope regarding task organization, simplifying business logic and user interface complexity.
+
+  ID       : REQ-015
+  Category : Assumption
+  Priority : Low
+  Score    : 0
+  Hours    : 10 - 50 hrs
+  Reason   : The requirement is an assumption about future implementation and does not impose any immediate complexity or workload on the current version.

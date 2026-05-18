@@ -1,0 +1,2101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Requirement Agent</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #f0f2f5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            background-color: #ffffff;
+            border-bottom: 1px solid #dde1e7;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .workspace {
+            flex: 1;
+            display: flex;
+            min-height: 0;
+        }
+        .brand-bar {
+            background: rgba(29, 31, 39, 1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .brand-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .brand-bar img {
+            height: 42px;
+            width: auto;
+            display: block;
+        }
+        .brand-bar .brand-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        .agent-status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #5a6473;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.06);
+            flex: 0 0 auto;
+        }
+        .agent-status-dot.idle { background: #5a6473; }
+        .agent-status-dot.running { background: #2ecc71; }
+        .agent-status-dot.error { background: #e74c3c; }
+        .agent-status-group {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #ffffff;
+            font-size: 0.82em;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+        }
+        .agent-status-name {
+            color: #ffffff;
+            opacity: 0.92;
+            white-space: nowrap;
+        }
+        .navbar {
+            width: 250px;
+            padding: 16px 12px;
+            border-right: 1px solid #dde1e7;
+            border-bottom: none;
+            align-items: stretch;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .nav-tabs {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+        }
+        .nav-tab {
+            background-color: #2d3748;
+            color: #ffffff;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.88em;
+            font-weight: 500;
+            transition: background-color 0.15s;
+            width: 100%;
+            text-align: left;
+        }
+        .nav-tab:hover { background-color: #1a202c; }
+        .nav-tab.active { background-color: #1a202c; }
+        .btn-reset {
+            background-color: #2d3748;
+            color: #ffffff;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.88em;
+            font-weight: 500;
+        }
+        .btn-reset:hover { background-color: #1a202c; }
+
+        /* MAIN */
+        .main { flex: 1; padding: 24px 20px; }
+        .card {
+            background-color: #ffffff;
+            border: 1px solid #dde1e7;
+            border-radius: 8px;
+            padding: 24px 28px;
+            max-width: 960px;
+            margin: 0 auto;
+        }
+        .card h2 { font-size: 1.2em; font-weight: 700; color: #1a202c; margin-bottom: 4px; }
+        .subtitle { font-size: 0.88em; color: #555; margin-bottom: 18px; }
+
+        /* LABELS */
+        .field-label {
+            display: block;
+            font-size: 0.82em;
+            font-weight: 600;
+            color: #2a8fa8;
+            margin-bottom: 5px;
+            margin-top: 14px;
+        }
+
+        /* INPUTS */
+        input[type="text"],
+        input[type="email"],
+        input[type="file"],
+        textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ccd1d9;
+            border-radius: 5px;
+            font-size: 0.88em;
+            color: #333;
+            background-color: #fff;
+            font-family: inherit;
+        }
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        textarea:focus { outline: none; border-color: #2a8fa8; }
+        input[type="file"] { padding: 6px 10px; cursor: pointer; }
+        textarea { resize: vertical; }
+
+        /* TWO-COL */
+        .row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+
+        /* BUTTONS */
+        .btn-group { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+        .btn-primary {
+            background-color: #1e3a5f;
+            color: #ffffff;
+            border: none;
+            padding: 9px 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.88em;
+            font-weight: 600;
+        }
+        .btn-primary:hover { background-color: #14294a; }
+        .btn-secondary {
+            background-color: #ffffff;
+            color: #1a202c;
+            border: 1px solid #b0b8c4;
+            padding: 9px 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.88em;
+            font-weight: 500;
+        }
+        .btn-secondary:hover { background-color: #f4f6f8; border-color: #8a95a1; }
+
+        /* DOWNLOAD ROW */
+        .download-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 14px;
+            font-size: 0.88em;
+        }
+        .dl-label { font-weight: 600; color: #2a8fa8; }
+        .download-row a { color: #444; text-decoration: none; cursor: pointer; }
+        .download-row a:hover { text-decoration: underline; color: #2a8fa8; }
+
+        /* STATUS */
+        .status-bar { padding: 12px 20px; font-size: 0.85em; color: #555; }
+        .status-ready { color: #2a8fa8; font-weight: 600; }
+
+        .chat-shell {
+            border: 1px solid #d7dde8;
+            border-radius: 8px;
+            background: #f9fbfe;
+            padding: 10px;
+            min-height: 260px;
+            max-height: 380px;
+            overflow-y: auto;
+        }
+        .chat-row {
+            margin-bottom: 10px;
+            display: flex;
+        }
+        .chat-row.user { justify-content: flex-end; }
+        .chat-row.bot { justify-content: flex-start; }
+        .chat-bubble {
+            max-width: 88%;
+            padding: 8px 10px;
+            border-radius: 8px;
+            font-size: 0.86em;
+            line-height: 1.45;
+            white-space: pre-wrap;
+        }
+        .chat-row.user .chat-bubble {
+            background: #1e3a5f;
+            color: #ffffff;
+        }
+        .chat-row.bot .chat-bubble {
+            background: #ffffff;
+            color: #26313f;
+            border: 1px solid #d8e0ea;
+        }
+        .quick-questions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        .quick-q {
+            border: 1px solid #bfd2e7;
+            color: #1e3a5f;
+            background: #edf4fb;
+            border-radius: 999px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 0.78em;
+            font-weight: 600;
+        }
+        .quick-q:hover { background: #e1edf9; }
+        .chat-typing {
+            display: inline-flex;
+            gap: 4px;
+            align-items: center;
+        }
+        .chat-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #6f8092;
+            animation: chatDot 1.1s infinite ease-in-out;
+        }
+        .chat-dot:nth-child(2) { animation-delay: 0.16s; }
+        .chat-dot:nth-child(3) { animation-delay: 0.32s; }
+        .robot-chat-trigger {
+            position: fixed;
+            right: 22px;
+            bottom: 26px;
+            width: 64px;
+            height: 64px;
+            border: none;
+            border-radius: 50%;
+            background: radial-gradient(circle at 28% 28%, #dff2ff 0%, #7ec2f4 42%, #2f7fbe 100%);
+            box-shadow: 0 10px 24px rgba(25, 70, 111, 0.35);
+            cursor: pointer;
+            z-index: 1300;
+            animation: robotFloat 2.7s ease-in-out infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .robot-chat-trigger:hover {
+            transform: translateY(-1px) scale(1.03);
+        }
+        .robot-chat-trigger svg {
+            width: 34px;
+            height: 34px;
+            fill: #ffffff;
+        }
+        .robot-chat-ping {
+            position: absolute;
+            inset: -6px;
+            border-radius: 50%;
+            border: 2px solid rgba(98, 179, 237, 0.62);
+            animation: robotPulse 2.1s ease-out infinite;
+            pointer-events: none;
+        }
+        .robot-chat-panel {
+            position: fixed;
+            right: 22px;
+            bottom: 102px;
+            width: min(390px, calc(100vw - 24px));
+            max-height: calc(100vh - 16px);
+            background: #ffffff;
+            border: 1px solid #cfdae8;
+            border-radius: 12px;
+            box-shadow: 0 18px 42px rgba(22, 42, 68, 0.24);
+            z-index: 1299;
+            display: none;
+            overflow: hidden;
+        }
+        .robot-chat-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: linear-gradient(90deg, #163b61 0%, #2d6ea4 100%);
+            color: #ffffff;
+            font-size: 0.88em;
+            font-weight: 700;
+            cursor: move;
+            user-select: none;
+        }
+        .robot-chat-close {
+            border: 1px solid rgba(255, 255, 255, 0.32);
+            background: rgba(255, 255, 255, 0.14);
+            color: #ffffff;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8em;
+            padding: 4px 8px;
+        }
+        .robot-chat-body {
+            padding: 10px;
+            max-height: calc(100vh - 86px);
+            overflow-y: auto;
+        }
+        @keyframes robotFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+        @keyframes robotPulse {
+            0% { transform: scale(0.9); opacity: 0.85; }
+            100% { transform: scale(1.25); opacity: 0; }
+        }
+        @keyframes chatDot {
+            0%, 100% { transform: translateY(0); opacity: 0.45; }
+            50% { transform: translateY(-2px); opacity: 1; }
+        }
+
+        /* TAB PANELS */
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+            .hidden-before-project { display: none; }
+            .project-pick-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+            .project-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; }
+            .active-project-pill {
+                margin-top: 14px;
+                display: inline-block;
+                background: #e9f6f9;
+                color: #1e3a5f;
+                border: 1px solid #b6dfe8;
+                border-radius: 999px;
+                padding: 6px 12px;
+                font-size: 0.82em;
+                font-weight: 600;
+            }
+            .muted-note { font-size: 0.83em; color: #6b7280; margin-top: 6px; }
+
+            select {
+                width: 100%;
+                padding: 8px 12px;
+                border: 1px solid #ccd1d9;
+                border-radius: 5px;
+                font-size: 0.88em;
+                color: #333;
+                background-color: #fff;
+                font-family: inherit;
+            }
+
+            .approval-summary {
+                margin-top: 12px;
+                padding: 10px 12px;
+                border-radius: 8px;
+                border: 1px solid #cce7d4;
+                background: #eefaf1;
+                color: #1f6b3a;
+                font-size: 0.84em;
+                display: none;
+            }
+
+            .approval-modal-backdrop {
+                position: fixed;
+                inset: 0;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                background: rgba(8, 20, 36, 0.28);
+                z-index: 1200;
+                padding: 18px;
+            }
+
+            .approval-modal {
+                width: 100%;
+                max-width: 420px;
+                border-radius: 12px;
+                border: 1px solid #dfe5ef;
+                background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+                box-shadow: 0 16px 40px rgba(28, 49, 84, 0.18);
+                padding: 18px;
+            }
+
+            .approval-modal h3 {
+                font-size: 1.02em;
+                color: #1a202c;
+                margin-bottom: 4px;
+            }
+
+            .approval-modal p {
+                font-size: 0.84em;
+                color: #5f6b7d;
+                margin-bottom: 10px;
+            }
+            .tds-diagram-grid {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 14px;
+                margin-top: 8px;
+            }
+            .tds-diagram-card {
+                border: 1px solid #d9e1eb;
+                border-radius: 8px;
+                background: #fbfcfe;
+                padding: 14px;
+            }
+            .tds-diagram-title {
+                font-size: 0.9em;
+                font-weight: 700;
+                color: #1e3a5f;
+                margin-bottom: 10px;
+            }
+            .tds-mermaid-shell {
+                overflow-x: auto;
+                background: #ffffff;
+                border: 1px solid #e5ebf3;
+                border-radius: 6px;
+                padding: 12px;
+            }
+            .tds-code-block {
+                white-space: pre-wrap;
+                word-break: break-word;
+                font-family: Consolas, monospace;
+                font-size: 0.83em;
+                color: #22313f;
+                background: #ffffff;
+                border: 1px solid #e5ebf3;
+                border-radius: 6px;
+                padding: 12px;
+            }
+            .agent-overview {
+                margin-top: 10px;
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            .agent-overview-item {
+                border: 1px solid #dce3ee;
+                border-radius: 8px;
+                padding: 10px 12px;
+                background: #f8fbff;
+            }
+            .agent-overview-item strong {
+                color: #1e3a5f;
+                display: inline-block;
+                margin-bottom: 2px;
+            }
+    </style>
+</head>
+<body>
+
+    <header class="brand-bar">
+        <div class="brand-left">
+            <img src="{{ url_for('static', filename='HPE_LOGO.png') }}" alt="HPE Logo">
+            <div class="brand-title">SDLC AI Agent Pipeline</div>
+        </div>
+        <div class="agent-status-group" aria-label="Agent status">
+            <div id="agentStatusPill" class="agent-status-dot idle"></div>
+            <div id="agentStatusName" class="agent-status-name">Idle</div>
+        </div>
+    </header>
+
+    <div class="workspace">
+        <!-- NAVBAR -->
+        <nav class="navbar">
+            <div class="nav-tabs">
+                    <button id="tabBtn-home" class="nav-tab active" onclick="showTab('home', this)">Home</button>
+                    <button id="tabBtn-requirement" class="nav-tab hidden-before-project" onclick="showTab('requirement', this)">Requirement Agent</button>
+                    <button id="tabBtn-estimation" class="nav-tab hidden-before-project" onclick="showTab('estimation', this)">Estimation Agent</button>
+                    <button id="tabBtn-fds" class="nav-tab hidden-before-project" onclick="showTab('fds', this)">FDS Agent</button>
+                    <button id="tabBtn-tds" class="nav-tab hidden-before-project" onclick="showTab('tds', this)">TDS Agent</button>
+            </div>
+            
+        </nav>
+
+        <!-- CONTENT -->
+        <div class="main">
+
+            <!-- HOME -->
+            <div id="tab-home" class="tab-panel active">
+                <div class="card">
+                    <h2>Welcome</h2>
+                    <p class="subtitle">This pipeline helps you move from business conversation to implementation artifacts in a guided SDLC flow.</p>
+
+                    <div class="agent-overview">
+                        <div class="agent-overview-item">
+                            <strong>Requirement Agent</strong>
+                            <div>Converts validated transcript input into BRD content and an A2A card.</div>
+                        </div>
+                        <div class="agent-overview-item">
+                            <strong>Estimation Agent</strong>
+                            <div>Builds effort and investment estimates from approved requirement outputs.</div>
+                        </div>
+                        <div class="agent-overview-item">
+                            <strong>FDS Agent</strong>
+                            <div>Generates functional design artifacts and prepares handoff for technical design.</div>
+                        </div>
+                        <div class="agent-overview-item">
+                            <strong>TDS Agent</strong>
+                            <div>Handles technical design stage after FDS handoff data is ready.</div>
+                        </div>
+                    </div>
+
+                    <div class="btn-group">
+                        <button class="btn-primary" onclick="goToProjects()">Projects</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PROJECTS -->
+            <div id="tab-projects" class="tab-panel">
+                <div class="card">
+                    <h2>Project Workspace</h2>
+                    <p class="subtitle">Pick an existing project or create a new project. Agent tabs will appear after you choose one.</p>
+
+                    <div class="project-pick-grid">
+                        <div>
+                            <label class="field-label">Existing projects</label>
+                            <div class="project-row">
+                                <select id="existingProjects"></select>
+                                <button class="btn-secondary" onclick="useSelectedProject()">Work On Selected</button>
+                            </div>
+                            <p class="muted-note" id="projectsSummary">Loading projects...</p>
+                        </div>
+
+                        <div>
+                            <label class="field-label">Create new project</label>
+                            <div class="project-row">
+                                <input type="text" id="newProjectName" placeholder="Example: Customer Portal Modernization">
+                                <button class="btn-primary" onclick="createNewProject()">Create New Project</button>
+                            </div>
+                            <p class="muted-note">Creating a new project unlocks agents and routes generated artifacts into a new folder.</p>
+                        </div>
+                    </div>
+
+                    <div id="activeProjectInfo" class="active-project-pill" style="display:none;"></div>
+                </div>
+            </div>
+
+            <!-- REQUIREMENT AGENT -->
+            <div id="tab-requirement" class="tab-panel">
+                <div class="card">
+                <h2>Requirement Agent</h2>
+                <p class="subtitle">Input can be file path or upload. Supports .pdf, .doc, .docx, .txt, .md.</p>
+
+                <div class="row-2col">
+                    <div>
+                        <label class="field-label">Transcript file path</label>
+                        <input type="text" id="transcriptPath" placeholder="Example: C:/docs/transcript.pdf">
+                    </div>
+                    <div>
+                        <label class="field-label">Upload transcript file</label>
+                        <input type="file" id="transcriptFile" accept=".pdf,.doc,.docx,.txt,.md">
+                    </div>
+                </div>
+
+            
+
+                <div class="btn-group">
+                    <button class="btn-primary" onclick="generateBRD()">Generate BRD</button>
+                    <button class="btn-secondary" onclick="openApprovalModal()">Approve</button>
+                </div>
+
+                <div id="approvalSummary" class="approval-summary"></div>
+
+                <label class="field-label">Generated BRD preview</label>
+                <textarea id="brdPreview" rows="6" placeholder="Generated BRD report will appear here..."></textarea>
+
+                <label class="field-label">Edit BRD content if approval is rejected</label>
+                <textarea id="brdEdit" rows="6" placeholder="Generated BRD content will appear here for editing..."></textarea>
+                 <div>
+                        <label class="field-label">BRD team email</label>
+                        <input type="email" id="brdEmail" placeholder="brd-team@company.com">
+                    </div>
+                <div class="btn-group">
+                    <button class="btn-secondary" onclick="regenerateBRD()">Regenerate BRD Report After Edit</button>
+                    <button class="btn-secondary" onclick="sendMailBRD()">Send Mail to BRD Team</button>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn-primary" onclick="sendToEstimation()">Send to Estimation</button>
+                </div>
+
+               
+
+                <div class="download-row">
+                    <span class="dl-label">Download BRD:</span>
+                    <a onclick="downloadBRD('word')">Word</a>
+                    <a onclick="downloadBRD('pdf')">PDF</a>
+                    <a onclick="downloadBRD('txt')">TXT</a>
+                </div>
+            </div>
+        </div>
+
+            <!-- ESTIMATION AGENT -->
+            <div id="tab-estimation" class="tab-panel">
+                <div class="card">
+                <h2>Estimation Agent</h2>
+                <p class="subtitle">Generate effort estimations from a BRD or A2A card.</p>
+
+                <label class="field-label">A2A Card path</label>
+                <input type="text" id="cardPath" placeholder="Example: projects/my_project/cards/a2a_card.json">
+
+                <label class="field-label">Or upload A2A card file</label>
+                <input type="file" id="cardFile" accept=".json">
+
+                <div class="btn-group">
+                    <button class="btn-primary" onclick="generateEstimation()">Generate Estimation</button>
+                    <button class="btn-secondary" onclick="openEstimationApprovalModal()">Approve Estimation</button>
+                </div>
+
+                <div id="estimationApprovalSummary" class="approval-summary"></div>
+
+                <label class="field-label">Estimation preview</label>
+                <textarea id="estimationPreview" rows="8" placeholder="Estimation report will appear here..."></textarea>
+
+                <div class="btn-group">
+                    <button class="btn-primary" onclick="sendToFDS()">Send to FDS</button>
+                </div>
+
+                <div class="download-row">
+                    <span class="dl-label">Download Estimation:</span>
+                    <a onclick="downloadEstimation('txt')">TXT</a>
+                </div>
+            </div>
+        </div>
+
+            <!-- FDS AGENT -->
+            <div id="tab-fds" class="tab-panel">
+                <div class="card">
+                <h2>FDS Agent</h2>
+                <p class="subtitle">Generate Functional Design Specification artifacts from the approved A2A card.</p>
+
+                <label class="field-label">A2A Card path</label>
+                <input type="text" id="fdsCardPath" placeholder="Example: projects/my_project/cards/a2a_card.json">
+
+                <div class="btn-group">
+                    <button class="btn-primary" onclick="generateFDS()">Generate FDS</button>
+                </div>
+
+                <label class="field-label">FDS preview</label>
+                <textarea id="fdsPreview" rows="8" placeholder="FDS report will appear here..."></textarea>
+
+                <div class="btn-group">
+                    <button class="btn-secondary" onclick="openFdsApprovalModal()">Approve FDS</button>
+                </div>
+
+                <div id="fdsApprovalSummary" class="approval-summary"></div>
+
+                <div class="btn-group">
+                    <button class="btn-secondary" onclick="sendToTDS()">Send to TDS</button>
+                </div>
+
+                <div class="download-row">
+                    <span class="dl-label">Download FDS:</span>
+                    <a onclick="downloadFDS('word')">Word</a>
+                    <a onclick="downloadFDS('txt')">TXT</a>
+                </div>
+            </div>
+        </div>
+
+            <!-- TDS AGENT -->
+            <div id="tab-tds" class="tab-panel">
+                <div class="card">
+                <h2>TDS Agent</h2>
+                <p class="subtitle">Generate Technical Design Specification outputs from the ready-for-TDS card produced by FDS.</p>
+
+                <label class="field-label">TDS A2A Card path</label>
+                <input type="text" id="tdsCardPathInput" placeholder="Example: projects/my_project/cards/tds_a2a_card.json">
+
+                <div class="btn-group">
+                    <button class="btn-primary" onclick="generateTDS()">Generate TDS</button>
+                    <button class="btn-secondary" onclick="openTdsApprovalModal()">Approve TDS</button>
+                </div>
+
+                <label class="field-label">TDS diagrams</label>
+                <div id="tdsDiagramContainer" class="tds-diagram-grid">
+                    <div class="muted-note">Generated TDS diagrams will appear here.</div>
+                </div>
+
+                <div id="tdsApprovalSummary" class="approval-summary"></div>
+
+                <div class="download-row">
+                    <span class="dl-label">Download TDS:</span>
+                    <a onclick="downloadTDS('word')">Word</a>
+                    <a onclick="downloadTDS('json')">JSON</a>
+                </div>
+            </div>
+        </div>
+
+        </div>
+    </div>
+
+    <button class="robot-chat-trigger" onclick="toggleRobotChat()" title="Open Project Chatbot" aria-label="Open Project Chatbot">
+        <span class="robot-chat-ping"></span>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M9 2h6v2h2a2 2 0 0 1 2 2v2h1a2 2 0 0 1 2 2v6a4 4 0 0 1-4 4h-3.3l-2.4 2.4a.5.5 0 0 1-.7 0L9.2 20H6a4 4 0 0 1-4-4v-6a2 2 0 0 1 2-2h1V6a2 2 0 0 1 2-2h2V2Zm-2 6h10V6H7v2Zm2.2 6a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Zm5.6 0a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Z"/>
+        </svg>
+    </button>
+
+    <div id="robotChatPanel" class="robot-chat-panel" role="dialog" aria-label="Project Chatbot">
+        <div class="robot-chat-head">
+            <span>Project Chatbot</span>
+            <button class="robot-chat-close" onclick="closeRobotChat()">Close</button>
+        </div>
+        <div class="robot-chat-body">
+            <div id="chatHistory" class="chat-shell">
+                <div class="chat-row bot">
+                    <div class="chat-bubble">Ask me things like: Who is the business for this project? Who are the stakeholders/team leads? How is estimation defined? List project status summary.</div>
+                </div>
+            </div>
+
+            <div class="quick-questions">
+                <button id="quickQ1" class="quick-q" onclick="useQuickQuestion('Who is the business for this project?')">Business for project</button>
+                <button id="quickQ2" class="quick-q" onclick="useQuickQuestion('Who are the stakeholders or team leads?')">Team leads / stakeholders</button>
+                <button id="quickQ3" class="quick-q" onclick="useQuickQuestion('How is estimation defined?')">Estimation definition</button>
+                <button id="quickQ4" class="quick-q" onclick="useQuickQuestion('List project status summary')">Project summary</button>
+            </div>
+
+            <label class="field-label">Your question</label>
+            <textarea id="chatQuestion" rows="3" placeholder="Type your project question here..."></textarea>
+
+            <div class="btn-group">
+                <button id="chatAskBtn" class="btn-primary" onclick="askChatbot()">Ask Chatbot</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- STATUS BAR -->
+    <div class="status-bar">
+        <span class="status-ready">Ready.</span>
+        <span id="statusMsg"> Connected to agents.</span>
+    </div>
+
+    <!-- LOADING OVERLAY -->
+    <div id="loadingOverlay" style="display:none; position:fixed; inset:0; background:rgba(255,255,255,0.82);
+         z-index:999; flex-direction:column; align-items:center; justify-content:center; gap:14px;">
+        <div style="width:40px;height:40px;border:4px solid #dde1e7;border-top-color:#2a8fa8;
+             border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+        <div id="loadingLabel" style="font-size:0.92em;color:#2a8fa8;font-weight:600;">Processing…</div>
+    </div>
+
+    <!-- APPROVAL MODAL -->
+    <div id="approvalModalBackdrop" class="approval-modal-backdrop">
+        <div class="approval-modal">
+            <h3>Approve BRD</h3>
+            <p>Enter approver details to update the A2A card approval section.</p>
+
+            <label class="field-label">Approver Name</label>
+            <input type="text" id="approverNameInput" placeholder="Example: Arya H">
+
+            <label class="field-label">Approver Position</label>
+            <input type="text" id="approverPositionInput" placeholder="Example: Product Owner">
+
+            <div class="btn-group" style="margin-top:14px; justify-content:flex-end;">
+                <button class="btn-secondary" onclick="closeApprovalModal()">Cancel</button>
+                <button class="btn-primary" onclick="submitApproval()">Confirm Approval</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ESTIMATION APPROVAL MODAL -->
+    <div id="estimationApprovalModalBackdrop" class="approval-modal-backdrop">
+        <div class="approval-modal">
+            <h3>Approve Estimation</h3>
+            <p>Enter approver details to update the estimation approval section in the A2A card.</p>
+
+            <label class="field-label">Approver Name</label>
+            <input type="text" id="estimationApproverNameInput" placeholder="Example: Arya H">
+
+            <label class="field-label">Approver Position</label>
+            <input type="text" id="estimationApproverPositionInput" placeholder="Example: Delivery Manager">
+
+            <div class="btn-group" style="margin-top:14px; justify-content:flex-end;">
+                <button class="btn-secondary" onclick="closeEstimationApprovalModal()">Cancel</button>
+                <button class="btn-primary" onclick="submitEstimationApproval()">Confirm Approval</button>
+            </div>
+        </div>
+    </div>
+    <div id="fdsApprovalModalBackdrop" class="approval-modal-backdrop">
+        <div class="approval-modal">
+            <h3>Approve FDS</h3>
+            <p>Enter approver details to update the FDS handoff card approval section.</p>
+
+            <label class="field-label">Approver Name</label>
+            <input type="text" id="fdsApproverNameInput" placeholder="Example: Arya H">
+
+            <label class="field-label">Approver Position</label>
+            <input type="text" id="fdsApproverPositionInput" placeholder="Example: Solution Architect">
+
+            <div class="btn-group" style="margin-top:14px; justify-content:flex-end;">
+                <button class="btn-secondary" onclick="closeFdsApprovalModal()">Cancel</button>
+                <button class="btn-primary" onclick="submitFdsApproval()">Confirm Approval</button>
+            </div>
+        </div>
+    </div>
+    <div id="tdsApprovalModalBackdrop" class="approval-modal-backdrop">
+        <div class="approval-modal">
+            <h3>Approve TDS</h3>
+            <p>Enter approver details to update the TDS approval section in the handoff card.</p>
+
+            <label class="field-label">Approver Name</label>
+            <input type="text" id="tdsApproverNameInput" placeholder="Example: Arya H">
+
+            <label class="field-label">Approver Position</label>
+            <input type="text" id="tdsApproverPositionInput" placeholder="Example: Technical Lead">
+
+            <div class="btn-group" style="margin-top:14px; justify-content:flex-end;">
+                <button class="btn-secondary" onclick="closeTdsApprovalModal()">Cancel</button>
+                <button class="btn-primary" onclick="submitTdsApproval()">Confirm Approval</button>
+            </div>
+        </div>
+    </div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <script>
+        // ── State ────────────────────────────────────────────────
+        const state = {
+            cardPath: '',
+            brdTxtPath: '',
+            brdDocxPath: '',
+            estimationTxtPath: '',
+            estimationDocxPath: '',
+            fdsTxtPath: '',
+            fdsDocxPath: '',
+            tdsCardPath: '',
+            tdsDocxPath: '',
+            tdsJsonPath: '',
+            tdsSections: {},
+                activeProjectSlug: '',
+                activeProjectName: '',
+                projectMode: '',
+                projectsCatalog: [],
+                isApproved: false,
+                approval: null,
+                isEstimationApproved: false,
+                estimationApproval: null,
+                isFdsApproved: false,
+                fdsApproval: null,
+                isTdsApproved: false,
+                tdsApproval: null,
+                agentStatus: 'idle',
+                activeAgent: '',
+                chatTurns: [],
+                chatBusy: false,
+                robotChatPos: null,
+        };
+
+            let robotChatDrag = null;
+
+        // ── Tab switching ─────────────────────────────────────────
+        function showTab(name, btn) {
+                if (name !== 'home' && name !== 'projects' && name !== 'chatbot' && !state.activeProjectName) {
+                    setStatus('Select or create a project from Projects first.', true);
+                    return;
+                }
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + name).classList.add('active');
+            const targetBtn = btn || document.getElementById('tabBtn-' + name);
+            if (targetBtn) targetBtn.classList.add('active');
+        }
+
+            function goToProjects() {
+                showTab('projects');
+            }
+
+            function lockAgents() {
+                ['requirement', 'estimation', 'fds', 'tds'].forEach(name => {
+                    const b = document.getElementById('tabBtn-' + name);
+                    if (b) b.classList.add('hidden-before-project');
+                });
+            }
+
+            function unlockAgents() {
+                ['requirement', 'estimation', 'fds', 'tds'].forEach(name => {
+                    const b = document.getElementById('tabBtn-' + name);
+                    if (b) b.classList.remove('hidden-before-project');
+                });
+            }
+
+            function updateActiveProjectInfo() {
+                const el = document.getElementById('activeProjectInfo');
+                if (!state.activeProjectName) {
+                    el.style.display = 'none';
+                    el.textContent = '';
+                    return;
+                }
+                const modeLabel = state.projectMode === 'existing' ? 'Existing' : 'New';
+                el.style.display = 'inline-block';
+                el.textContent = 'Active Project (' + modeLabel + '): ' + state.activeProjectName;
+            }
+
+            async function loadProjects() {
+                const sel = document.getElementById('existingProjects');
+                const summary = document.getElementById('projectsSummary');
+                sel.innerHTML = '';
+                summary.textContent = 'Loading projects...';
+
+                try {
+                    const resp = await fetch('/api/projects');
+                    const data = await resp.json();
+                    if (data.error) throw new Error(data.error);
+                    state.projectsCatalog = Array.isArray(data) ? data : [];
+
+                    if (!state.projectsCatalog.length) {
+                        const opt = document.createElement('option');
+                        opt.value = '';
+                        opt.textContent = 'No existing projects found';
+                        sel.appendChild(opt);
+                        summary.textContent = '0 projects found. Create a new project to continue.';
+                        return;
+                    }
+
+                    state.projectsCatalog.forEach(p => {
+                        const opt = document.createElement('option');
+                        opt.value = p.slug;
+                        opt.textContent = p.display_name + ' (' + p.slug + ')';
+                        sel.appendChild(opt);
+                    });
+
+                    summary.textContent = state.projectsCatalog.length + ' project(s) found.';
+                } catch (e) {
+                    summary.textContent = 'Could not load projects from server.';
+                    setStatus('Failed to load projects: ' + e, true);
+                }
+            }
+
+            function useSelectedProject() {
+                const slug = document.getElementById('existingProjects').value;
+                if (!slug) {
+                    alert('No project selected.');
+                    return;
+                }
+                const project = state.projectsCatalog.find(p => p.slug === slug);
+                if (!project) {
+                    alert('Selected project is not available. Please refresh and try again.');
+                    return;
+                }
+
+                state.activeProjectSlug = project.slug;
+                state.activeProjectName = project.display_name;
+                state.projectMode = 'existing';
+                updateActiveProjectInfo();
+                unlockAgents();
+                setStatus('Project selected: ' + project.display_name + '. Agents unlocked.');
+                showTab('requirement', document.getElementById('tabBtn-requirement'));
+            }
+
+            function createNewProject() {
+                const name = document.getElementById('newProjectName').value.trim();
+                if (!name) {
+                    alert('Enter a new project name first.');
+                    return;
+                }
+
+                state.activeProjectSlug = '';
+                state.activeProjectName = name;
+                state.projectMode = 'new';
+                updateActiveProjectInfo();
+                unlockAgents();
+                setStatus('New project prepared: ' + name + '. Agents unlocked.');
+                showTab('requirement', document.getElementById('tabBtn-requirement'));
+            }
+         
+        // ── Status bar ────────────────────────────────────────────
+        function updateAgentStatusPill() {
+            const pill = document.getElementById('agentStatusPill');
+            const name = document.getElementById('agentStatusName');
+            if (!pill) return;
+            pill.classList.remove('idle', 'running', 'error');
+            const status = state.agentStatus || 'idle';
+            pill.classList.add(status);
+            if (name) {
+                name.textContent = status === 'running'
+                    ? (state.activeAgent ? state.activeAgent + ' Agent' : 'Agent') + ' running'
+                    : status === 'error'
+                        ? 'Error'
+                        : 'Idle';
+            }
+            pill.title = name ? name.textContent : '';
+        }
+
+        function setAgentStatus(status, agentName = '') {
+            state.agentStatus = status;
+            state.activeAgent = agentName;
+            updateAgentStatusPill();
+        }
+
+        function getDefaultApproverName() {
+            const memberNames = document.getElementById('memberNames');
+            return memberNames ? memberNames.value.trim() : '';
+        }
+
+        function isMermaidDiagramText(text) {
+            const cleaned = (text || '').trim();
+            return cleaned.startsWith('flowchart TD') || cleaned.startsWith('sequenceDiagram') || cleaned.startsWith('erDiagram');
+        }
+
+        async function renderTDSSections(sections, sectionOrder) {
+            const container = document.getElementById('tdsDiagramContainer');
+            if (!container) return;
+
+            const entries = sections && typeof sections === 'object' ? sections : {};
+            const orderedSections = Array.isArray(sectionOrder) && sectionOrder.length
+                ? sectionOrder
+                : Object.keys(entries);
+
+            container.innerHTML = '';
+
+            if (!orderedSections.length) {
+                container.innerHTML = '<div class="muted-note">Generated TDS diagrams will appear here.</div>';
+                return;
+            }
+
+            orderedSections.forEach(sectionName => {
+                const content = entries[sectionName] || '';
+                const card = document.createElement('div');
+                card.className = 'tds-diagram-card';
+
+                const title = document.createElement('div');
+                title.className = 'tds-diagram-title';
+                title.textContent = sectionName;
+                card.appendChild(title);
+
+                if (isMermaidDiagramText(content)) {
+                    const shell = document.createElement('div');
+                    shell.className = 'tds-mermaid-shell';
+
+                    const diagram = document.createElement('div');
+                    diagram.className = 'mermaid';
+                    diagram.textContent = content;
+                    shell.appendChild(diagram);
+                    card.appendChild(shell);
+                } else {
+                    const pre = document.createElement('pre');
+                    pre.className = 'tds-code-block';
+                    pre.textContent = content || 'No content generated.';
+                    card.appendChild(pre);
+                }
+
+                container.appendChild(card);
+            });
+
+            if (!window.mermaid) {
+                return;
+            }
+
+            try {
+                await window.mermaid.run({
+                    nodes: Array.from(container.querySelectorAll('.mermaid')),
+                });
+            } catch (e) {
+                container.querySelectorAll('.mermaid').forEach(node => {
+                    const pre = document.createElement('pre');
+                    pre.className = 'tds-code-block';
+                    pre.textContent = node.textContent || '';
+                    const shell = node.parentElement;
+                    if (shell) shell.replaceWith(pre);
+                });
+                setStatus('TDS diagrams generated, but Mermaid render failed.', true);
+            }
+        }
+
+        function setStatus(msg, isError = false) {
+            const bar = document.getElementById('statusMsg');
+            bar.textContent = msg;
+            bar.style.color = isError ? '#c0392b' : '#2a8fa8';
+            if (isError) setAgentStatus('error');
+        }
+
+        function toggleRobotChat() {
+            const panel = document.getElementById('robotChatPanel');
+            if (!panel) return;
+            const show = panel.style.display !== 'block';
+            panel.style.display = show ? 'block' : 'none';
+            if (show) {
+                positionRobotChatPanel();
+                const box = document.getElementById('chatQuestion');
+                if (box) box.focus();
+            }
+        }
+
+        function closeRobotChat() {
+            const panel = document.getElementById('robotChatPanel');
+            if (panel) panel.style.display = 'none';
+        }
+
+        function clampRobotChatPos(left, top) {
+            const panel = document.getElementById('robotChatPanel');
+            if (!panel) return { left: 8, top: 8 };
+
+            const maxLeft = Math.max(8, window.innerWidth - panel.offsetWidth - 8);
+            const maxTop = Math.max(8, window.innerHeight - panel.offsetHeight - 8);
+
+            return {
+                left: Math.min(Math.max(8, left), maxLeft),
+                top: Math.min(Math.max(8, top), maxTop),
+            };
+        }
+
+        function applyRobotChatPos(pos) {
+            const panel = document.getElementById('robotChatPanel');
+            if (!panel || !pos) return;
+
+            panel.style.left = pos.left + 'px';
+            panel.style.top = pos.top + 'px';
+            panel.style.right = 'auto';
+            panel.style.bottom = 'auto';
+            state.robotChatPos = pos;
+        }
+
+        function positionRobotChatPanel() {
+            const panel = document.getElementById('robotChatPanel');
+            if (!panel) return;
+
+            if (state.robotChatPos) {
+                const clamped = clampRobotChatPos(state.robotChatPos.left, state.robotChatPos.top);
+                applyRobotChatPos(clamped);
+                return;
+            }
+
+            const defaultLeft = window.innerWidth - panel.offsetWidth - 22;
+            const defaultTop = window.innerHeight - panel.offsetHeight - 102;
+            applyRobotChatPos(clampRobotChatPos(defaultLeft, defaultTop));
+        }
+
+        function startRobotChatDrag(ev) {
+            const panel = document.getElementById('robotChatPanel');
+            if (!panel || panel.style.display !== 'block') return;
+
+            const startLeft = state.robotChatPos ? state.robotChatPos.left : panel.offsetLeft;
+            const startTop = state.robotChatPos ? state.robotChatPos.top : panel.offsetTop;
+
+            robotChatDrag = {
+                startX: ev.clientX,
+                startY: ev.clientY,
+                left: startLeft,
+                top: startTop,
+            };
+            ev.preventDefault();
+        }
+
+        function onRobotChatDrag(ev) {
+            if (!robotChatDrag) return;
+            const nextLeft = robotChatDrag.left + (ev.clientX - robotChatDrag.startX);
+            const nextTop = robotChatDrag.top + (ev.clientY - robotChatDrag.startY);
+            applyRobotChatPos(clampRobotChatPos(nextLeft, nextTop));
+        }
+
+        function endRobotChatDrag() {
+            robotChatDrag = null;
+        }
+
+        function appendChatMessage(sender, message) {
+            const history = document.getElementById('chatHistory');
+            if (!history) return;
+
+            const row = document.createElement('div');
+            row.className = 'chat-row ' + sender;
+
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble';
+            bubble.textContent = message || '';
+
+            row.appendChild(bubble);
+            history.appendChild(row);
+            history.scrollTop = history.scrollHeight;
+
+            return row;
+        }
+
+        function showChatTyping() {
+            return appendChatMessage('bot', '...');
+        }
+
+        function replaceTypingWithMessage(typingNode, message) {
+            if (!typingNode) {
+                appendChatMessage('bot', message);
+                return;
+            }
+            const bubble = typingNode.querySelector('.chat-bubble');
+            if (bubble) bubble.textContent = message || '';
+        }
+
+        function setChatBusy(busy) {
+            state.chatBusy = !!busy;
+            const btn = document.getElementById('chatAskBtn');
+            const box = document.getElementById('chatQuestion');
+            if (btn) {
+                btn.disabled = !!busy;
+                btn.style.opacity = busy ? '0.65' : '1';
+            }
+            if (box) box.readOnly = !!busy;
+        }
+
+        function updateQuickQuestions(questions) {
+            if (!Array.isArray(questions) || !questions.length) return;
+            const ids = ['quickQ1', 'quickQ2', 'quickQ3', 'quickQ4'];
+            ids.forEach((id, idx) => {
+                const el = document.getElementById(id);
+                const text = questions[idx] || questions[0];
+                if (!el || !text) return;
+                el.textContent = text;
+                el.setAttribute('onclick', 'useQuickQuestion(' + JSON.stringify(text) + ')');
+            });
+        }
+
+        function useQuickQuestion(text) {
+            const box = document.getElementById('chatQuestion');
+            box.value = text;
+            askChatbot();
+        }
+
+        async function askChatbot() {
+            const box = document.getElementById('chatQuestion');
+            const question = box.value.trim();
+            if (!question) {
+                alert('Please type a question first.');
+                return;
+            }
+            if (state.chatBusy) return;
+
+            appendChatMessage('user', question);
+            state.chatTurns.push({ role: 'user', message: question });
+            box.value = '';
+            setChatBusy(true);
+
+            setAgentStatus('running', 'Project Chatbot');
+            setStatus('Getting response from Project Chatbot...');
+            const typingNode = showChatTyping();
+
+            let resp, data;
+            try {
+                resp = await fetch('/api/chatbot', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        question,
+                        project_slug: state.activeProjectSlug || '',
+                        history: state.chatTurns.slice(-12),
+                    }),
+                });
+                data = await resp.json();
+            } catch (e) {
+                replaceTypingWithMessage(typingNode, 'Network error: ' + e);
+                setStatus('Chatbot request failed.', true);
+                setAgentStatus('error');
+                setChatBusy(false);
+                return;
+            }
+
+            if (data.error) {
+                replaceTypingWithMessage(typingNode, 'Error: ' + data.error);
+                setStatus('Chatbot error: ' + data.error, true);
+                setAgentStatus('error');
+                setChatBusy(false);
+                return;
+            }
+
+            const botAnswer = data.answer || 'No response generated.';
+            replaceTypingWithMessage(typingNode, botAnswer);
+            state.chatTurns.push({ role: 'assistant', message: botAnswer, meta: data.meta || {} });
+            if (data.meta && Array.isArray(data.meta.suggested_questions)) {
+                updateQuickQuestions(data.meta.suggested_questions);
+            }
+            setStatus('Chatbot response ready.');
+            setAgentStatus('idle');
+            setChatBusy(false);
+        }
+
+        // ── Loading overlay ───────────────────────────────────────
+        function setLoading(show, label = 'Processing\u2026') {
+            document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+            document.getElementById('loadingLabel').textContent = label;
+        }
+
+        // ── Job polling ───────────────────────────────────────────
+        function pollJob(jobId, onDone, onError, label = 'Processing\u2026') {
+            setLoading(true, label);
+            const iv = setInterval(async () => {
+                try {
+                    const r = await fetch('/api/job/' + jobId);
+                    const job = await r.json();
+                    if (job.status === 'done') {
+                        clearInterval(iv);
+                        setLoading(false);
+                        onDone(job.result);
+                    } else if (job.status === 'error') {
+                        clearInterval(iv);
+                        setLoading(false);
+                        setAgentStatus('error');
+                        onError(job.error || 'Unknown error');
+                    }
+                } catch (e) {
+                    clearInterval(iv);
+                    setLoading(false);
+                    setAgentStatus('error');
+                    onError(String(e));
+                }
+            }, 2000);
+        }
+
+        // ── Generate BRD ──────────────────────────────────────────
+        async function generateBRD() {
+            const path   = document.getElementById('transcriptPath').value.trim();
+            const file   = document.getElementById('transcriptFile').files[0];
+
+            if (!state.activeProjectName) {
+                alert('Select or create a project from Projects first.');
+                return;
+            }
+
+            if (!path && !file) {
+                alert('Please provide a transcript file path or upload a transcript file.');
+                return;
+            }
+
+            const fd = new FormData();
+            if (file)  fd.append('transcript_file', file);
+            else fd.append('transcript_path', path);
+
+            if (state.projectMode === 'existing' && state.activeProjectSlug) {
+                fd.append('project_slug', state.activeProjectSlug);
+            }
+            fd.append('project_name', state.activeProjectName);
+
+            setAgentStatus('running', 'Requirement');
+            setStatus('Sending transcript to Requirements Agent\u2026');
+            let resp, data;
+            try {
+                resp = await fetch('/api/generate-brd', { method: 'POST', body: fd });
+                data = await resp.json();
+            } catch (e) {
+                setStatus('Network error: ' + e, true);
+                setAgentStatus('error');
+                return;
+            }
+            if (data.error) { setStatus(data.error, true); setAgentStatus('error'); return; }
+
+            pollJob(
+                data.job_id,
+                result => {
+                    document.getElementById('brdPreview').value = result.brd_text || '';
+                    document.getElementById('brdEdit').value    = result.brd_text || '';
+                    state.cardPath    = result.card_path    || '';
+                    state.brdTxtPath  = result.txt_path     || '';
+                    state.brdDocxPath = result.docx_path    || '';
+                    state.isApproved = false;
+                    state.approval = null;
+                    document.getElementById('approvalSummary').style.display = 'none';
+                    if (result.project_name) {
+                        state.activeProjectName = result.project_name;
+                        updateActiveProjectInfo();
+                    }
+                    setStatus('BRD generated \u2714  Project: ' + (result.project_name || '') +
+                              '  |  Requirements: ' + (result.stats?.total_requirements ?? ''));
+                    setAgentStatus('idle');
+                },
+                err => {
+                    setStatus('BRD generation failed: ' + err.split('\n')[0], true);
+                    setAgentStatus('error');
+                },
+                'Generating BRD (this may take a minute)\u2026'
+            );
+        }
+
+        function openApprovalModal() {
+            if (!state.cardPath) {
+                alert('Generate a BRD first before approval.');
+                return;
+            }
+            document.getElementById('approverNameInput').value = getDefaultApproverName();
+            document.getElementById('approverPositionInput').value = 'Business Owner';
+            document.getElementById('approvalModalBackdrop').style.display = 'flex';
+        }
+
+        function closeApprovalModal() {
+            document.getElementById('approvalModalBackdrop').style.display = 'none';
+        }
+
+        function openEstimationApprovalModal() {
+            if (!state.cardPath) {
+                alert('No card available. Generate BRD first.');
+                return;
+            }
+            if (!state.estimationTxtPath && !document.getElementById('estimationPreview').value.trim()) {
+                alert('Generate estimation first before approval.');
+                return;
+            }
+            document.getElementById('estimationApproverNameInput').value = getDefaultApproverName();
+            document.getElementById('estimationApproverPositionInput').value = 'Delivery Manager';
+            document.getElementById('estimationApprovalModalBackdrop').style.display = 'flex';
+        }
+
+        function closeEstimationApprovalModal() {
+            document.getElementById('estimationApprovalModalBackdrop').style.display = 'none';
+        }
+
+        function openFdsApprovalModal() {
+            if (!state.tdsCardPath) {
+                alert('Generate FDS first before approval.');
+                return;
+            }
+            if (!state.fdsDocxPath && !document.getElementById('fdsPreview').value.trim()) {
+                alert('Generate FDS first before approval.');
+                return;
+            }
+            document.getElementById('fdsApproverNameInput').value = getDefaultApproverName();
+            document.getElementById('fdsApproverPositionInput').value = 'Solution Architect';
+            document.getElementById('fdsApprovalModalBackdrop').style.display = 'flex';
+        }
+
+        function closeFdsApprovalModal() {
+            document.getElementById('fdsApprovalModalBackdrop').style.display = 'none';
+        }
+
+        function openTdsApprovalModal() {
+            if (!state.tdsCardPath) {
+                alert('No TDS card available. Generate FDS first.');
+                return;
+            }
+            if (!state.tdsDocxPath && !Object.keys(state.tdsSections || {}).length) {
+                alert('Generate TDS first before approval.');
+                return;
+            }
+            document.getElementById('tdsApproverNameInput').value = getDefaultApproverName();
+            document.getElementById('tdsApproverPositionInput').value = 'Technical Lead';
+            document.getElementById('tdsApprovalModalBackdrop').style.display = 'flex';
+        }
+
+        function closeTdsApprovalModal() {
+            document.getElementById('tdsApprovalModalBackdrop').style.display = 'none';
+        }
+
+        async function submitApproval() {
+            if (!state.cardPath) {
+                alert('No card available to approve. Generate BRD first.');
+                return;
+            }
+
+            const approvedBy = document.getElementById('approverNameInput').value.trim();
+            const approverRole = document.getElementById('approverPositionInput').value.trim();
+
+            if (!approvedBy || !approverRole) {
+                alert('Please provide approver name and position.');
+                return;
+            }
+
+            setStatus('Updating A2A card approval…');
+            setLoading(true, 'Approving BRD…');
+
+            let resp, data;
+            try {
+                resp = await fetch('/api/approve-card', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        card_path: state.cardPath,
+                        approved_by: approvedBy,
+                        approver_role: approverRole,
+                        comments: 'Approved via Web UI approval popup.',
+                    }),
+                });
+                data = await resp.json();
+            } catch (e) {
+                setLoading(false);
+                setStatus('Network error: ' + e, true);
+                return;
+            }
+
+            setLoading(false);
+            if (data.error) {
+                setStatus(data.error, true);
+                return;
+            }
+
+            state.isApproved = true;
+            state.approval = data.approval || null;
+
+            const summary = document.getElementById('approvalSummary');
+            summary.style.display = 'block';
+            summary.textContent = 'Approved by ' + approvedBy + ' (' + approverRole + '). Card updated and ready for estimation.';
+
+            closeApprovalModal();
+            setStatus('BRD approved ✔ A2A card updated. You can now send to Estimation.');
+        }
+
+        // ── Send BRD to Estimation (after approval) ───────────────
+        async function sendToEstimation() {
+            if (!state.cardPath) {
+                alert('Generate a BRD first before sending to Estimation.');
+                return;
+            }
+            if (!state.isApproved) {
+                alert('Approve the BRD first. Click Approve and submit approver details.');
+                return;
+            }
+
+            setAgentStatus('running', 'Estimation');
+            setStatus('Starting Estimation Agent…');
+            let resp, data;
+            try {
+                resp = await fetch('/api/run-estimation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ card_path: state.cardPath }),
+                });
+                data = await resp.json();
+            } catch (e) {
+                setStatus('Network error: ' + e, true);
+                setAgentStatus('error');
+                return;
+            }
+            if (data.error) { setStatus(data.error, true); setAgentStatus('error'); return; }
+
+            pollJob(
+                data.job_id,
+                result => {
+                    state.estimationTxtPath  = result.estimation_txt_path  || '';
+                    state.estimationDocxPath = result.estimation_docx_path || '';
+                    state.isEstimationApproved = false;
+                    state.estimationApproval = null;
+                    document.getElementById('estimationApprovalSummary').style.display = 'none';
+                    document.querySelector('[onclick*="estimation"]').click();
+                    
+                    // Build preview with size, investment, and hours breakdown
+                    let previewText = 'PROJECT SIZE\n' + result.size + '\n\nINVESTMENT RANGE\n' + result.investment + '\n\n';
+                    if (result.breakdown) {
+                        previewText += 'EFFORT BREAKDOWN (with 8-hour buffer per role)\n';
+                        previewText += '─'.repeat(50) + '\n';
+                        previewText += 'Frontend Development    : ' + result.breakdown.frontend + ' hours\n';
+                        previewText += 'Backend Development     : ' + result.breakdown.backend + ' hours\n';
+                        previewText += 'Testing & QA            : ' + result.breakdown.testing + ' hours\n';
+                        previewText += 'Documentation           : ' + result.breakdown.documentation + ' hours\n';
+                        previewText += '─'.repeat(50) + '\n';
+                        previewText += 'TOTAL EFFORT            : ' + result.breakdown.total_with_buffer + ' hours\n';
+                        previewText += '(Original: ' + result.breakdown.total_original + ' hours + 32-hour buffer)';
+                    }
+                    document.getElementById('estimationPreview').value = previewText;
+                    document.getElementById('cardPath').value = state.cardPath || '';
+                    setStatus(
+                        'Estimation complete ✔  Size: ' + result.size +
+                        '  |  Total: ' + result.total_with_buffer + ' hrs (with buffer)' +
+                        '  |  Investment: ' + result.investment
+                    );
+                    setAgentStatus('idle');
+                },
+                err => {
+                    setStatus('Estimation failed: ' + err.split('\n')[0], true);
+                    setAgentStatus('error');
+                },
+                'Running Estimation Agent (this may take several minutes)…'
+            );
+        }
+
+        // ── Regenerate BRD after edit ─────────────────────────────
+        function regenerateBRD() {
+            const edited = document.getElementById('brdEdit').value.trim();
+            if (!edited) { alert('No edited BRD content to regenerate from.'); return; }
+            document.getElementById('brdPreview').value = edited;
+            setStatus('BRD preview updated with edited content.');
+        }
+
+        // ── Send Mail ─────────────────────────────────────────────
+        async function sendMailBRD() {
+            const email = document.getElementById('brdEmail').value.trim();
+            if (!email) { alert('Please enter a BRD team email address.'); return; }
+            const brd = document.getElementById('brdPreview').value.trim();
+            let resp, data;
+            try {
+                resp = await fetch('/api/send-mail', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email,
+                        subject: 'BRD Report',
+                        body: brd,
+                        attachment_path: state.brdTxtPath || '',
+                    }),
+                });
+                data = await resp.json();
+            } catch (e) {
+                setStatus('Network error: ' + e, true); return;
+            }
+            if (data.error) { setStatus(data.error, true); return; }
+            setStatus(data.message || 'Mail sent.');
+        }
+
+        // ── Download BRD ──────────────────────────────────────────
+        function downloadBRD(format) {
+            let path = '';
+            if (format === 'word') path = state.brdDocxPath;
+            else if (format === 'txt') path = state.brdTxtPath;
+            else { alert('PDF download requires additional server tooling. Use Word or TXT.'); return; }
+            if (!path) { alert('Generate a BRD first.'); return; }
+            window.location.href = '/api/download?path=' + encodeURIComponent(path);
+        }
+
+        // ── Estimation tab: run estimation from card ──────────────
+        async function generateEstimation() {
+            const path = document.getElementById('cardPath').value.trim();
+            const file = document.getElementById('cardFile').files[0];
+            let cardPath = path || state.cardPath;
+
+            if (!cardPath && !file) {
+                alert('Please provide an A2A card path or upload a card file.'); return;
+            }
+
+            // If a file was uploaded, upload it first (not yet supported — prompt path)
+            if (!cardPath && file) {
+                alert('Please enter the card file path in the text field. File upload for cards is not yet supported in this tab.');
+                return;
+            }
+
+            setAgentStatus('running', 'Estimation');
+            setStatus('Running Estimation Agent\u2026');
+            let resp, data;
+            try {
+                resp = await fetch('/api/run-estimation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ card_path: cardPath }),
+                });
+                data = await resp.json();
+            } catch (e) {
+                setStatus('Network error: ' + e, true);
+                setAgentStatus('error');
+                return;
+            }
+            if (data.error) { setStatus(data.error, true); setAgentStatus('error'); return; }
+
+            pollJob(
+                data.job_id,
+                result => {
+                    state.estimationTxtPath  = result.estimation_txt_path  || '';
+                    state.estimationDocxPath = result.estimation_docx_path || '';
+                    state.isEstimationApproved = false;
+                    state.estimationApproval = null;
+                    document.getElementById('estimationApprovalSummary').style.display = 'none';
+                    
+                    // Build preview with size, investment, and hours breakdown
+                    let previewText = 'PROJECT SIZE\n' + result.size + '\n\nINVESTMENT RANGE\n' + result.investment + '\n\n';
+                    if (result.breakdown) {
+                        previewText += 'EFFORT BREAKDOWN (with 8-hour buffer per role)\n';
+                        previewText += '─'.repeat(50) + '\n';
+                        previewText += 'Frontend Development    : ' + result.breakdown.frontend + ' hours\n';
+                        previewText += 'Backend Development     : ' + result.breakdown.backend + ' hours\n';
+                        previewText += 'Testing & QA            : ' + result.breakdown.testing + ' hours\n';
+                        previewText += 'Documentation           : ' + result.breakdown.documentation + ' hours\n';
+                        previewText += '─'.repeat(50) + '\n';
+                        previewText += 'TOTAL EFFORT            : ' + result.breakdown.total_with_buffer + ' hours\n';
+                        previewText += '(Original: ' + result.breakdown.total_original + ' hours + 32-hour buffer)';
+                    }
+                    document.getElementById('estimationPreview').value = previewText;
+                    if (cardPath) {
+                        state.cardPath = cardPath;
+                        document.getElementById('cardPath').value = cardPath;
+                    }
+                    setStatus(
+                        'Estimation complete \u2714  Size: ' + result.size +
+                        '  |  Total: ' + result.total_with_buffer + ' hrs (with buffer)' +
+                        '  |  Investment: ' + result.investment
+                    );
+                    setAgentStatus('idle');
+                },
+                err => {
+                    setStatus('Estimation failed: ' + err.split('\n')[0], true);
+                    setAgentStatus('error');
+                },
+                'Running Estimation Agent (this may take several minutes)\u2026'
+            );
+        }
+
+        function downloadEstimation(format) {
+            const path = format === 'txt' ? state.estimationTxtPath : state.estimationDocxPath;
+            if (!path) { alert('Run estimation first.'); return; }
+            window.location.href = '/api/download?path=' + encodeURIComponent(path);
+        }
+
+        async function submitEstimationApproval() {
+            if (!state.cardPath) {
+                alert('No card available. Generate BRD first.');
+                return;
+            }
+
+            const approvedBy = document.getElementById('estimationApproverNameInput').value.trim();
+            const approverRole = document.getElementById('estimationApproverPositionInput').value.trim();
+            if (!approvedBy || !approverRole) {
+                alert('Please provide approver name and position.');
+                return;
+            }
+
+            setStatus('Updating estimation approval in A2A card…');
+            setLoading(true, 'Approving estimation…');
+
+            let resp, data;
+            try {
+                resp = await fetch('/api/approve-estimation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        card_path: state.cardPath,
+                        approved_by: approvedBy,
+                        approver_role: approverRole,
+                        comments: 'Approved via Web UI estimation popup.',
+                    }),
+                });
+                data = await resp.json();
+            } catch (e) {
+                setLoading(false);
+                setStatus('Network error: ' + e, true);
+                return;
+            }
+
+            setLoading(false);
+            if (data.error) {
+                setStatus(data.error, true);
+                return;
+            }
+
+            state.isEstimationApproved = true;
+            state.estimationApproval = data.estimation_approval || null;
+            const summary = document.getElementById('estimationApprovalSummary');
+            summary.style.display = 'block';
+            summary.textContent = 'Estimation approved by ' + approvedBy + ' (' + approverRole + '). Card updated.';
+
+            closeEstimationApprovalModal();
+            setStatus('Estimation approved ✔ A2A card updated.');
+        }
+
+        async function submitFdsApproval() {
+            if (!state.tdsCardPath) {
+                alert('No TDS handoff card available. Generate FDS first.');
+                return;
+            }
+
+            const approvedBy = document.getElementById('fdsApproverNameInput').value.trim();
+            const approverRole = document.getElementById('fdsApproverPositionInput').value.trim();
+            if (!approvedBy || !approverRole) {
+                alert('Please provide approver name and position.');
+                return;
+            }
+
+            setStatus('Updating FDS approval in handoff card…');
+            setLoading(true, 'Approving FDS…');
+
+            let resp, data;
+            try {
+                resp = await fetch('/api/approve-fds', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        card_path: state.tdsCardPath,
+                        approved_by: approvedBy,
+                        approver_role: approverRole,
+                        comments: 'Approved via Web UI FDS popup.',
+                    }),
+                });
+                data = await resp.json();
+            } catch (e) {
+                setLoading(false);
+                setStatus('Network error: ' + e, true);
+                return;
+            }
+
+            setLoading(false);
+            if (data.error) {
+                setStatus(data.error, true);
+                return;
+            }
+
+            state.isFdsApproved = true;
+            state.fdsApproval = data.fds_approval || null;
+            const summary = document.getElementById('fdsApprovalSummary');
+            summary.style.display = 'block';
+            summary.textContent = 'FDS approved by ' + approvedBy + ' (' + approverRole + '). Card updated and ready for TDS.';
+
+            closeFdsApprovalModal();
+            setStatus('FDS approved ✔ handoff card updated. You can now send to TDS.');
+        }
+
+        async function submitTdsApproval() {
+            if (!state.tdsCardPath) {
+                alert('No TDS card available to approve.');
+                return;
+            }
+
+            const approvedBy = document.getElementById('tdsApproverNameInput').value.trim();
+            const approverRole = document.getElementById('tdsApproverPositionInput').value.trim();
+            if (!approvedBy || !approverRole) {
+                alert('Please provide approver name and position.');
+                return;
+            }
+
+            setStatus('Updating TDS approval in handoff card…');
+            setLoading(true, 'Approving TDS…');
+
+            let resp, data;
+            try {
+                resp = await fetch('/api/approve-tds', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        card_path: state.tdsCardPath,
+                        approved_by: approvedBy,
+                        approver_role: approverRole,
+                        comments: 'Approved via Web UI TDS popup.',
+                        tds_docx_path: state.tdsDocxPath,
+                        tds_json_path: state.tdsJsonPath,
+                    }),
+                });
+                data = await resp.json();
+            } catch (e) {
+                setLoading(false);
+                setStatus('Network error: ' + e, true);
+                return;
+            }
+
+            setLoading(false);
+            if (data.error) {
+                setStatus(data.error, true);
+                return;
+            }
+
+            state.isTdsApproved = true;
+            state.tdsApproval = data.tds_approval || null;
+            const summary = document.getElementById('tdsApprovalSummary');
+            summary.style.display = 'block';
+            summary.textContent = 'TDS approved by ' + approvedBy + ' (' + approverRole + '). Card updated.';
+
+            closeTdsApprovalModal();
+            setStatus('TDS approved ✔ handoff card updated.');
+        }
+
+        async function generateFDS() {
+            const inputPath = document.getElementById('fdsCardPath').value.trim();
+            const cardPath = inputPath || state.cardPath;
+
+            if (!cardPath) {
+                alert('No A2A card available. Generate BRD first.');
+                return;
+            }
+
+            setAgentStatus('running', 'FDS');
+            setStatus('Running FDS Agent…');
+            let resp, data;
+            try {
+                resp = await fetch('/api/run-fds', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ card_path: cardPath }),
+                });
+                data = await resp.json();
+            } catch (e) {
+                setStatus('Network error: ' + e, true);
+                setAgentStatus('error');
+                return;
+            }
+            if (data.error) {
+                setStatus(data.error, true);
+                setAgentStatus('error');
+                return;
+            }
+
+            pollJob(
+                data.job_id,
+                result => {
+                    state.fdsTxtPath = result.fds_txt_path || '';
+                    state.fdsDocxPath = result.fds_docx_path || '';
+                    state.tdsCardPath = result.tds_card_path || '';
+                    state.cardPath = cardPath;
+                    state.isFdsApproved = false;
+                    state.fdsApproval = null;
+                    document.getElementById('fdsApprovalSummary').style.display = 'none';
+                    state.isTdsApproved = false;
+                    state.tdsApproval = null;
+                    document.getElementById('tdsApprovalSummary').style.display = 'none';
+
+                    document.getElementById('fdsCardPath').value = cardPath;
+                    document.getElementById('fdsPreview').value = result.fds_text || '';
+
+                    if (result.project_name) {
+                        state.activeProjectName = result.project_name;
+                        updateActiveProjectInfo();
+                    }
+
+                    setStatus(
+                        'FDS complete ✔  Sections: ' + (result.sections_count ?? '') +
+                        '  |  TDS card prepared: ' + (state.tdsCardPath ? 'Yes' : 'No')
+                    );
+                    setAgentStatus('idle');
+                },
+                err => {
+                    setStatus('FDS failed: ' + err.split('\n')[0], true);
+                    setAgentStatus('error');
+                },
+                'Running FDS Agent (this may take several minutes)…'
+            );
+        }
+
+        function sendToFDS() {
+            if (!state.isEstimationApproved) {
+                alert('Approve estimation first before sending to FDS.');
+                return;
+            }
+            if (!state.cardPath) {
+                alert('No card available. Generate BRD first.');
+                return;
+            }
+
+            document.getElementById('fdsCardPath').value = state.cardPath;
+            showTab('fds', document.getElementById('tabBtn-fds'));
+            generateFDS();
+        }
+
+        function downloadFDS(format) {
+            let path = '';
+            if (format === 'word') path = state.fdsDocxPath;
+            else if (format === 'txt') path = state.fdsTxtPath;
+            else {
+                alert('Use Word or TXT for FDS download.');
+                return;
+            }
+
+            if (!path) {
+                alert('Generate FDS first.');
+                return;
+            }
+            window.location.href = '/api/download?path=' + encodeURIComponent(path);
+        }
+
+        function sendToTDS() {
+            if (!state.tdsCardPath) {
+                alert('Generate FDS first to create a TDS input card.');
+                return;
+            }
+            if (!state.isFdsApproved) {
+                alert('Approve FDS first before sending to TDS.');
+                return;
+            }
+            document.getElementById('tdsCardPathInput').value = state.tdsCardPath;
+            setStatus('TDS handoff ready. Using card: ' + state.tdsCardPath);
+            showTab('tds', document.getElementById('tabBtn-tds'));
+            generateTDS();
+        }
+
+        async function generateTDS() {
+            const inputPath = document.getElementById('tdsCardPathInput').value.trim();
+            const cardPath = inputPath || state.tdsCardPath;
+
+            if (!cardPath) {
+                alert('No TDS card available. Generate FDS first.');
+                return;
+            }
+
+            setAgentStatus('running', 'TDS');
+            setStatus('Running TDS Agent…');
+            renderTDSSections({}, []);
+            let resp, data;
+            try {
+                resp = await fetch('/api/run-tds', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ card_path: cardPath }),
+                });
+                data = await resp.json();
+            } catch (e) {
+                setStatus('Network error: ' + e, true);
+                setAgentStatus('error');
+                return;
+            }
+            if (data.error) {
+                setStatus(data.error, true);
+                setAgentStatus('error');
+                return;
+            }
+
+            pollJob(
+                data.job_id,
+                result => {
+                    state.tdsCardPath = cardPath;
+                    state.tdsDocxPath = result.tds_docx_path || '';
+                    state.tdsJsonPath = result.tds_json_path || '';
+                    state.tdsSections = result.sections || {};
+                    state.isTdsApproved = false;
+                    state.tdsApproval = null;
+                    document.getElementById('tdsApprovalSummary').style.display = 'none';
+
+                    document.getElementById('tdsCardPathInput').value = cardPath;
+                    renderTDSSections(state.tdsSections, result.section_order || []);
+
+                    if (result.project_name) {
+                        state.activeProjectName = result.project_name;
+                        updateActiveProjectInfo();
+                    }
+
+                    setStatus(
+                        'TDS complete ✔  Sections: ' + (result.sections_count ?? '') +
+                        '  |  Outputs ready for download.'
+                    );
+                    setAgentStatus('idle');
+                },
+                err => {
+                    setStatus('TDS failed: ' + err.split('\n')[0], true);
+                    setAgentStatus('error');
+                },
+                'Running TDS Agent (this may take several minutes)…'
+            );
+        }
+
+        function downloadTDS(format) {
+            let path = '';
+            if (format === 'word') path = state.tdsDocxPath;
+            else if (format === 'json') path = state.tdsJsonPath;
+            else {
+                alert('Use Word or JSON for TDS download.');
+                return;
+            }
+
+            if (!path) {
+                alert('Generate TDS first.');
+                return;
+            }
+            window.location.href = '/api/download?path=' + encodeURIComponent(path);
+        }
+
+        // ── Initial page setup ───────────────────────────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.mermaid) {
+                window.mermaid.initialize({ startOnLoad: false, securityLevel: 'loose' });
+            }
+
+            const chatBox = document.getElementById('chatQuestion');
+            const chatHead = document.querySelector('.robot-chat-head');
+            if (chatBox) {
+                chatBox.addEventListener('keydown', (ev) => {
+                    if (ev.key === 'Enter' && !ev.shiftKey) {
+                        ev.preventDefault();
+                        askChatbot();
+                    }
+                });
+            }
+
+            if (chatHead) {
+                chatHead.addEventListener('mousedown', startRobotChatDrag);
+                window.addEventListener('mousemove', onRobotChatDrag);
+                window.addEventListener('mouseup', endRobotChatDrag);
+                window.addEventListener('resize', () => {
+                    if (!state.robotChatPos) return;
+                    applyRobotChatPos(clampRobotChatPos(state.robotChatPos.left, state.robotChatPos.top));
+                });
+            }
+
+            lockAgents();
+            updateActiveProjectInfo();
+            updateAgentStatusPill();
+            loadProjects();
+            setStatus('Start on Home, then click Next to choose a project from Projects.');
+        });
+    </script>
+</body>
+</html>

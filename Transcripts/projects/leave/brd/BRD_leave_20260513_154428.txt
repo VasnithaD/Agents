@@ -1,0 +1,73 @@
+======================================================================
+BUSINESS REQUIREMENTS DOCUMENT
+Project : Leave
+Date    : 2026-05-13
+Source  : short_transcript.txt
+======================================================================
+
+1. EXECUTIVE SUMMARY
+----------------------------------------
+The purpose of the project is to develop a mobile application that allows customers to easily order groceries, select delivery time slots, and make online payments. This solution aims to enhance customer convenience and streamline the ordering process for FreshBasket's stores in Hyderabad.
+
+2. PROJECT BACKGROUND
+----------------------------------------
+FreshBasket Grocery Chain aims to modernize its shopping experience by providing an app that allows customers to order groceries conveniently. Currently, customers face challenges in ordering and managing their grocery needs, and the new app seeks to address these pain points by offering a straightforward and user-friendly solution tailored to the needs of both customers and store managers.
+
+3. SCOPE
+----------------------------------------
+In Scope  : Development of a customer-facing mobile app with a product catalog, cart functionality, slot-based delivery, online payment integration, user registration with OTP login, and a lightweight admin panel for store managers to manage orders and inventory.
+Out Scope : The project will not include email login options, advanced features beyond inventory management, or any integration with third-party delivery services.
+
+4. STAKEHOLDERS
+----------------------------------------
+  - Ravi Sharma
+  - Priya Mehta
+  - Arjun Reddy
+
+5. REQUIREMENTS
+----------------------------------------
+ID           Category           Priority   Description
+------------ ------------------ ---------- ----------------------------------------
+REQ-001      Functional         High       The app must allow customers to order groceries from their mobile devices.
+REQ-002      Functional         High       The app must provide a product catalog for customers to browse.
+REQ-003      Functional         High       The app must include a shopping cart feature for customers to manage their selected items.
+REQ-004      Functional         High       The app must enable customers to select a delivery time slot for their orders.
+REQ-005      Functional         High       The app must support online payment processing for customer transactions.
+REQ-006      Functional         High       The app must implement user registration using OTP login without email.
+REQ-007      Functional         Medium     Store managers must have access to view all incoming orders through a lightweight admin panel.
+REQ-008      Functional         Medium     Store managers must be able to update the status of orders and indicate out-of-stock items.
+REQ-009      Technical          High       The admin panel must be a web-based application that does not require installation.
+REQ-010      Non-Functional     Medium     The app must be user-friendly and simple to navigate for customers and store managers.
+REQ-011      Security           High       The app must ensure secure handling of customer payment information.
+REQ-012      Performance        Medium     The app must load the product catalog within 3 seconds to enhance user experience.
+REQ-013      Constraint         High       The app will only be developed for use in five specific stores located in Hyderabad.
+REQ-014      Assumption         Medium     Customers are primarily comfortable with using OTP for login instead of email authentication.
+REQ-015      Non-Functional     Low        The app must be compatible with both Android and iOS mobile operating systems.
+
+6. RISKS
+----------------------------------------
+  RISK-001: There is a risk that customers may face difficulties using the app if it is not user-friendly, especially since many are not tech-savvy.
+  RISK-002: There is a risk of potential security breaches concerning the handling of online payment information.
+
+7. ASSUMPTIONS
+----------------------------------------
+  ASSUMPTION-001: It is assumed that customers will prefer OTP login over email registration for accessing the app.
+  ASSUMPTION-002: It is assumed that store managers will be able to effectively use the lightweight admin panel despite their limited technical skills.
+
+8. CONSTRAINTS
+----------------------------------------
+  CONSTRAINT-001: The app will only be developed for the FreshBasket stores located in Hyderabad.
+  CONSTRAINT-002: The project scope does not include advanced features beyond basic inventory management for store managers.
+
+9. DEPENDENCIES
+----------------------------------------
+  DEPENDENCY-001: The success of the app's payment processing feature depends on the integration with a reliable payment gateway.
+
+10. APPROVAL
+----------------------------------------
+Approval Status : Approved
+Approved By     : Arya H
+Approver Role   : Business Owner
+Approved At     : 2026-05-13T15:44:41.873887
+Comments        : Approved via Web UI approval popup.
+

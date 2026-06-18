@@ -13,6 +13,7 @@ from docx.shared import Pt, RGBColor ,Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 import uuid
 import subprocess
+from rag_agent_context import ground_prompt_with_rag
 
 # ------------------------------------------------------------------ #
 #  Paths                                                               #
@@ -135,6 +136,10 @@ def setup_session():
 # ------------------------------------------------------------------ #
 
 def ask(prompt, user_id, username, session_id):
+    grounded_prompt = ground_prompt_with_rag(
+        prompt,
+        task_label="BRD extraction from transcript",
+    )
     endpoint = (
         "call/chatlite"
         "?force_async=false"
@@ -152,7 +157,7 @@ def ask(prompt, user_id, username, session_id):
         "model_name":  "gpt-4o-mini",
         "stream":      False,
         "webScraping": False,
-        "user_query":  prompt,
+        "user_query":  grounded_prompt,
     })
     return resp.get("Response", "")
 
@@ -352,11 +357,13 @@ def build_approval_rows(approval):
     ]
 
 def write_brd_txt(output_path, overview, requirements, risks, assumptions,
-                  constraints, dependencies, source_filename, approval):
+                  constraints, dependencies, source_filename, approval, related_folder="", related_file=""):
     with open(output_path, "w", encoding="utf-8") as f:
         f.write("=" * 70 + "\n")
         f.write("BUSINESS REQUIREMENTS DOCUMENT\n")
         f.write(f"Project : {overview.get('PROJECT_NAME', 'N/A')}\n")
+        f.write(f"Related File : {related_file or 'N/A'}\n")
+        f.write(f"Related Folder : {related_folder or 'N/A'}\n")
         f.write(f"Date    : {datetime.now().strftime('%Y-%m-%d')}\n")
         f.write(f"Source  : {source_filename}\n")
         f.write("=" * 70 + "\n\n")
@@ -467,6 +474,7 @@ def refresh_brd_artifacts_from_card(card_path):
             payload.get("dependencies", []),
             source_filename,
             approval,
+            related_folder=str(Path(txt_path).parent),
         )
     except PermissionError:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -481,6 +489,7 @@ def refresh_brd_artifacts_from_card(card_path):
             payload.get("dependencies", []),
             source_filename,
             approval,
+            related_folder=str(Path(fallback_txt).parent),
         )
         txt_path = fallback_txt
         artifacts["brd_txt"] = str(txt_path)
@@ -702,7 +711,7 @@ def get_updated_transcript_path(current_txt_path):
     return current_txt_path
 
 def build_docx(overview, requirements, risks, assumptions,
-               constraints, dependencies, source_filename, approval=None):
+               constraints, dependencies, source_filename, approval=None, related_folder="", related_file=""):
 
     doc  = Document()
     now  = datetime.now().strftime("%Y-%m-%d")
@@ -738,45 +747,36 @@ def build_docx(overview, requirements, risks, assumptions,
 
     meta = doc.add_paragraph()
     meta.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    meta.add_run(f"Date: {now}\nSource: {source_filename}\nVersion: 1.0  |  Status: Draft")
+    meta.add_run(
+        f"Date: {now}\n"
+        f"Source: {source_filename}\n"
+        f"Related File: {related_file or 'N/A'}\n"
+        f"Related Folder: {related_folder or 'N/A'}\n"
+        f"Version: 1.0  |  Status: Draft"
+    )
 
     doc.add_page_break()
 
-    # ── 1. Document Control ────────────────────────────────────────
-    add_heading(doc, "1. Document Control", 1)
-    add_table(doc,
-        ["Field", "Details"],
-        [
-            ["Document Title", f"BRD — {proj}"],
-            ["Version",        "1.0"],
-            ["Status",         "Draft"],
-            ["Date Created",   now],
-            ["Source File",    source_filename],
-            ["Prepared By",    "Requirements Agent (ChatHPE)"],
-        ]
-    )
-    doc.add_paragraph()
-
-    # ── 2. Executive Summary ───────────────────────────────────────
-    add_heading(doc, "2. Executive Summary", 1)
+    # ── 1. Executive Summary ───────────────────────────────────────
+    add_heading(doc, "1. Executive Summary", 1)
     doc.add_paragraph(overview.get("PURPOSE", "N/A"))
     doc.add_paragraph()
 
-    # ── 3. Project Background ──────────────────────────────────────
-    add_heading(doc, "3. Project Background", 1)
+    # ── 2. Project Background ──────────────────────────────────────
+    add_heading(doc, "2. Project Background", 1)
     doc.add_paragraph(overview.get("BACKGROUND", "N/A"))
     doc.add_paragraph()
 
-    # ── 4. Scope ───────────────────────────────────────────────────
-    add_heading(doc, "4. Scope", 1)
-    add_heading(doc, "4.1 In Scope", 2)
+    # ── 3. Scope ───────────────────────────────────────────────────
+    add_heading(doc, "3. Scope", 1)
+    add_heading(doc, "3.1 In Scope", 2)
     doc.add_paragraph(overview.get("SCOPE_IN", "N/A"))
-    add_heading(doc, "4.2 Out of Scope", 2)
+    add_heading(doc, "3.2 Out of Scope", 2)
     doc.add_paragraph(overview.get("SCOPE_OUT", "N/A"))
     doc.add_paragraph()
 
-    # ── 5. Stakeholders ────────────────────────────────────────────
-    add_heading(doc, "5. Stakeholders", 1)
+    # ── 4. Stakeholders ────────────────────────────────────────────
+    add_heading(doc, "4. Stakeholders", 1)
     stakeholders = overview.get("STAKEHOLDERS", "N/A").split(",")
     for s in stakeholders:
         s = s.strip()
@@ -784,22 +784,22 @@ def build_docx(overview, requirements, risks, assumptions,
             doc.add_paragraph(s, style="List Bullet")
     doc.add_paragraph()
 
-    # ── 6. Requirements ────────────────────────────────────────────
-    add_heading(doc, "6. Business Requirements", 1)
+    # ── 5. Requirements ────────────────────────────────────────────
+    add_heading(doc, "5. Business Requirements", 1)
     categories = {}
     for req in requirements:
         categories.setdefault(req["category"], []).append(req)
 
     for idx, (cat, reqs) in enumerate(categories.items(), 1):
-        add_heading(doc, f"6.{idx} {cat} Requirements", 2)
+        add_heading(doc, f"5.{idx} {cat} Requirements", 2)
         add_table(doc,
             ["ID", "Priority", "Description"],
             [[r["id"], r["priority"], r["description"]] for r in reqs]
         )
         doc.add_paragraph()
 
-    # ── 7. Risks ───────────────────────────────────────────────────
-    add_heading(doc, "7. Risks", 1)
+    # ── 6. Risks ───────────────────────────────────────────────────
+    add_heading(doc, "6. Risks", 1)
     if risks:
         for i, r in enumerate(risks, 1):
             doc.add_paragraph(f"RISK-{i:03d}: {r}", style="List Bullet")
@@ -807,8 +807,8 @@ def build_docx(overview, requirements, risks, assumptions,
         doc.add_paragraph("No risks identified.")
     doc.add_paragraph()
 
-    # ── 8. Assumptions ─────────────────────────────────────────────
-    add_heading(doc, "8. Assumptions", 1)
+    # ── 7. Assumptions ─────────────────────────────────────────────
+    add_heading(doc, "7. Assumptions", 1)
     if assumptions:
         for i, a in enumerate(assumptions, 1):
             doc.add_paragraph(f"ASSUMPTION-{i:03d}: {a}", style="List Bullet")
@@ -816,8 +816,8 @@ def build_docx(overview, requirements, risks, assumptions,
         doc.add_paragraph("No assumptions identified.")
     doc.add_paragraph()
 
-    # ── 9. Constraints ─────────────────────────────────────────────
-    add_heading(doc, "9. Constraints", 1)
+    # ── 8. Constraints ─────────────────────────────────────────────
+    add_heading(doc, "8. Constraints", 1)
     if constraints:
         for i, c in enumerate(constraints, 1):
             doc.add_paragraph(f"CONSTRAINT-{i:03d}: {c}", style="List Bullet")
@@ -825,8 +825,8 @@ def build_docx(overview, requirements, risks, assumptions,
         doc.add_paragraph("No constraints identified.")
     doc.add_paragraph()
 
-    # ── 10. Dependencies ───────────────────────────────────────────
-    add_heading(doc, "10. Dependencies", 1)
+    # ── 9. Dependencies ───────────────────────────────────────────
+    add_heading(doc, "9. Dependencies", 1)
     if dependencies:
         for i, d in enumerate(dependencies, 1):
             doc.add_paragraph(f"DEPENDENCY-{i:03d}: {d}", style="List Bullet")
@@ -834,9 +834,9 @@ def build_docx(overview, requirements, risks, assumptions,
         doc.add_paragraph("No dependencies identified.")
     doc.add_paragraph()
 
-    # ── 11. Approval ───────────────────────────────────────────────
+    # ── 10. Approval ───────────────────────────────────────────────
     approval = approval or build_pending_approval()
-    add_heading(doc, "11. Approval", 1)
+    add_heading(doc, "10. Approval", 1)
     add_table(doc, ["Field", "Details"], build_approval_rows(approval))
     doc.add_paragraph()
 
@@ -846,30 +846,18 @@ def save_a2a_card(overview, requirements, risks, assumptions,
                   constraints, dependencies, stats,
                   transcript_path, docx_path, txt_path, cards_dir, project_dir):
     """Save A2A card as JSON for the Estimation Agent to consume.
-    
-    Each project gets its own card file (named by project).
-    If a card already exists for this project, update it while preserving card_id.
-    Otherwise, create a new card for this project.
+
+    A new card is created for each BRD generation so Estimation can target
+    a specific BRD/card pair from the project history.
     """
 
-    # Generate project-specific card filename
     project_name = overview.get("PROJECT_NAME", "Unknown").strip()
     project_slug = slugify_project_name(project_name)
-    
-    card_path = Path(cards_dir) / f"a2a_card_{project_slug}.json"
-    
-    # Check if a card already exists for THIS project
-    existing_card = None
-    if card_path.exists():
-        try:
-            with open(card_path, "r", encoding="utf-8") as f:
-                existing_card = json.load(f)
-            print(f"[agent] Found existing card for project '{project_name}' → {card_path.name}")
-        except (json.JSONDecodeError, IOError) as e:
-            print(f"[agent] Could not read existing card: {e} — creating new one")
-            existing_card = None
-    else:
-        print(f"[agent] Creating new card for project '{project_name}'")
+
+    txt_stem = Path(txt_path).stem
+    prefix = f"BRD_{project_slug}_"
+    run_token = txt_stem[len(prefix):] if txt_stem.startswith(prefix) else datetime.now().strftime("%Y%m%d_%H%M%S")
+    card_path = Path(cards_dir) / f"a2a_card_{project_slug}_{run_token}.json"
 
     new_payload = {
         "overview": overview,
@@ -880,25 +868,14 @@ def save_a2a_card(overview, requirements, risks, assumptions,
         "dependencies": dependencies
     }
 
-    payload_changed = False
-    existing_approval = build_pending_approval()
-    if existing_card:
-        payload_changed = existing_card.get("payload", {}) != new_payload
-        existing_approval = existing_card.get("approval", build_pending_approval())
-
-    approval = existing_approval
-    status = existing_card.get("status", "pending_approval") if existing_card else "pending_approval"
-    if (not existing_card) or payload_changed:
-        approval = build_pending_approval()
-        status = "pending_approval"
-        if existing_card and existing_approval.get("status") == "approved":
-            print("[agent] Requirements changed; approval reset to pending.")
+    approval = build_pending_approval()
+    status = "pending_approval"
 
     # Build the updated card
     card = {
         "a2a_version": "1.0",
-        "card_id": existing_card.get("card_id") if existing_card else str(uuid.uuid4()),
-        "created_at": existing_card.get("created_at") if existing_card else datetime.now().isoformat(),
+        "card_id": str(uuid.uuid4()),
+        "created_at": datetime.now().isoformat(),
         "updated_at": datetime.now().isoformat(),
 
         "source_agent": {
@@ -943,8 +920,7 @@ def save_a2a_card(overview, requirements, risks, assumptions,
     with open(card_path, "w", encoding="utf-8") as f:
         json.dump(card, f, indent=2)
 
-    action = "updated" if existing_card else "created"
-    print(f"[agent] A2A card {action} → {card_path.name}")
+    print(f"[agent] A2A card created → {card_path.name}")
     return card_path
 
 def combine_transcript_and_suggestions(transcript_text, suggestion_text):
@@ -957,6 +933,53 @@ def combine_transcript_and_suggestions(transcript_text, suggestion_text):
         f"{suggestion_text}\n"
     )
 
+def extract_related_artifacts_from_rag(rag_context: str) -> dict:
+    """
+    Extract most relevant file/folder from RAG context.
+    Priority:
+    1) first "> Path:" file hit
+    2) first "- ..." related folder line
+    3) RAG project root
+    """
+    result = {"related_file": "", "related_folder": "", "project_root": ""}
+    if not rag_context or not rag_context.strip():
+        return result
+
+    lines = rag_context.split("\n")
+    related_folders = []
+
+    for line in lines:
+        trimmed = line.strip()
+        if not trimmed:
+            continue
+
+        if trimmed.startswith("> Path:"):
+            full_path = trimmed.replace("> Path:", "", 1).strip()
+            if full_path and len(full_path) > 5 and not result["related_file"]:
+                result["related_file"] = full_path
+                idx = max(full_path.rfind("\\"), full_path.rfind("/"))
+                if idx > 0:
+                    result["related_folder"] = full_path[:idx]
+
+        if trimmed.startswith("- "):
+            path = trimmed[2:].strip()
+            if path and ("\\" in path or "/" in path) and path not in related_folders:
+                related_folders.append(path)
+
+        if "rag project root:" in trimmed.lower() and not result["project_root"]:
+            key_idx = trimmed.lower().find("rag project root:")
+            root = trimmed[key_idx + len("rag project root:"):].replace("*", "").strip()
+            if root:
+                result["project_root"] = root
+
+    if not result["related_folder"] and related_folders:
+        result["related_folder"] = related_folders[0]
+
+    if not result["related_folder"] and result["project_root"]:
+        result["related_folder"] = result["project_root"]
+
+    return result
+
 def run_requirements_pipeline(transcript_text, transcript_source_path, output_dir, project_name_override=""):
     if not transcript_text or not transcript_text.strip():
         raise ValueError("Transcript text is empty.")
@@ -966,6 +989,23 @@ def run_requirements_pipeline(transcript_text, transcript_source_path, output_di
 
     print("\n[agent] Setting up session ...")
     user_id, username, session_id = setup_session()
+
+    # Retrieve RAG context and extract related file/folder from external project
+    print("\n[agent] Retrieving RAG context for related files ...")
+    rag_context = ground_prompt_with_rag(transcript_text, "BRD requirements extraction")
+    rag_artifacts = extract_related_artifacts_from_rag(rag_context)
+    related_file = rag_artifacts.get("related_file", "")
+    related_folder = rag_artifacts.get("related_folder", "")
+    project_root = rag_artifacts.get("project_root", "")
+    if related_file:
+        print(f"[agent] Related file from RAG: {related_file} ✅")
+    if related_folder:
+        print(f"[agent] Related folder from RAG: {related_folder} ✅")
+    elif project_root:
+        print(f"[agent] Using RAG project root: {project_root}")
+    else:
+        print("[agent] No related file/folder found in RAG context (using local folder)")
+        related_folder = ""
 
     print("\n[agent] Step 1/3 — Extracting project overview ...")
     raw_overview = ask(
@@ -1013,6 +1053,10 @@ def run_requirements_pipeline(transcript_text, transcript_source_path, output_di
     docx_path = brd_dir / f"BRD_{base_name}_{timestamp}.docx"
     txt_out_path = brd_dir / f"BRD_{base_name}_{timestamp}.txt"
 
+    # Use RAG-extracted folder/file if available, otherwise fallback to local brd_dir
+    display_folder = related_folder or str(brd_dir)
+    display_file = related_file or ""
+
     doc = build_docx(
         overview,
         requirements,
@@ -1022,6 +1066,8 @@ def run_requirements_pipeline(transcript_text, transcript_source_path, output_di
         deps,
         transcript_source_path.name,
         build_pending_approval(),
+        related_folder=display_folder,
+        related_file=display_file,
     )
     doc.save(str(docx_path))
 
@@ -1035,6 +1081,8 @@ def run_requirements_pipeline(transcript_text, transcript_source_path, output_di
         deps,
         transcript_source_path.name,
         build_pending_approval(),
+        related_folder=display_folder,
+        related_file=display_file,
     )
 
     stats = {
@@ -1073,7 +1121,8 @@ def run_requirements_pipeline(transcript_text, transcript_source_path, output_di
         "card_path": str(card_path),
         "project_dir": str(project_dir),
         "cards_dir": str(cards_dir),
-        "brd_dir": str(brd_dir),
+        "brd_dir": display_folder,  # Use RAG-extracted folder if available
+        "brd_file": display_file,
     }
 
 def maybe_apply_terminal_suggestions(txt_path, transcript_text):

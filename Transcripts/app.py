@@ -29,6 +29,88 @@ from requirement_extractor import (
 )
  
 app = Flask(__name__)
+app.config["SECRET_KEY"] = (os.getenv("FLASK_SECRET_KEY") or "change-me-local-secret").strip()
+
+DEFAULT_USER = (os.getenv("APP_DEFAULT_USER") or "local-user").strip()
+DEFAULT_ROLE = (os.getenv("APP_DEFAULT_ROLE") or "admin").strip().lower()
+
+# ── Register chatbot routes (RAG-based AI chatbot) ─────────────────
+try:
+    from chatbot_routes import register_chatbot_routes
+    register_chatbot_routes(app)
+except Exception as _chatbot_routes_err:
+    print(f"[app] Warning: Could not register chatbot routes: {_chatbot_routes_err}")
+
+# ── Register GitHub integration routes (separate testable module) ───
+if (os.getenv("GITHUB_INTEGRATION_ENABLED") or "true").strip().lower() in {"1", "true", "yes", "on"}:
+    try:
+        from github_integration import register_github_routes
+        register_github_routes(app)
+        print("[app] GitHub integration routes enabled at /api/github/*")
+    except Exception as _github_routes_err:
+        print(f"[app] Warning: Could not register github integration routes: {_github_routes_err}")
+
+# ── Auto-indexing: initialize + watch for new documents ────────────
+def _get_projects_snapshot(projects_dir: Path) -> dict:
+    """Return a dict of {filepath: mtime} for all files under projects_dir."""
+    snapshot = {}
+    if not projects_dir.exists():
+        return snapshot
+    for root, _, files in os.walk(projects_dir):
+        for fname in files:
+            fp = Path(root) / fname
+            try:
+                snapshot[str(fp)] = fp.stat().st_mtime
+            except OSError:
+                pass
+    return snapshot
+
+
+def _embeddings_auto_index_worker():
+    """
+    Background daemon: initializes embeddings then polls the projects folder
+    every 60 seconds and rebuilds the FAISS index whenever files are added
+    or modified.
+    """
+    projects_dir = SCRIPT_DIR / "projects"
+    poll_interval = 60  # seconds
+
+    try:
+        from vector_embeddings import initialize_embeddings, get_embeddings_manager
+    except Exception as e:
+        print(f"[embeddings] Cannot import vector_embeddings: {e}")
+        return
+
+    # Initial load (uses cached index if it exists)
+    try:
+        initialize_embeddings()
+        print("[embeddings] Initial index ready.")
+    except Exception as e:
+        print(f"[embeddings] Warning: initial indexing failed: {e}")
+
+    last_snapshot = _get_projects_snapshot(projects_dir)
+
+    while True:
+        time.sleep(poll_interval)
+        try:
+            current_snapshot = _get_projects_snapshot(projects_dir)
+            if current_snapshot != last_snapshot:
+                print("[embeddings] Project files changed — rebuilding index...")
+                manager = get_embeddings_manager()
+                if manager:
+                    docs = manager.load_documents_from_projects()
+                    chunks = manager.chunk_documents(docs)
+                    if chunks:
+                        manager.build_faiss_index(chunks)
+                        print(f"[embeddings] Index rebuilt: {len(chunks)} chunks from {len(docs)} docs.")
+                    else:
+                        print("[embeddings] No chunks generated; index not updated.")
+                last_snapshot = current_snapshot
+        except Exception as e:
+            print(f"[embeddings] Warning: auto-index error: {e}")
+
+
+threading.Thread(target=_embeddings_auto_index_worker, daemon=True).start()
  
 # ══════════════════════════════════════════════════════════════════
 # In-memory job store
@@ -255,6 +337,363 @@ def _latest_card_for_project(project_slug: str) -> dict:
         return json.loads(candidates[0].read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
         return {}
+
+
+def _resolve_card_artifact_path(path_str: str) -> Path | None:
+    value = (path_str or "").strip()
+    if not value:
+        return None
+    p = Path(value)
+    if not p.is_absolute():
+        p = SCRIPT_DIR / p
+    try:
+        return p.resolve()
+    except OSError:
+        return None
+
+
+def _list_project_brd_options(project_slug: str) -> list[dict]:
+    project_dir = SCRIPT_DIR / "projects" / project_slug
+    cards_dir = project_dir / "cards"
+    brd_dir = project_dir / "brd"
+
+    card_by_brd: dict[str, dict] = {}
+    if cards_dir.exists():
+        for card_file in sorted(cards_dir.glob("a2a_card_*.json"), key=lambda p: p.stat().st_mtime, reverse=True):
+            try:
+                card = json.loads(card_file.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                continue
+
+            artifacts = card.get("artifacts") or {}
+            brd_txt_path = _resolve_card_artifact_path(artifacts.get("brd_txt", ""))
+            if not brd_txt_path:
+                continue
+
+            key = str(brd_txt_path)
+            if key not in card_by_brd:
+                approval = card.get("approval") or {}
+                card_by_brd[key] = {
+                    "card_path": str(card_file.resolve()),
+                    "card_status": card.get("status", ""),
+                    "approval_status": approval.get("status", ""),
+                }
+
+    options: list[dict] = []
+    if not brd_dir.exists():
+        return options
+
+    for brd_txt in sorted(brd_dir.glob("BRD_*.txt"), key=lambda p: p.stat().st_mtime, reverse=True):
+        brd_txt_resolved = str(brd_txt.resolve())
+        linked = card_by_brd.get(brd_txt_resolved, {})
+        options.append({
+            "brd_name": brd_txt.name,
+            "brd_txt_path": brd_txt_resolved,
+            "card_path": linked.get("card_path", ""),
+            "card_status": linked.get("card_status", ""),
+            "approval_status": linked.get("approval_status", ""),
+            "has_card": bool(linked.get("card_path")),
+        })
+
+    return options
+
+
+def _list_project_fds_options(project_slug: str) -> list[dict]:
+    project_dir = SCRIPT_DIR / "projects" / project_slug
+    cards_dir = project_dir / "cards"
+    fds_dir = project_dir / "fds"
+
+    card_by_fds: dict[str, dict] = {}
+    if cards_dir.exists():
+        for card_file in sorted(cards_dir.glob("a2a_card_*.json"), key=lambda p: p.stat().st_mtime, reverse=True):
+            try:
+                card = json.loads(card_file.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                continue
+
+            fds_artifacts = card.get("fds_artifacts") or {}
+            fds_txt_path = _resolve_card_artifact_path(fds_artifacts.get("fds_txt", ""))
+            if not fds_txt_path:
+                continue
+
+            key = str(fds_txt_path)
+            if key not in card_by_fds:
+                tds_card_path = _resolve_card_artifact_path(fds_artifacts.get("tds_card", ""))
+                card_by_fds[key] = {
+                    "card_path": str(card_file.resolve()),
+                    "tds_card_path": str(tds_card_path) if tds_card_path else "",
+                    "has_tds_card": bool(tds_card_path and tds_card_path.exists()),
+                }
+
+    options: list[dict] = []
+    if not fds_dir.exists():
+        return options
+
+    for fds_txt in sorted(fds_dir.glob("FDS_*.txt"), key=lambda p: p.stat().st_mtime, reverse=True):
+        fds_txt_resolved = str(fds_txt.resolve())
+        linked = card_by_fds.get(fds_txt_resolved, {})
+        options.append({
+            "fds_name": fds_txt.name,
+            "fds_txt_path": fds_txt_resolved,
+            "card_path": linked.get("card_path", ""),
+            "tds_card_path": linked.get("tds_card_path", ""),
+            "has_tds_card": bool(linked.get("has_tds_card", False)),
+        })
+
+    return options
+
+
+def _list_project_tds_options(project_slug: str) -> list[dict]:
+    project_dir = SCRIPT_DIR / "projects" / project_slug
+    tds_dir = project_dir / "tds"
+
+    options: list[dict] = []
+    if not tds_dir.exists():
+        return options
+
+    for tds_json in sorted(tds_dir.glob("TDS_*.json"), key=lambda p: p.stat().st_mtime, reverse=True):
+        options.append({
+            "tds_name": tds_json.name,
+            "tds_json_path": str(tds_json.resolve()),
+        })
+
+    return options
+
+
+def _find_card_for_brd_txt(brd_txt_path: Path) -> Path | None:
+    target = str(brd_txt_path.resolve())
+    projects_dir = SCRIPT_DIR / "projects"
+    if not projects_dir.exists():
+        return None
+
+    candidates = sorted(
+        projects_dir.glob("*/cards/a2a_card_*.json"),
+        key=lambda p: p.stat().st_mtime,
+        reverse=True,
+    )
+    for card_file in candidates:
+        try:
+            card = json.loads(card_file.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            continue
+
+        artifacts = card.get("artifacts") or {}
+        linked_brd = _resolve_card_artifact_path(artifacts.get("brd_txt", ""))
+        if not linked_brd:
+            continue
+        if str(linked_brd) == target:
+            return card_file.resolve()
+
+    return None
+
+
+def _store_uploaded_estimation_card(uploaded_file) -> Path:
+    filename = Path((uploaded_file.filename or "").strip()).name
+    if not filename:
+        raise ValueError("Uploaded card file name is missing.")
+    if Path(filename).suffix.lower() != ".json":
+        raise ValueError("Uploaded card must be a .json file.")
+
+    upload_dir = SCRIPT_DIR / "temp" / "estimation_cards"
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    saved_path = upload_dir / f"uploaded_card_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}.json"
+    uploaded_file.save(saved_path)
+
+    # Validate the uploaded JSON before running the estimation pipeline.
+    json.loads(saved_path.read_text(encoding="utf-8"))
+    return saved_path.resolve()
+
+
+def _store_uploaded_stage_card(uploaded_file, folder_name: str) -> Path:
+    filename = Path((uploaded_file.filename or "").strip()).name
+    if not filename:
+        raise ValueError("Uploaded card file name is missing.")
+    if Path(filename).suffix.lower() != ".json":
+        raise ValueError("Uploaded card must be a .json file.")
+
+    upload_dir = SCRIPT_DIR / "temp" / folder_name
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    saved_path = upload_dir / f"uploaded_card_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}.json"
+    uploaded_file.save(saved_path)
+
+    # Validate JSON payload to fail fast on malformed uploads.
+    json.loads(saved_path.read_text(encoding="utf-8"))
+    return saved_path.resolve()
+
+
+def _find_tds_card_for_brd_txt(brd_txt_path: Path) -> Path | None:
+    base_card = _find_card_for_brd_txt(brd_txt_path)
+    if not base_card or not base_card.exists():
+        return None
+
+    try:
+        card = json.loads(base_card.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None
+
+    fds_artifacts = card.get("fds_artifacts") or {}
+    tds_card_path = _resolve_card_artifact_path(fds_artifacts.get("tds_card", ""))
+    if not tds_card_path or not tds_card_path.exists():
+        return None
+    return tds_card_path
+
+
+def _find_tds_card_for_fds_txt(fds_txt_path: Path) -> Path | None:
+    target = str(fds_txt_path.resolve())
+    projects_dir = SCRIPT_DIR / "projects"
+    if not projects_dir.exists():
+        return None
+
+    candidates = sorted(
+        projects_dir.glob("*/cards/a2a_card_*.json"),
+        key=lambda p: p.stat().st_mtime,
+        reverse=True,
+    )
+    for card_file in candidates:
+        try:
+            card = json.loads(card_file.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            continue
+
+        fds_artifacts = card.get("fds_artifacts") or {}
+        linked_fds = _resolve_card_artifact_path(fds_artifacts.get("fds_txt", ""))
+        if not linked_fds or str(linked_fds) != target:
+            continue
+
+        tds_card = _resolve_card_artifact_path(fds_artifacts.get("tds_card", ""))
+        if tds_card and tds_card.exists():
+            return tds_card
+
+    return None
+
+
+def _find_tds_card_for_tds_json(tds_json_path: Path) -> Path | None:
+    target = str(tds_json_path.resolve())
+    projects_dir = SCRIPT_DIR / "projects"
+    if not projects_dir.exists():
+        return None
+
+    candidates = sorted(
+        projects_dir.glob("*/cards/*.json"),
+        key=lambda p: p.stat().st_mtime,
+        reverse=True,
+    )
+    for card_file in candidates:
+        try:
+            card = json.loads(card_file.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            continue
+
+        tds_artifacts = card.get("tds_artifacts") or {}
+        card_artifacts = card.get("artifacts") or {}
+
+        linked_tds_json = _resolve_card_artifact_path(
+            tds_artifacts.get("tds_json") or card_artifacts.get("tds_json", "")
+        )
+        if not linked_tds_json:
+            continue
+        if str(linked_tds_json) == target:
+            return card_file.resolve()
+
+    return None
+
+
+def _auto_create_estimation_card(brd_txt_path: Path) -> Path:
+    """
+    Auto-generate estimation A2A card for BRD if it doesn't exist.
+    Returns the card path (existing or newly created).
+    """
+    # Check if card already exists
+    existing_card = _find_card_for_brd_txt(brd_txt_path)
+    if existing_card and existing_card.exists():
+        return existing_card
+
+    # Auto-create card
+    project_dir = brd_txt_path.parent.parent  # Up from 'brd' to 'project'
+    cards_dir = project_dir / "cards"
+    cards_dir.mkdir(parents=True, exist_ok=True)
+
+    card_name = brd_txt_path.stem + "_a2a_card.json"
+    card_path = cards_dir / card_name
+
+    # If file already exists (edge case), return it
+    if card_path.exists():
+        return card_path
+
+    # Create minimal A2A card
+    new_card = {
+        "status": "estimation_ready",
+        "project": {
+            "name": project_dir.name,
+            "brd_path": str(brd_txt_path.resolve())
+        },
+        "payload": {
+            "brd_content": f"[Linked to {brd_txt_path.name}]"
+        },
+        "artifacts": {
+            "brd_txt": str(brd_txt_path.resolve()),
+            "output_dir": str(project_dir.resolve())
+        },
+        "created_at": datetime.now().isoformat(),
+        "created_by": "auto_generation"
+    }
+
+    try:
+        card_path.write_text(json.dumps(new_card, indent=2), encoding="utf-8")
+        print(f"[auto-card] ✅ Created estimation card: {card_path}")
+    except OSError as exc:
+        print(f"[auto-card] ❌ Failed to create card: {exc}")
+        raise
+
+    return card_path
+
+
+def _auto_create_fds_tds_card(brd_txt_path: Path, estimation_card_path: Path) -> Path:
+    """
+    Auto-generate FDS→TDS A2A card if it doesn't exist.
+    Links it to the estimation card.
+    Returns the card path (existing or newly created).
+    """
+    project_dir = brd_txt_path.parent.parent
+    cards_dir = project_dir / "cards"
+
+    card_name = brd_txt_path.stem + "_fds_tds_a2a_card.json"
+    card_path = cards_dir / card_name
+
+    # If card already exists, return it
+    if card_path.exists():
+        return card_path
+
+    # Create FDS→TDS card
+    new_card = {
+        "status": "ready_for_tds",
+        "project": {
+            "name": project_dir.name
+        },
+        "payload": {
+            "fds_sections": {
+                "functional_requirements": "[Auto-linked to FDS output]",
+                "integration_points": "[Pending FDS generation]",
+                "data_requirements": "[Pending FDS generation]"
+            },
+            "summary": {}
+        },
+        "artifacts": {
+            "output_dir": str(project_dir.resolve()),
+            "estimation_card": str(estimation_card_path.resolve())
+        },
+        "created_at": datetime.now().isoformat(),
+        "created_by": "auto_generation"
+    }
+
+    try:
+        card_path.write_text(json.dumps(new_card, indent=2), encoding="utf-8")
+        print(f"[auto-card] ✅ Created FDS→TDS card: {card_path}")
+    except OSError as exc:
+        print(f"[auto-card] ❌ Failed to create FDS→TDS card: {exc}")
+        raise
+
+    return card_path
 
 
 def _extract_business_from_text(text: str) -> str:
@@ -817,40 +1256,145 @@ def _send_email_smtp(to_email: str, subject: str, body: str, attachment_path: st
             if smtp_user and smtp_pass:
                 server.login(smtp_user, smtp_pass)
             server.send_message(msg)
+
+
+def _generic_mail_body(subject: str, attachment_path: str = "") -> str:
+    subject_l = (subject or "").lower()
+    attachment_name = Path(attachment_path).name.lower() if attachment_path else ""
+
+    doc_type = "document"
+    if "estimation" in subject_l or "estimation" in attachment_name:
+        doc_type = "estimation"
+    elif "fds" in subject_l or "fds" in attachment_name:
+        doc_type = "FDS"
+    elif "tds" in subject_l or "tds" in attachment_name:
+        doc_type = "TDS"
+    elif any(k in subject_l for k in ["brd", "requirement"]) or any(
+        k in attachment_name for k in ["brd", "requirement"]
+    ):
+        doc_type = "requirements"
+
+    return (
+        "Hi,\n\n"
+        f"Your {doc_type} is ready. Please find the attached file.\n\n"
+        "Thanks."
+    )
+
+
+def _read_env_file_value(env_path: Path, key: str) -> str:
+    """Read a single key from an env file without loading the whole file into process env."""
+    if not env_path.exists():
+        return ""
+
+    prefix = f"{key}="
+    try:
+        for raw_line in env_path.read_text(encoding="utf-8", errors="ignore").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or not line.startswith(prefix):
+                continue
+            value = line[len(prefix):].strip()
+            if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
+                value = value[1:-1]
+            return value.strip()
+    except Exception:
+        return ""
+
+    return ""
+
+
+def _normalize_host(host: str) -> str:
+    host_clean = (host or "").strip()
+    if not host_clean or host_clean in {"0.0.0.0", "::"}:
+        return "localhost"
+    return host_clean
+
+
+def _resolve_codex_portal_url() -> str:
+    """
+    Resolve the URL opened from the main Agents page Codex button.
+
+    Priority:
+    1) CODEX_PORTAL_URL env override
+    2) MCP_SERVER_URL env
+    3) mcp-client/.env MCP_SERVER_URL
+    4) mcp-client/.env MCP_SERVER_HOST + MCP_SERVER_PORT
+    5) fallback localhost:3000
+    """
+    direct_url = (os.getenv("CODEX_PORTAL_URL") or "").strip()
+    if direct_url:
+        return direct_url
+
+    env_server_url = (os.getenv("MCP_SERVER_URL") or "").strip()
+    if env_server_url:
+        return env_server_url
+
+    mcp_env_path = SCRIPT_DIR / "mcp-client" / ".env"
+
+    mcp_server_url = _read_env_file_value(mcp_env_path, "MCP_SERVER_URL")
+    if mcp_server_url:
+        return mcp_server_url
+
+    mcp_host = _normalize_host(_read_env_file_value(mcp_env_path, "MCP_SERVER_HOST"))
+    mcp_port = (_read_env_file_value(mcp_env_path, "MCP_SERVER_PORT") or "3000").strip()
+
+    if not mcp_port.isdigit():
+        mcp_port = "3000"
+
+    return f"http://{mcp_host}:{mcp_port}"
  
  
 # ══════════════════════════════════════════════════════════════════
 # Routes
 # ══════════════════════════════════════════════════════════════════
+
+
+def _render_main_page(active_page: str):
+    return render_template(
+        "index.html",
+        active_page=active_page,
+        current_user=DEFAULT_USER,
+        current_role=DEFAULT_ROLE,
+        codex_portal_url=_resolve_codex_portal_url(),
+    )
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login_page():
+    return redirect(url_for("home_page"))
+
+
+@app.route("/logout", methods=["GET"])
+def logout_page():
+    return redirect(url_for("home_page"))
  
 @app.route("/")
 def index():
-    return render_template("index.html", active_page="home")
+    return redirect(url_for("home_page"))
 
 
 @app.route("/home")
 def home_page():
-    return render_template("index.html", active_page="home")
+    return _render_main_page("home")
 
 
 @app.route("/requirement")
 def requirement_page():
-    return render_template("index.html", active_page="requirement")
+    return _render_main_page("requirement")
 
 
 @app.route("/estimation")
 def estimation_page():
-    return render_template("index.html", active_page="estimation")
+    return _render_main_page("estimation")
 
 
 @app.route("/fds")
 def fds_page():
-    return render_template("index.html", active_page="fds")
+    return _render_main_page("fds")
 
 
 @app.route("/tds")
 def tds_page():
-    return render_template("index.html", active_page="tds")
+    return _render_main_page("tds")
  
  
 @app.route("/api/projects", methods=["GET"])
@@ -860,6 +1404,166 @@ def list_projects():
         return jsonify(catalog)
     except Exception as exc:
         return jsonify({"error": str(exc)}), 500
+
+
+@app.route("/api/project-brd-options", methods=["GET"])
+def project_brd_options():
+    project_slug = (request.args.get("project_slug") or "").strip()
+    if not project_slug:
+        return jsonify({"error": "project_slug is required"}), 400
+
+    try:
+        catalog = get_project_catalog(SCRIPT_DIR)
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+    project_map = {p.get("slug", ""): p for p in catalog}
+    selected = project_map.get(project_slug)
+    if not selected:
+        return jsonify({"error": f"Project slug not found: {project_slug}"}), 404
+
+    options = _list_project_brd_options(project_slug)
+    return jsonify({
+        "project_slug": project_slug,
+        "project_name": selected.get("display_name", project_slug),
+        "options": options,
+    })
+
+
+@app.route("/api/project-fds-options", methods=["GET"])
+def project_fds_options():
+    project_slug = (request.args.get("project_slug") or "").strip()
+    if not project_slug:
+        return jsonify({"error": "project_slug is required"}), 400
+
+    try:
+        catalog = get_project_catalog(SCRIPT_DIR)
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+    project_map = {p.get("slug", ""): p for p in catalog}
+    selected = project_map.get(project_slug)
+    if not selected:
+        return jsonify({"error": f"Project slug not found: {project_slug}"}), 404
+
+    options = _list_project_fds_options(project_slug)
+    return jsonify({
+        "project_slug": project_slug,
+        "project_name": selected.get("display_name", project_slug),
+        "options": options,
+    })
+
+
+@app.route("/api/project-tds-options", methods=["GET"])
+def project_tds_options():
+    project_slug = (request.args.get("project_slug") or "").strip()
+    if not project_slug:
+        return jsonify({"error": "project_slug is required"}), 400
+
+    try:
+        catalog = get_project_catalog(SCRIPT_DIR)
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+    project_map = {p.get("slug", ""): p for p in catalog}
+    selected = project_map.get(project_slug)
+    if not selected:
+        return jsonify({"error": f"Project slug not found: {project_slug}"}), 404
+
+    options = _list_project_tds_options(project_slug)
+    return jsonify({
+        "project_slug": project_slug,
+        "project_name": selected.get("display_name", project_slug),
+        "options": options,
+    })
+
+
+@app.route("/api/brd-journey", methods=["GET"])
+def brd_journey():
+    """Return the SDLC journey status for a single BRD's A2A card."""
+    card_path_str = (request.args.get("card_path") or "").strip()
+    if not card_path_str:
+        return jsonify({"error": "card_path is required"}), 400
+
+    try:
+        card_path = _safe_path(card_path_str)
+    except PermissionError as exc:
+        return jsonify({"error": str(exc)}), 403
+
+    if not card_path.exists():
+        return jsonify({"error": "Card file not found"}), 404
+
+    try:
+        card = json.loads(card_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError) as exc:
+        return jsonify({"error": f"Cannot read card: {exc}"}), 500
+
+    artifacts   = card.get("artifacts") or {}
+    est_arts    = card.get("estimation_artifacts") or {}
+    fds_arts    = card.get("fds_artifacts") or {}
+    tds_arts    = card.get("tds_artifacts") or {}
+    approval    = card.get("approval") or {}
+    est_app     = card.get("estimation_approval") or {}
+    fds_app     = card.get("fds_approval") or {}
+    tds_app     = card.get("tds_approval") or {}
+
+    def _exists(path_str):
+        if not path_str:
+            return False
+        try:
+            return Path(path_str).exists()
+        except Exception:
+            return False
+
+    def _any_exists(*paths):
+        return any(_exists(p) for p in paths)
+
+    linked_tds_card = {}
+    linked_tds_arts = {}
+    linked_tds_app = {}
+    linked_fds_app = {}
+    linked_tds_artifacts = {}
+    linked_tds_card_path = _resolve_card_artifact_path(fds_arts.get("tds_card", ""))
+    if linked_tds_card_path and linked_tds_card_path.exists():
+        try:
+            linked_tds_card = json.loads(linked_tds_card_path.read_text(encoding="utf-8"))
+            linked_tds_arts = linked_tds_card.get("tds_artifacts") or {}
+            linked_tds_app = linked_tds_card.get("tds_approval") or {}
+            linked_fds_app = linked_tds_card.get("fds_approval") or {}
+            linked_tds_artifacts = linked_tds_card.get("artifacts") or {}
+        except (json.JSONDecodeError, OSError):
+            linked_tds_card = {}
+
+    brd_txt = artifacts.get("brd_txt", "")
+    fds_approved = (fds_app.get("status") == "approved") or (linked_fds_app.get("status") == "approved")
+    fds_approver = fds_app.get("approved_by", "") or linked_fds_app.get("approved_by", "")
+    return jsonify({
+        "brd_name": Path(brd_txt).name if brd_txt else card_path.stem,
+        "req_generated":    _exists(brd_txt),
+        "req_approved":     approval.get("status") == "approved",
+        "req_approver":     approval.get("approved_by", ""),
+        "est_generated":    _exists(est_arts.get("txt", "")),
+        "est_approved":     est_app.get("status") == "approved",
+        "est_approver":     est_app.get("approved_by", ""),
+        "fds_generated":    _any_exists(
+            fds_arts.get("txt", ""),
+            fds_arts.get("fds_txt", ""),
+            fds_arts.get("docx", ""),
+            fds_arts.get("fds_docx", ""),
+        ),
+        "fds_approved":     fds_approved,
+        "fds_approver":     fds_approver,
+        "tds_generated":    _any_exists(
+            tds_arts.get("docx", ""),
+            tds_arts.get("tds_docx", ""),
+            artifacts.get("tds_docx", ""),
+            linked_tds_arts.get("docx", ""),
+            linked_tds_arts.get("tds_docx", ""),
+            linked_tds_artifacts.get("tds_docx", ""),
+        ),
+        "tds_approved":     (tds_app.get("status") == "approved") or (linked_tds_app.get("status") == "approved"),
+        "tds_approver":     tds_app.get("approved_by", "") or linked_tds_app.get("approved_by", ""),
+    })
 
 
 @app.route("/api/chatbot", methods=["POST"])
@@ -873,6 +1577,28 @@ def chatbot_api():
         answer, meta = _answer_chat_question(question, project_slug, history)
     except Exception as exc:
         return jsonify({"error": str(exc)}), 500
+
+    return jsonify({
+        "answer": answer,
+        "meta": meta,
+    })
+
+
+@app.route("/api/codex/chat", methods=["POST"])
+def codex_chat_api():
+    data = request.get_json(silent=True) or {}
+    question = (data.get("question") or data.get("message") or "").strip()
+    project_slug = (data.get("project_slug") or "").strip()
+    history = data.get("history") or []
+
+    try:
+        answer, meta = _answer_chat_question(question, project_slug, history)
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+    meta = dict(meta or {})
+    meta["mode"] = "codex"
+    meta["retrieval"] = "rag"
 
     return jsonify({
         "answer": answer,
@@ -931,7 +1657,10 @@ def generate_brd():
                 "card_path":    result["card_path"],
                 "docx_path":    result["docx_path"],
                 "txt_path":     result["txt_path"],
+                "related_folder": result.get("brd_dir", ""),
+                "related_file": result.get("brd_file", ""),
                 "project_name": result["overview"].get("PROJECT_NAME", ""),
+                "project_slug": Path(result["project_dir"]).name,
                 "stats":        result["stats"],
             })
         except Exception as exc:
@@ -939,6 +1668,102 @@ def generate_brd():
  
     threading.Thread(target=worker, daemon=True).start()
     return jsonify({"job_id": job_id})
+
+
+@app.route("/api/save-brd-edit", methods=["POST"])
+def save_brd_edit():
+    data = request.get_json(silent=True) or {}
+    card_path_str = (data.get("card_path") or "").strip()
+    brd_text = (data.get("brd_text") or "").strip()
+    txt_path_str = (data.get("txt_path") or "").strip()
+    docx_path_str = (data.get("docx_path") or "").strip()
+
+    if not card_path_str:
+        return jsonify({"error": "card_path is required"}), 400
+    if not brd_text:
+        return jsonify({"error": "brd_text is required"}), 400
+
+    try:
+        card_path = _safe_path(card_path_str)
+    except PermissionError as exc:
+        return jsonify({"error": str(exc)}), 403
+
+    if not card_path.exists():
+        return jsonify({"error": f"Card not found: {card_path_str}"}), 404
+
+    try:
+        card = json.loads(card_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError) as exc:
+        return jsonify({"error": f"Unable to read card: {exc}"}), 500
+
+    artifacts = card.get("artifacts") or {}
+    txt_path_raw = txt_path_str or (artifacts.get("brd_txt") or "")
+    docx_path_raw = docx_path_str or (artifacts.get("brd_docx") or "")
+
+    if not txt_path_raw:
+        return jsonify({"error": "No BRD TXT path found in card artifacts."}), 400
+
+    try:
+        txt_path = _safe_path(txt_path_raw)
+    except PermissionError as exc:
+        return jsonify({"error": str(exc)}), 403
+
+    txt_path.parent.mkdir(parents=True, exist_ok=True)
+    normalized_text = brd_text.replace("\r\n", "\n")
+    txt_path.write_text(normalized_text + "\n", encoding="utf-8")
+    artifacts["brd_txt"] = str(txt_path)
+
+    saved_docx_path = ""
+    if docx_path_raw:
+        try:
+            docx_path = _safe_path(docx_path_raw)
+        except PermissionError as exc:
+            return jsonify({"error": str(exc)}), 403
+
+        docx_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            from docx import Document
+
+            doc = Document()
+            for line in normalized_text.split("\n"):
+                doc.add_paragraph(line)
+            doc.save(str(docx_path))
+            saved_docx_path = str(docx_path)
+        except PermissionError:
+            from datetime import datetime as _dt
+
+            timestamp = _dt.now().strftime("%Y%m%d_%H%M%S")
+            fallback_docx = docx_path.with_name(f"{docx_path.stem}_edited_{timestamp}{docx_path.suffix}")
+            from docx import Document
+
+            doc = Document()
+            for line in normalized_text.split("\n"):
+                doc.add_paragraph(line)
+            doc.save(str(fallback_docx))
+            saved_docx_path = str(fallback_docx)
+        except Exception as exc:
+            return jsonify({"error": f"Failed to write BRD DOCX: {exc}"}), 500
+
+    if saved_docx_path:
+        artifacts["brd_docx"] = saved_docx_path
+
+    card["artifacts"] = artifacts
+    card["approval"] = build_pending_approval()
+    card["status"] = "pending_approval"
+    card["updated_at"] = datetime.now().isoformat()
+
+    try:
+        card_path.write_text(json.dumps(card, indent=2), encoding="utf-8")
+    except OSError as exc:
+        return jsonify({"error": f"Failed to save card: {exc}"}), 500
+
+    return jsonify({
+        "message": "BRD edits saved. Approval reset to pending.",
+        "card_path": str(card_path),
+        "txt_path": str(txt_path),
+        "docx_path": saved_docx_path or (artifacts.get("brd_docx") or ""),
+        "approval": card["approval"],
+    })
 
 
 @app.route("/api/approve-card", methods=["POST"])
@@ -1132,32 +1957,60 @@ def approve_and_estimate():
                 "total_low":  est.get("total_low", 0),
                 "total_mid":  est.get("total_mid", 0),
                 "total_high": est.get("total_high", 0),
+                "total_with_buffer": est.get("total_with_buffer", 0),
+                "breakdown":  est.get("breakdown"),
                 "req_count":  est.get("req_count", 0),
             })
         except Exception as exc:
             _set_job(job_id, "error", error=str(exc) + "\n" + traceback.format_exc())
- 
+
     threading.Thread(target=worker, daemon=True).start()
     return jsonify({"job_id": job_id})
- 
- 
+
+
 # ── Run Estimation only (card already approved) ───────────────────
  
 @app.route("/api/run-estimation", methods=["POST"])
 def run_estimation():
-    data = request.get_json(silent=True) or {}
-    card_path_str = (data.get("card_path") or "").strip()
- 
-    if not card_path_str:
-        return jsonify({"error": "card_path is required"}), 400
- 
-    try:
-        card_path = _safe_path(card_path_str)
-    except PermissionError as exc:
-        return jsonify({"error": str(exc)}), 403
- 
-    if not card_path.exists():
-        return jsonify({"error": f"Card not found: {card_path_str}"}), 404
+    card_path = None
+    brd_txt_path_str = ""
+
+    uploaded_card = request.files.get("card_file")
+    if uploaded_card and uploaded_card.filename:
+        try:
+            card_path = _store_uploaded_estimation_card(uploaded_card)
+        except json.JSONDecodeError:
+            return jsonify({"error": "Uploaded card file is not valid JSON."}), 400
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        except OSError as exc:
+            return jsonify({"error": f"Failed to store uploaded card: {exc}"}), 500
+
+    if request.is_json:
+        data = request.get_json(silent=True) or {}
+        if (data.get("card_path") or "").strip():
+            return jsonify({"error": "card_path is no longer supported. Use brd_txt_path or upload a card file."}), 400
+        brd_txt_path_str = (data.get("brd_txt_path") or "").strip()
+    else:
+        brd_txt_path_str = (request.form.get("brd_txt_path") or "").strip()
+
+    if not card_path and brd_txt_path_str:
+        try:
+            brd_txt_path = _safe_path(brd_txt_path_str)
+        except PermissionError as exc:
+            return jsonify({"error": str(exc)}), 403
+
+        if not brd_txt_path.exists():
+            return jsonify({"error": f"BRD file not found: {brd_txt_path_str}"}), 404
+
+        # Auto-create estimation card if it doesn't exist
+        try:
+            card_path = _auto_create_estimation_card(brd_txt_path)
+        except Exception as exc:
+            return jsonify({"error": f"Failed to auto-create estimation card: {exc}"}), 500
+
+    if not card_path:
+        return jsonify({"error": "Provide brd_txt_path or upload a card_file."}), 400
  
     job_id = str(uuid.uuid4())
     _set_job(job_id, "running")
@@ -1167,6 +2020,7 @@ def run_estimation():
             from estimation_agents import run_estimation_pipeline
             est = run_estimation_pipeline(str(card_path))
             _set_job(job_id, "done", result={
+                "card_path": str(card_path),
                 "estimation_text":      est.get("txt_content", ""),
                 "estimation_txt_path":  est.get("txt_path", ""),
                 "estimation_docx_path": est.get("docx_path", ""),
@@ -1175,6 +2029,8 @@ def run_estimation():
                 "total_low":  est.get("total_low", 0),
                 "total_mid":  est.get("total_mid", 0),
                 "total_high": est.get("total_high", 0),
+                "total_with_buffer": est.get("total_with_buffer", 0),
+                "breakdown":  est.get("breakdown"),
                 "req_count":  est.get("req_count", 0),
             })
         except Exception as exc:
@@ -1188,19 +2044,48 @@ def run_estimation():
 
 @app.route("/api/run-fds", methods=["POST"])
 def run_fds():
-    data = request.get_json(silent=True) or {}
-    card_path_str = (data.get("card_path") or "").strip()
+    card_path = None
+    brd_txt_path_str = ""
 
-    if not card_path_str:
-        return jsonify({"error": "card_path is required"}), 400
+    uploaded_card = request.files.get("card_file")
+    if uploaded_card and uploaded_card.filename:
+        try:
+            card_path = _store_uploaded_stage_card(uploaded_card, "fds_cards")
+        except json.JSONDecodeError:
+            return jsonify({"error": "Uploaded card file is not valid JSON."}), 400
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        except OSError as exc:
+            return jsonify({"error": f"Failed to store uploaded card: {exc}"}), 500
 
-    try:
-        card_path = _safe_path(card_path_str)
-    except PermissionError as exc:
-        return jsonify({"error": str(exc)}), 403
+    if request.is_json:
+        data = request.get_json(silent=True) or {}
+        if (data.get("card_path") or "").strip():
+            return jsonify({"error": "card_path is no longer supported. Use brd_txt_path or upload a card file."}), 400
+        brd_txt_path_str = (data.get("brd_txt_path") or "").strip()
+    else:
+        brd_txt_path_str = (request.form.get("brd_txt_path") or "").strip()
 
-    if not card_path.exists():
-        return jsonify({"error": f"Card not found: {card_path_str}"}), 404
+    if not card_path and brd_txt_path_str:
+        try:
+            brd_txt_path = _safe_path(brd_txt_path_str)
+        except PermissionError as exc:
+            return jsonify({"error": str(exc)}), 403
+
+        if not brd_txt_path.exists():
+            return jsonify({"error": f"BRD file not found: {brd_txt_path_str}"}), 404
+
+        # Auto-create estimation card if it doesn't exist
+        try:
+            estimation_card = _auto_create_estimation_card(brd_txt_path)
+            # Auto-create FDS→TDS card before running FDS
+            _auto_create_fds_tds_card(brd_txt_path, estimation_card)
+            card_path = estimation_card
+        except Exception as exc:
+            return jsonify({"error": f"Failed to auto-create cards: {exc}"}), 500
+
+    if not card_path:
+        return jsonify({"error": "Provide brd_txt_path or upload a card_file."}), 400
 
     job_id = str(uuid.uuid4())
     _set_job(job_id, "running")
@@ -1213,9 +2098,12 @@ def run_fds():
             sections = result.get("sections") or {}
 
             _set_job(job_id, "done", result={
+                "card_path": str(card_path),
                 "project_name": result.get("project_name", ""),
                 "fds_docx_path": result.get("docx_path", ""),
                 "fds_txt_path": result.get("txt_path", ""),
+                "related_folder": result.get("fds_dir", ""),
+                "related_file": result.get("fds_file", ""),
                 "tds_card_path": result.get("tds_card_path", ""),
                 "fds_text": result.get("txt_content", ""),
                 "sections_count": len(sections),
@@ -1231,19 +2119,44 @@ def run_fds():
 
 @app.route("/api/run-tds", methods=["POST"])
 def run_tds():
-    data = request.get_json(silent=True) or {}
-    card_path_str = (data.get("card_path") or "").strip()
+    card_path = None
+    fds_txt_path_str = ""
 
-    if not card_path_str:
-        return jsonify({"error": "card_path is required"}), 400
+    uploaded_card = request.files.get("card_file")
+    if uploaded_card and uploaded_card.filename:
+        try:
+            card_path = _store_uploaded_stage_card(uploaded_card, "tds_cards")
+        except json.JSONDecodeError:
+            return jsonify({"error": "Uploaded card file is not valid JSON."}), 400
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        except OSError as exc:
+            return jsonify({"error": f"Failed to store uploaded card: {exc}"}), 500
 
-    try:
-        card_path = _safe_path(card_path_str)
-    except PermissionError as exc:
-        return jsonify({"error": str(exc)}), 403
+    if request.is_json:
+        data = request.get_json(silent=True) or {}
+        if (data.get("card_path") or "").strip():
+            return jsonify({"error": "card_path is no longer supported. Use fds_txt_path or upload a card file."}), 400
+        fds_txt_path_str = (data.get("fds_txt_path") or "").strip()
+    else:
+        fds_txt_path_str = (request.form.get("fds_txt_path") or "").strip()
 
-    if not card_path.exists():
-        return jsonify({"error": f"Card not found: {card_path_str}"}), 404
+    if not card_path and fds_txt_path_str:
+        try:
+            fds_txt_path = _safe_path(fds_txt_path_str)
+        except PermissionError as exc:
+            return jsonify({"error": str(exc)}), 403
+
+        if not fds_txt_path.exists():
+            return jsonify({"error": f"FDS file not found: {fds_txt_path_str}"}), 404
+
+        resolved_card = _find_tds_card_for_fds_txt(fds_txt_path)
+        if not resolved_card:
+            return jsonify({"error": "No TDS card is linked with the selected FDS. Generate FDS first."}), 400
+        card_path = resolved_card
+
+    if not card_path:
+        return jsonify({"error": "Provide fds_txt_path or upload a card_file."}), 400
 
     job_id = str(uuid.uuid4())
     _set_job(job_id, "running")
@@ -1266,13 +2179,18 @@ def run_tds():
             docx_path = output_dir / f"TDS_{timestamp}.docx"
             json_path = output_dir / f"TDS_{timestamp}.json"
             source_fds_docx = card.get("artifacts", {}).get("fds_docx", "Not specified")
+            display_folder = result.get("related_folder") or str(output_dir)
+            display_file = result.get("related_file") or ""
 
             doc = build_tds_docx(
                 result["project_name"],
+                result.get("requirements", []),
                 result["sections"],
                 result.get("section_order", list(result["sections"].keys())),
                 card_path.name,
                 source_fds_docx,
+                related_folder=display_folder,
+                related_file=display_file,
             )
             doc.save(str(docx_path))
 
@@ -1280,10 +2198,29 @@ def run_tds():
                 "project": result["project_name"],
                 "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
                 "source_card": str(card_path),
+                "related_file": display_file,
+                "related_folder": display_folder,
+                "requirements": result.get("requirements", []),
                 "section_plan": result.get("section_plan", []),
                 "sections": result["sections"],
             }
             json_path.write_text(json.dumps(json_payload, indent=2), encoding="utf-8")
+
+            # Stamp generated TDS artifact paths to the active TDS card (approval remains separate).
+            try:
+                card["tds_artifacts"] = {
+                    "tds_docx": str(docx_path),
+                    "tds_json": str(json_path),
+                }
+                card_artifacts = card.get("artifacts") or {}
+                card_artifacts["tds_docx"] = str(docx_path)
+                card_artifacts["tds_json"] = str(json_path)
+                card["artifacts"] = card_artifacts
+                card["status"] = "tds_generated"
+                card["updated_at"] = datetime.now().isoformat()
+                card_path.write_text(json.dumps(card, indent=2), encoding="utf-8")
+            except OSError:
+                pass
 
             ordered_sections = result.get("section_order", list(result["sections"].keys()))
             preview_parts = []
@@ -1294,9 +2231,12 @@ def run_tds():
                 preview_parts.append("")
 
             _set_job(job_id, "done", result={
+                "card_path": str(card_path),
                 "project_name": result.get("project_name", ""),
                 "tds_docx_path": str(docx_path),
                 "tds_json_path": str(json_path),
+                "related_file": display_file,
+                "related_folder": display_folder,
                 "tds_preview": "\n".join(preview_parts).strip(),
                 "sections_count": len(result.get("sections", {})),
                 "section_order": ordered_sections,
@@ -1307,8 +2247,107 @@ def run_tds():
 
     threading.Thread(target=worker, daemon=True).start()
     return jsonify({"job_id": job_id})
- 
- 
+
+
+# ── Run Test Cases (pseudocode + test cases from TDS card) ────────
+
+@app.route("/api/run-test-cases", methods=["POST"])
+def run_test_cases():
+    card_path = None
+    tds_json_path_str = ""
+
+    uploaded_card = request.files.get("card_file")
+    if uploaded_card and uploaded_card.filename:
+        try:
+            card_path = _store_uploaded_stage_card(uploaded_card, "tds_cards")
+        except json.JSONDecodeError:
+            return jsonify({"error": "Uploaded card file is not valid JSON."}), 400
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        except OSError as exc:
+            return jsonify({"error": f"Failed to store uploaded card: {exc}"}), 500
+
+    if request.is_json:
+        data = request.get_json(silent=True) or {}
+        tds_json_path_str = (data.get("tds_json_path") or "").strip()
+    else:
+        tds_json_path_str = (request.form.get("tds_json_path") or "").strip()
+
+    if not card_path and tds_json_path_str:
+        try:
+            tds_json_path = _safe_path(tds_json_path_str)
+        except PermissionError as exc:
+            return jsonify({"error": str(exc)}), 403
+
+        if not tds_json_path.exists():
+            return jsonify({"error": f"TDS file not found: {tds_json_path_str}"}), 404
+
+        resolved_card = _find_tds_card_for_tds_json(tds_json_path)
+        if not resolved_card:
+            return jsonify({"error": "No TDS card linked to selected TDS file. Generate TDS first."}), 400
+        card_path = resolved_card
+
+    if not card_path:
+        return jsonify({"error": "Provide tds_json_path or upload a card_file."}), 400
+
+    job_id = str(uuid.uuid4())
+    _set_job(job_id, "running")
+
+    def worker():
+        try:
+            from tds import load_tds_a2a_card, resolve_output_dir
+            from test_case_generator import build_test_cases_docx, run_test_cases_from_card
+
+            card = load_tds_a2a_card(card_path)
+            result = run_test_cases_from_card(card)
+
+            output_dir = resolve_output_dir(card_path, card)
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+            timestamp = time.strftime("%Y%m%d_%H%M%S")
+            docx_path = output_dir / f"TestCases_{timestamp}.docx"
+            json_path = output_dir / f"TestCases_{timestamp}.json"
+
+            doc = build_test_cases_docx(
+                result["project_name"],
+                result["sections"],
+                result.get("section_order", list(result["sections"].keys())),
+                card_path.name,
+            )
+            doc.save(str(docx_path))
+
+            json_payload = {
+                "project": result["project_name"],
+                "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                "source_card": str(card_path),
+                "sections": result["sections"],
+            }
+            json_path.write_text(json.dumps(json_payload, indent=2), encoding="utf-8")
+
+            # Build plain-text preview
+            ordered = result.get("section_order", list(result["sections"].keys()))
+            preview_parts = []
+            for name in ordered:
+                preview_parts.append(f"{'='*60}\n{name}\n{'='*60}")
+                preview_parts.append(result["sections"].get(name, ""))
+                preview_parts.append("")
+
+            _set_job(job_id, "done", result={
+                "card_path": str(card_path),
+                "project_name": result.get("project_name", ""),
+                "tc_docx_path": str(docx_path),
+                "tc_json_path": str(json_path),
+                "tc_preview": "\n".join(preview_parts).strip(),
+                "sections": result.get("sections", {}),
+                "section_order": ordered,
+            })
+        except Exception as exc:
+            _set_job(job_id, "error", error=str(exc) + "\n" + traceback.format_exc())
+
+    threading.Thread(target=worker, daemon=True).start()
+    return jsonify({"job_id": job_id})
+
+
 # ── Download file ─────────────────────────────────────────────────
  
 @app.route("/api/download", methods=["GET"])
@@ -1332,8 +2371,8 @@ def send_mail():
     data = request.get_json(silent=True) or {}
     email = (data.get("email") or "").strip()
     subject = (data.get("subject") or "BRD Report").strip()
-    body = (data.get("body") or "").strip()
     attachment_path = (data.get("attachment_path") or "").strip()
+    body = _generic_mail_body(subject, attachment_path)
  
     if not email:
         return jsonify({"error": "email is required"}), 400
@@ -1359,7 +2398,7 @@ if __name__ == "__main__":
     print("[app] Starting Requirement Agent web server")
     if len(ports) == 1:
         print(f"[app] Serving on http://localhost:{ports[0]}")
-        app.run(debug=True, host=host, port=ports[0])
+        app.run(debug=True, host=host, port=ports[0], use_reloader=False)
     else:
         print(f"[app] Multi-port mode enabled: {', '.join(str(p) for p in ports)}")
         print("[app] Note: Debug reloader is disabled in multi-port mode.")

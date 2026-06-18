@@ -28,6 +28,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
+from rag_agent_context import ground_prompt_with_rag
  
 # ══════════════════════════════════════════════════════════════════
 # 1. ENV + CONFIG
@@ -214,11 +215,16 @@ def call_llm(system_prompt: str, user_prompt: str) -> str:
         "&proxy=false"
     )
  
+    grounded_user_prompt = ground_prompt_with_rag(
+        user_prompt,
+        task_label="Estimation complexity scoring",
+    )
+
     merged_prompt = (
         "SYSTEM INSTRUCTION:\n"
         + system_prompt
         + "\n\nUSER REQUEST:\n"
-        + user_prompt
+        + grounded_user_prompt
     )
  
     payload = {
@@ -594,6 +600,29 @@ def _stamp_estimation_approval(card_path: Path, docx_path: Path, txt_path: Path,
         print("[EstimationAgent] Estimation approved and card updated.")
     except Exception as exc:
         print(f"[EstimationAgent] Could not update card: {exc}")
+
+
+def _stamp_estimation_generated(card_path: Path, docx_path: Path, txt_path: Path) -> None:
+    """Record generated estimation artifacts and reset estimation approval to pending."""
+    try:
+        card = json.loads(card_path.read_text(encoding="utf-8"))
+        card["estimation_artifacts"] = {
+            "docx": str(docx_path),
+            "txt": str(txt_path),
+        }
+        card["estimation_approval"] = {
+            "status": "pending",
+            "approved_by": "",
+            "approver_role": "",
+            "approved_at": "",
+            "comments": "Awaiting estimation approval.",
+        }
+        card["status"] = "estimation_generated"
+        card["updated_at"] = datetime.now().isoformat()
+        card_path.write_text(json.dumps(card, indent=2), encoding="utf-8")
+        print("[EstimationAgent] Estimation generated and marked pending approval.")
+    except Exception as exc:
+        print(f"[EstimationAgent] Could not update card after estimation generation: {exc}")
  
  
 def _get_updated_transcript_path(card_path: Path) -> Path:
@@ -675,13 +704,18 @@ def run_estimation_pipeline(card_path_str: str) -> dict:
     card = json.loads(card_path.read_text(encoding="utf-8"))
  
     approval = card.get("approval", {})
-    card_status = card.get("status", "pending_approval")
-    approval_status = approval.get("status", "pending")
-    allowed_statuses = {"approved_for_estimation", "estimation_approved"}
-    if card_status not in allowed_statuses or approval_status != "approved":
+    card_status = str(card.get("status", "pending_approval") or "").strip().lower()
+    approval_status = str(approval.get("status", "pending") or "").strip().lower()
+    estimation_approval_status = str((card.get("estimation_approval") or {}).get("status", "") or "").strip().lower()
+    blocked_statuses = {"pending_approval", "rejected", "draft"}
+    is_approved_for_estimation = (
+        approval_status == "approved" or estimation_approval_status == "approved"
+    )
+    if card_status in blocked_statuses or not is_approved_for_estimation:
         raise RuntimeError(
             f"Card is not approved for estimation. "
-            f"status={card_status}, approval.status={approval_status}"
+            f"status={card_status}, approval.status={approval_status}, "
+            f"estimation_approval.status={estimation_approval_status}"
         )
  
     project_info = card.get("project", {})
@@ -733,8 +767,8 @@ def run_estimation_pipeline(card_path_str: str) -> dict:
     build_docx(scored_list, size_info, totals, project_name, docx_path, breakdown=breakdown)
     build_txt(scored_list, size_info, totals, project_name, txt_path, breakdown=breakdown)
  
-    # Stamp card with estimation artifacts
-    _stamp_estimation_approval(card_path, docx_path, txt_path, "Web UI", "Web Approval")
+    # Save generated artifacts and keep approval pending until explicit user approval.
+    _stamp_estimation_generated(card_path, docx_path, txt_path)
  
     txt_content = txt_path.read_text(encoding="utf-8") if txt_path.exists() else ""
  
@@ -794,14 +828,22 @@ if __name__ == "__main__":
     card = json.loads(card_text)
  
     approval = card.get("approval", {})
-    card_status = card.get("status", "pending_approval")
-    approval_status = approval.get("status", "pending")
-    allowed_statuses = {"approved_for_estimation", "estimation_approved"}
-    if card_status not in allowed_statuses or approval_status != "approved":
+    card_status = str(card.get("status", "pending_approval") or "").strip().lower()
+    approval_status = str(approval.get("status", "pending") or "").strip().lower()
+    estimation_approval_status = str((card.get("estimation_approval") or {}).get("status", "") or "").strip().lower()
+    blocked_statuses = {"pending_approval", "rejected", "draft"}
+    is_approved_for_estimation = (
+        approval_status == "approved" or estimation_approval_status == "approved"
+    )
+    if card_status in blocked_statuses or not is_approved_for_estimation:
         print("[error] Card is not approved for estimation.")
         print("[error] Generate the BRD, review it, then approve the card first.")
-        print("[error] Expected status in {approved_for_estimation, estimation_approved} and approval.status=approved")
-        print("[error] Current status=" + str(card_status) + ", approval.status=" + str(approval_status))
+        print("[error] Expected approval.status=approved (or estimation_approval.status=approved) and non-pending card status")
+        print(
+            "[error] Current status=" + str(card_status)
+            + ", approval.status=" + str(approval_status)
+            + ", estimation_approval.status=" + str(estimation_approval_status)
+        )
         sys.exit(1)
  
         # ── Read from nested A2A card structure ──────────────────

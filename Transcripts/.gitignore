@@ -1,0 +1,29 @@
+﻿# Env files with secrets
+.env
+.env.local
+mcp-client/.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Node
+node_modules/
+package-lock.json
+
+# Generated artifacts (large binary/generated files)
+projects/*/brd/*.docx
+projects/*/estimation/*.docx
+projects/*/fds/*.docx
+projects/*/tds/*.docx
+projects/*/cards/TDS_*.docx
+projects/*/cards/TDS_*.json
+temp/
+
+# Vector DB (rebuilt on startup)
+vector_db/
+
+# mcp-client dist (compiled output)
+mcp-client/dist/
+mcp-client/node_modules/

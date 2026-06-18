@@ -28,6 +28,7 @@
             flex: 1;
             display: flex;
             min-height: 0;
+            overflow-x: hidden;
         }
         .brand-bar {
             background: rgba(29, 31, 39, 1);
@@ -78,6 +79,11 @@
             opacity: 0.92;
             white-space: nowrap;
         }
+        .brand-right {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+        }
         .navbar {
             width: 250px;
             padding: 16px 12px;
@@ -120,13 +126,157 @@
         }
         .btn-reset:hover { background-color: #1a202c; }
 
+        /* DASHBOARD STEPPER */
+        .dash-stepper {
+            display: flex;
+            flex-direction: row;
+            gap: 0;
+            margin-top: 22px;
+            position: relative;
+            width: 100%;
+            max-width: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding-bottom: 8px;
+        }
+        .dash-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 8px;
+            position: relative;
+            padding-right: 20px;
+            min-width: 124px;
+            flex: 0 0 124px;
+        }
+        .dash-step:last-child { padding-right: 0; }
+        .dash-step::before {
+            content: '';
+            position: absolute;
+            left: 36px;
+            top: 14px;
+            right: -10px;
+            height: 2px;
+            background: #dde3ee;
+        }
+        .dash-step:last-child::before { display: none; }
+        .dash-step-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid #c5cfe0;
+            background: #f0f4fa;
+            flex: 0 0 auto;
+            position: relative;
+            z-index: 1;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .dash-step.done .dash-step-icon {
+            background: #1e3a5f;
+            border-color: #1e3a5f;
+        }
+        .dash-step.done .dash-step-icon::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='white' d='M6.5 11.5 3 8l1-1 2.5 2.5 5-5 1 1z'/%3E%3C/svg%3E") center/18px no-repeat;
+        }
+        .dash-step.active .dash-step-icon {
+            background: #2a8fa8;
+            border-color: #2a8fa8;
+            box-shadow: 0 0 0 4px rgba(42,143,168,0.18);
+        }
+        .dash-step-body {
+            width: 100%;
+        }
+        .dash-step-label {
+            font-size: 0.92em;
+            font-weight: 600;
+            color: #1a202c;
+            margin-top: 0;
+        }
+        .dash-step.done .dash-step-label { color: #1e3a5f; }
+        .dash-step.pending .dash-step-label { color: #8a95a1; }
+        .dash-step-sub {
+            font-size: 0.8em;
+            color: #667085;
+            margin-top: 2px;
+        }
+        .dash-journey-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 14px;
+            min-width: 0;
+        }
+        .dash-journey-title {
+            font-size: 0.95em;
+            font-weight: 700;
+            color: #1e3a5f;
+            min-width: 0;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* DASHBOARD BRD GRID */
+        .dash-brd-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 14px;
+            margin-top: 12px;
+        }
+        .dash-brd-card {
+            background: #f5f8fc;
+            border: 1.5px solid #dde3ee;
+            border-radius: 10px;
+            padding: 14px 16px;
+            cursor: pointer;
+            transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
+        }
+        .dash-brd-card:hover {
+            border-color: #2a8fa8;
+            box-shadow: 0 2px 12px rgba(42,143,168,0.12);
+            background: #eef6f9;
+        }
+        .dash-brd-card.selected {
+            border-color: #1e3a5f;
+            background: #e6edf6;
+        }
+        .dash-brd-card-name {
+            font-size: 0.82em;
+            font-weight: 700;
+            color: #1e3a5f;
+            word-break: break-all;
+            margin-bottom: 6px;
+        }
+        .dash-brd-card-badge {
+            display: inline-block;
+            font-size: 0.72em;
+            font-weight: 600;
+            border-radius: 999px;
+            padding: 2px 8px;
+        }
+        .dash-brd-card-badge.approved { background: #d1fae5; color: #065f46; }
+        .dash-brd-card-badge.pending  { background: #fef3c7; color: #92400e; }
+        .dash-brd-card-badge.no-card  { background: #e5e7eb; color: #6b7280; }
+        .muted-note { font-size: 0.8em; color: #9ca3af; }
+
         /* MAIN */
-        .main { flex: 1; padding: 24px 20px; }
+        .main {
+            flex: 1;
+            min-width: 0;
+            padding: 24px 20px;
+            overflow-x: hidden;
+        }
         .card {
             background-color: #ffffff;
             border: 1px solid #dde1e7;
             border-radius: 8px;
             padding: 24px 28px;
+            width: 100%;
             max-width: 960px;
             margin: 0 auto;
         }
@@ -429,6 +579,71 @@
                 color: #5f6b7d;
                 margin-bottom: 10px;
             }
+            .brd-preview-modal-backdrop {
+                position: fixed;
+                inset: 0;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                background: rgba(8, 20, 36, 0.28);
+                z-index: 1400;
+                padding: 20px;
+            }
+            .brd-preview-modal-backdrop.active {
+                display: flex;
+            }
+            .brd-preview-modal {
+                width: 94vw;
+                height: 90vh;
+                max-width: 94vw;
+                max-height: 90vh;
+                border-radius: 12px;
+                border: 1px solid #dfe5ef;
+                background: #ffffff;
+                box-shadow: 0 24px 48px rgba(28, 49, 84, 0.24);
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+            .brd-preview-modal-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 16px 20px;
+                border-bottom: 1px solid #dfe5ef;
+                background: rgba(29, 31, 39, 1);
+                color: #ffffff;
+                font-weight: 600;
+            }
+            .brd-preview-modal-close {
+                background: rgba(255, 255, 255, 0.14);
+                border: 1px solid rgba(255, 255, 255, 0.32);
+                color: #ffffff;
+                cursor: pointer;
+                border-radius: 6px;
+                padding: 6px 12px;
+                font-size: 0.88em;
+            }
+            .brd-preview-modal-close:hover {
+                background: rgba(255, 255, 255, 0.22);
+            }
+            .brd-preview-modal-body {
+                flex: 1;
+                overflow-y: auto;
+                padding: 0;
+            }
+            .brd-preview-modal-body textarea {
+                width: 100%;
+                height: 100%;
+                border: 0;
+                border-radius: 0;
+                padding: 16px;
+                font-family: Consolas, monospace;
+                font-size: 0.85em;
+                color: #22313f;
+                background: #ffffff;
+                resize: none;
+            }
             .tds-diagram-grid {
                 display: grid;
                 grid-template-columns: 1fr;
@@ -465,22 +680,57 @@
                 border-radius: 6px;
                 padding: 12px;
             }
-            .agent-overview {
-                margin-top: 10px;
-                display: grid;
-                grid-template-columns: 1fr;
-                gap: 10px;
+            .home-project-panel {
+                margin: 18px 0 22px;
+                padding: 18px;
+                border: 1px solid #d7e1ec;
+                border-radius: 12px;
+                background: linear-gradient(180deg, #f8fbff 0%, #eef5fb 100%);
             }
-            .agent-overview-item {
-                border: 1px solid #dce3ee;
-                border-radius: 8px;
-                padding: 10px 12px;
-                background: #f8fbff;
+            .home-project-panel h3 {
+                font-size: 1.02em;
+                color: #1a202c;
+                margin-bottom: 6px;
             }
-            .agent-overview-item strong {
+            .home-project-panel .project-pick-grid {
+                margin-top: 12px;
+            }
+            .home-project-panel .project-row {
+                align-items: center;
+            }
+            .brd-panel-toggle {
+                margin-top: 6px;
+            }
+            .brd-panel {
+                display: none;
+                margin-top: 12px;
+                padding: 16px;
+                border: 1px solid #d7e0eb;
+                border-radius: 12px;
+                background: linear-gradient(180deg, #f9fbff 0%, #eef4fb 100%);
+                box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            }
+            .brd-panel.active {
+                display: block;
+            }
+            .brd-panel-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                margin-bottom: 10px;
+            }
+            .brd-panel-head h3 {
+                font-size: 0.98em;
                 color: #1e3a5f;
-                display: inline-block;
-                margin-bottom: 2px;
+            }
+            .brd-panel-note {
+                font-size: 0.82em;
+                color: #667085;
+            }
+            #dashJourneyDetail {
+                max-width: 100%;
+                overflow-x: hidden;
             }
     </style>
 </head>
@@ -491,9 +741,11 @@
             <img src="{{ url_for('static', filename='HPE_LOGO.png') }}" alt="HPE Logo">
             <div class="brand-title">SDLC AI Agent Pipeline</div>
         </div>
-        <div class="agent-status-group" aria-label="Agent status">
-            <div id="agentStatusPill" class="agent-status-dot idle"></div>
-            <div id="agentStatusName" class="agent-status-name">Idle</div>
+        <div class="brand-right">
+            <div class="agent-status-group" aria-label="Agent status">
+                <div id="agentStatusPill" class="agent-status-dot idle"></div>
+                <div id="agentStatusName" class="agent-status-name">Idle</div>
+            </div>
         </div>
     </header>
 
@@ -502,12 +754,16 @@
         <nav class="navbar">
             <div class="nav-tabs">
                     <button id="tabBtn-home" class="nav-tab active" onclick="showTab('home', this)">Home</button>
-                    <button id="tabBtn-requirement" class="nav-tab hidden-before-project" onclick="showTab('requirement', this)">Requirement Agent</button>
-                    <button id="tabBtn-estimation" class="nav-tab hidden-before-project" onclick="showTab('estimation', this)">Estimation Agent</button>
-                    <button id="tabBtn-fds" class="nav-tab hidden-before-project" onclick="showTab('fds', this)">FDS Agent</button>
-                    <button id="tabBtn-tds" class="nav-tab hidden-before-project" onclick="showTab('tds', this)">TDS Agent</button>
+                    <button id="tabBtn-requirement" class="nav-tab hidden-before-project" onclick="showTab('requirement', this)">Requirements</button>
+                    <button id="tabBtn-estimation" class="nav-tab hidden-before-project" onclick="showTab('estimation', this)">Estimation</button>
+                    <button id="tabBtn-fds" class="nav-tab hidden-before-project" onclick="showTab('fds', this)">FDS</button>
+                    <button id="tabBtn-tds" class="nav-tab hidden-before-project" onclick="showTab('tds', this)">TDS</button>
+                    <button id="tabBtn-testcases" class="nav-tab hidden-before-project" onclick="showTab('testcases', this)">Test Cases</button>
+                    <button id="tabBtn-codex" class="nav-tab hidden-before-project" onclick="openCodexPortal()">Codex</button>
             </div>
-            
+            <div style="margin-top:auto; padding-top:12px; border-top:1px solid rgba(255,255,255,0.12);">
+                <button id="tabBtn-dashboard" class="nav-tab hidden-before-project" onclick="showTab('dashboard', this); refreshDashboard();">Dashboard</button>
+            </div>
         </nav>
 
         <!-- CONTENT -->
@@ -519,28 +775,127 @@
                     <h2>Welcome</h2>
                     <p class="subtitle">This pipeline helps you move from business conversation to implementation artifacts in a guided SDLC flow.</p>
 
-                    <div class="agent-overview">
-                        <div class="agent-overview-item">
-                            <strong>Requirement Agent</strong>
-                            <div>Converts validated transcript input into BRD content and an A2A card.</div>
+                    <div class="home-project-panel">
+                        <h3>Choose a project</h3>
+                        <p class="muted-note">Select an existing project or create a new one to unlock the agent flow.</p>
+
+                        <div class="project-pick-grid">
+                            <div>
+                                <label class="field-label">Existing projects</label>
+                                <div class="project-row">
+                                    <select id="homeExistingProjects"></select>
+                                    <button class="btn-secondary" onclick="useHomeSelectedProject()">Open Project</button>
+                                </div>
+                                <p class="muted-note" id="homeProjectsSummary">Loading projects...</p>
+                            </div>
+
+                            <div>
+                                <label class="field-label">Create new project</label>
+                                <div class="project-row">
+                                    <input type="text" id="homeNewProjectName" placeholder="Example: Customer Portal Modernization">
+                                    <button class="btn-primary" onclick="createHomeProject()">Create and Open</button>
+                                </div>
+                                <p class="muted-note">New projects will open the agent tabs immediately after creation.</p>
+                            </div>
                         </div>
-                        <div class="agent-overview-item">
-                            <strong>Estimation Agent</strong>
-                            <div>Builds effort and investment estimates from approved requirement outputs.</div>
+
+                        <div id="homeActiveProjectInfo" class="active-project-pill" style="display:none;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DASHBOARD -->
+            <div id="tab-dashboard" class="tab-panel">
+                <div class="card">
+                    <h2>Project Journey</h2>
+                    <p class="subtitle" id="dashProjectName">Select or create a project to see its BRDs.</p>
+
+                    <div id="dashNoProject" style="margin-top:18px; color:#667085; font-size:0.9em;">No active project selected.</div>
+
+                    <!-- BRD LIST -->
+                    <div id="dashBrdList" style="display:none;">
+                        <label class="field-label" style="margin-top:14px;">BRDs in this project — click one to view its journey</label>
+                        <div id="dashBrdCards" class="dash-brd-grid"></div>
+                        <p class="muted-note" id="dashBrdNote" style="margin-top:8px;"></p>
+                    </div>
+
+                    <!-- JOURNEY DETAIL (hidden until BRD selected) -->
+                    <div id="dashJourneyDetail" style="display:none; margin-top:22px; padding-top:18px; border-top:1px solid #e8ecf2;">
+                        <div class="dash-journey-head">
+                            <button class="btn-secondary" style="font-size:0.8em; padding:5px 10px;" onclick="closeDashJourney()">← Back to BRDs</button>
+                            <span id="dashJourneyBrdName" class="dash-journey-title"></span>
                         </div>
-                        <div class="agent-overview-item">
-                            <strong>FDS Agent</strong>
-                            <div>Generates functional design artifacts and prepares handoff for technical design.</div>
+
+                        <div id="dashProgressWrap" style="margin-top:0; margin-bottom:20px;">
+                            <div style="display:flex; justify-content:space-between; font-size:0.82em; font-weight:600; color:#4a6080; margin-bottom:6px;">
+                                <span>Overall Progress</span>
+                                <span id="dashProgressPct">0%</span>
+                            </div>
+                            <div style="background:#e8ecf2; border-radius:999px; height:10px; overflow:hidden;">
+                                <div id="dashProgressBar" style="height:100%; width:0%; border-radius:999px; background:linear-gradient(90deg,#2a8fa8,#1e3a5f); transition:width 0.4s;"></div>
+                            </div>
                         </div>
-                        <div class="agent-overview-item">
-                            <strong>TDS Agent</strong>
-                            <div>Handles technical design stage after FDS handoff data is ready.</div>
+
+                        <div id="dashStepper" class="dash-stepper" style="margin-top:0;">
+                            <div class="dash-step" id="dstep-req-gen">
+                                <div class="dash-step-icon"></div>
+                                <div class="dash-step-body">
+                                    <div class="dash-step-label">Requirement Generated</div>
+                                    <div class="dash-step-sub" id="dsub-req-gen">Pending</div>
+                                </div>
+                            </div>
+                            <div class="dash-step" id="dstep-req-approve">
+                                <div class="dash-step-icon"></div>
+                                <div class="dash-step-body">
+                                    <div class="dash-step-label">Requirement Approved</div>
+                                    <div class="dash-step-sub" id="dsub-req-approve">Pending</div>
+                                </div>
+                            </div>
+                            <div class="dash-step" id="dstep-est-gen">
+                                <div class="dash-step-icon"></div>
+                                <div class="dash-step-body">
+                                    <div class="dash-step-label">Estimation Generated</div>
+                                    <div class="dash-step-sub" id="dsub-est-gen">Pending</div>
+                                </div>
+                            </div>
+                            <div class="dash-step" id="dstep-est-approve">
+                                <div class="dash-step-icon"></div>
+                                <div class="dash-step-body">
+                                    <div class="dash-step-label">Estimation Approved</div>
+                                    <div class="dash-step-sub" id="dsub-est-approve">Pending</div>
+                                </div>
+                            </div>
+                            <div class="dash-step" id="dstep-fds-gen">
+                                <div class="dash-step-icon"></div>
+                                <div class="dash-step-body">
+                                    <div class="dash-step-label">FDS Generated</div>
+                                    <div class="dash-step-sub" id="dsub-fds-gen">Pending</div>
+                                </div>
+                            </div>
+                            <div class="dash-step" id="dstep-fds-approve">
+                                <div class="dash-step-icon"></div>
+                                <div class="dash-step-body">
+                                    <div class="dash-step-label">FDS Approved</div>
+                                    <div class="dash-step-sub" id="dsub-fds-approve">Pending</div>
+                                </div>
+                            </div>
+                            <div class="dash-step" id="dstep-tds-gen">
+                                <div class="dash-step-icon"></div>
+                                <div class="dash-step-body">
+                                    <div class="dash-step-label">TDS Generated</div>
+                                    <div class="dash-step-sub" id="dsub-tds-gen">Pending</div>
+                                </div>
+                            </div>
+                            <div class="dash-step" id="dstep-tds-approve">
+                                <div class="dash-step-icon"></div>
+                                <div class="dash-step-body">
+                                    <div class="dash-step-label">TDS Approved</div>
+                                    <div class="dash-step-sub" id="dsub-tds-approve">Pending</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="btn-group">
-                        <button class="btn-primary" onclick="goToProjects()">Projects</button>
-                    </div>
                 </div>
             </div>
 
@@ -577,7 +932,7 @@
             <!-- REQUIREMENT AGENT -->
             <div id="tab-requirement" class="tab-panel">
                 <div class="card">
-                <h2>Requirement Agent</h2>
+                <h2>RequirementsS</h2>
                 <p class="subtitle">Input can be file path or upload. Supports .pdf, .doc, .docx, .txt, .md.</p>
 
                 <div class="row-2col">
@@ -593,32 +948,47 @@
 
             
 
-                <div class="btn-group">
+                <div id="requirementGenerateActions" class="btn-group">
                     <button class="btn-primary" onclick="generateBRD()">Generate BRD</button>
+                </div>
+
+                <div id="requirementPostGenerationActions" class="btn-group" style="display:none;">
+                    <button class="btn-secondary" onclick="toggleBrdPanel('edit')">Edit BRD</button>
+                    <button class="btn-secondary" onclick="openBrdPreviewModal()">BRD Preview</button>
+                    <button class="btn-secondary" onclick="openBrdEmailPanel()">Send BRD as Email</button>
                     <button class="btn-secondary" onclick="openApprovalModal()">Approve</button>
+                </div>
+
+                <div id="requirementPostApprovalActions" class="btn-group" style="display:none;">
+                    <button class="btn-primary" onclick="sendToEstimation()">Send to Estimation</button>
                 </div>
 
                 <div id="approvalSummary" class="approval-summary"></div>
 
-                <label class="field-label">Generated BRD preview</label>
-                <textarea id="brdPreview" rows="6" placeholder="Generated BRD report will appear here..."></textarea>
+                <div id="brdEditPanel" class="brd-panel">
+                    <div class="brd-panel-head">
+                        <h3>Edit BRD</h3>
+                        <span class="brd-panel-note">Make changes here if the approval is rejected.</span>
+                    </div>
+                    <textarea id="brdEdit" rows="8" placeholder="Generated BRD content will appear here for editing..."></textarea>
+                    <div class="btn-group">
+                        <button class="btn-secondary" onclick="saveEditedBRD()">Save Edited BRD</button>
+                    </div>
+                </div>
 
-                <label class="field-label">Edit BRD content if approval is rejected</label>
-                <textarea id="brdEdit" rows="6" placeholder="Generated BRD content will appear here for editing..."></textarea>
-                 <div>
+                <div id="brdEmailPanel" class="brd-panel">
+                    <div class="brd-panel-head">
+                        <h3>Send BRD as Email</h3>
+                        <span class="brd-panel-note">Send the current BRD preview to the BRD team.</span>
+                    </div>
+                    <div>
                         <label class="field-label">BRD team email</label>
                         <input type="email" id="brdEmail" placeholder="brd-team@company.com">
                     </div>
-                <div class="btn-group">
-                    <button class="btn-secondary" onclick="regenerateBRD()">Regenerate BRD Report After Edit</button>
-                    <button class="btn-secondary" onclick="sendMailBRD()">Send Mail to BRD Team</button>
+                    <div class="btn-group">
+                        <button class="btn-secondary" onclick="sendMailBRD()">Send Mail to BRD Team</button>
+                    </div>
                 </div>
-
-                <div class="btn-group">
-                    <button class="btn-primary" onclick="sendToEstimation()">Send to Estimation</button>
-                </div>
-
-               
 
                 <div class="download-row">
                     <span class="dl-label">Download BRD:</span>
@@ -632,28 +1002,49 @@
             <!-- ESTIMATION AGENT -->
             <div id="tab-estimation" class="tab-panel">
                 <div class="card">
-                <h2>Estimation Agent</h2>
-                <p class="subtitle">Generate effort estimations from a BRD or A2A card.</p>
+                <h2>Estimation</h2>
+                <p class="subtitle">Generate effort estimations from selected BRD or uploaded A2A card.</p>
 
-                <label class="field-label">A2A Card path</label>
-                <input type="text" id="cardPath" placeholder="Example: projects/my_project/cards/a2a_card.json">
+                <label class="field-label">Or choose BRD from active project</label>
+                <div class="project-row">
+                    <select id="estimationBrdSelect"></select>
+                </div>
+                <p class="muted-note" id="estimationBrdSummary">Select an existing project to load BRD options.</p>
 
                 <label class="field-label">Or upload A2A card file</label>
                 <input type="file" id="cardFile" accept=".json">
 
-                <div class="btn-group">
+                <div id="estimationGenerateActions" class="btn-group">
                     <button class="btn-primary" onclick="generateEstimation()">Generate Estimation</button>
+                </div>
+
+                <div id="estimationPostGenerationActions" class="btn-group" style="display:none;">
+                    <button class="btn-secondary" onclick="openEstimationPreviewModal()">Estimation Preview</button>
+                    <button class="btn-secondary" onclick="openEstimationEmailPanel()">Send Estimation as Email</button>
                     <button class="btn-secondary" onclick="openEstimationApprovalModal()">Approve Estimation</button>
+                </div>
+
+                <div id="estimationPostApprovalActions" class="btn-group" style="display:none;">
+                    <button class="btn-primary" onclick="sendToFDS()">Send to FDS</button>
                 </div>
 
                 <div id="estimationApprovalSummary" class="approval-summary"></div>
 
-                <label class="field-label">Estimation preview</label>
-                <textarea id="estimationPreview" rows="8" placeholder="Estimation report will appear here..."></textarea>
-
-                <div class="btn-group">
-                    <button class="btn-primary" onclick="sendToFDS()">Send to FDS</button>
+                <div id="estimationEmailPanel" class="brd-panel">
+                    <div class="brd-panel-head">
+                        <h3>Send Estimation as Email</h3>
+                        <span class="brd-panel-note">Send the current estimation report to the team.</span>
+                    </div>
+                    <div>
+                        <label class="field-label">Recipient email</label>
+                        <input type="email" id="estimationEmail" placeholder="estimation-team@company.com">
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn-secondary" onclick="sendMailEstimation()">Send Mail to Estimation Team</button>
+                    </div>
                 </div>
+
+                <textarea id="estimationPreview" style="display:none"></textarea>
 
                 <div class="download-row">
                     <span class="dl-label">Download Estimation:</span>
@@ -665,27 +1056,48 @@
             <!-- FDS AGENT -->
             <div id="tab-fds" class="tab-panel">
                 <div class="card">
-                <h2>FDS Agent</h2>
-                <p class="subtitle">Generate Functional Design Specification artifacts from the approved A2A card.</p>
+                <h2>FDS</h2>
+                <p class="subtitle">Generate Functional Design Specification artifacts from selected BRD or uploaded A2A card.</p>
 
-                <label class="field-label">A2A Card path</label>
-                <input type="text" id="fdsCardPath" placeholder="Example: projects/my_project/cards/a2a_card.json">
+                <label class="field-label">Or choose BRD from active project</label>
+                <div class="project-row">
+                    <select id="fdsBrdSelect"></select>
+                </div>
+                <p class="muted-note" id="fdsBrdSummary">Select an existing project to load BRD options.</p>
 
-                <div class="btn-group">
+                <label class="field-label">Or upload A2A card file</label>
+                <input type="file" id="fdsCardFile" accept=".json">
+
+                <div id="fdsGenerateActions" class="btn-group">
                     <button class="btn-primary" onclick="generateFDS()">Generate FDS</button>
                 </div>
 
-                <label class="field-label">FDS preview</label>
-                <textarea id="fdsPreview" rows="8" placeholder="FDS report will appear here..."></textarea>
-
-                <div class="btn-group">
+                <div id="fdsPostGenerationActions" class="btn-group" style="display:none;">
+                    <button class="btn-secondary" onclick="openFdsPreviewModal()">FDS Preview</button>
+                    <button class="btn-secondary" onclick="openFdsEmailPanel()">Send FDS as Email</button>
                     <button class="btn-secondary" onclick="openFdsApprovalModal()">Approve FDS</button>
                 </div>
 
+                <div id="fdsPostApprovalActions" class="btn-group" style="display:none;">
+                    <button class="btn-secondary" onclick="sendToTDS()">Send to TDS</button>
+                </div>
+
+                <textarea id="fdsPreview" style="display:none"></textarea>
+
                 <div id="fdsApprovalSummary" class="approval-summary"></div>
 
-                <div class="btn-group">
-                    <button class="btn-secondary" onclick="sendToTDS()">Send to TDS</button>
+                <div id="fdsEmailPanel" class="brd-panel">
+                    <div class="brd-panel-head">
+                        <h3>Send FDS as Email</h3>
+                        <span class="brd-panel-note">Send the current FDS report to the team.</span>
+                    </div>
+                    <div>
+                        <label class="field-label">Recipient email</label>
+                        <input type="email" id="fdsEmail" placeholder="fds-team@company.com">
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn-secondary" onclick="sendMailFDS()">Send Mail to FDS Team</button>
+                    </div>
                 </div>
 
                 <div class="download-row">
@@ -699,23 +1111,52 @@
             <!-- TDS AGENT -->
             <div id="tab-tds" class="tab-panel">
                 <div class="card">
-                <h2>TDS Agent</h2>
-                <p class="subtitle">Generate Technical Design Specification outputs from the ready-for-TDS card produced by FDS.</p>
+                <h2>TDS</h2>
+                <p class="subtitle">Generate Technical Design Specification outputs from selected FDS or uploaded TDS card.</p>
 
-                <label class="field-label">TDS A2A Card path</label>
-                <input type="text" id="tdsCardPathInput" placeholder="Example: projects/my_project/cards/tds_a2a_card.json">
+                <label class="field-label">Or choose FDS from active project</label>
+                <div class="project-row">
+                    <select id="tdsBrdSelect"></select>
+                </div>
+                <p class="muted-note" id="tdsBrdSummary">Select an existing project to load FDS options.</p>
 
-                <div class="btn-group">
+                <label class="field-label">Or upload TDS A2A card file</label>
+                <input type="file" id="tdsCardFile" accept=".json">
+
+                <div id="tdsGenerateActions" class="btn-group">
                     <button class="btn-primary" onclick="generateTDS()">Generate TDS</button>
+                </div>
+
+                <div id="tdsPostGenerationActions" class="btn-group" style="display:none;">
+                    <button class="btn-secondary" onclick="openTdsPreviewModal()">TDS Preview</button>
+                    <button class="btn-secondary" onclick="openTdsEmailPanel()">Send TDS as Email</button>
                     <button class="btn-secondary" onclick="openTdsApprovalModal()">Approve TDS</button>
+                </div>
+
+                <div id="tdsPostApprovalActions" class="btn-group" style="display:none;">
                 </div>
 
                 <label class="field-label">TDS diagrams</label>
                 <div id="tdsDiagramContainer" class="tds-diagram-grid">
                     <div class="muted-note">Generated TDS diagrams will appear here.</div>
                 </div>
+                <textarea id="tdsPreview" style="display:none"></textarea>
 
                 <div id="tdsApprovalSummary" class="approval-summary"></div>
+
+                <div id="tdsEmailPanel" class="brd-panel">
+                    <div class="brd-panel-head">
+                        <h3>Send TDS as Email</h3>
+                        <span class="brd-panel-note">Send the current TDS report to the team.</span>
+                    </div>
+                    <div>
+                        <label class="field-label">Recipient email</label>
+                        <input type="email" id="tdsEmail" placeholder="tds-team@company.com">
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn-secondary" onclick="sendMailTDS()">Send Mail to TDS Team</button>
+                    </div>
+                </div>
 
                 <div class="download-row">
                     <span class="dl-label">Download TDS:</span>
@@ -724,6 +1165,38 @@
                 </div>
             </div>
         </div>
+
+            <!-- TEST CASES -->
+            <div id="tab-testcases" class="tab-panel">
+                <div class="card">
+                <h2>Test Cases</h2>
+                <p class="subtitle">Generate requirement test cases (Low, Medium, Extreme) from the selected TDS.</p>
+
+                <label class="field-label">Choose TDS from active project</label>
+                <div class="project-row">
+                    <select id="tcTdsSelect"></select>
+                </div>
+                <p class="muted-note" id="tcTdsSummary">Select an existing project to load TDS options.</p>
+
+                <label class="field-label">Or upload TDS A2A card file directly</label>
+                <input type="file" id="tcCardFile" accept=".json">
+
+                <div class="btn-group">
+                    <button class="btn-primary" onclick="generateTestCases()">Generate Test Cases</button>
+                </div>
+
+                <div id="tcPostGenerationActions" class="btn-group" style="display:none;">
+                    <button class="btn-secondary" onclick="openTcPreviewModal()">Preview</button>
+                    <div class="download-row" style="margin:0;">
+                        <span class="dl-label">Download:</span>
+                        <a onclick="downloadTC('word')">Word</a>
+                        <a onclick="downloadTC('json')">JSON</a>
+                    </div>
+                </div>
+
+
+                </div>
+            </div>
 
         </div>
     </div>
@@ -775,6 +1248,71 @@
         <div style="width:40px;height:40px;border:4px solid #dde1e7;border-top-color:#2a8fa8;
              border-radius:50%;animation:spin 0.8s linear infinite;"></div>
         <div id="loadingLabel" style="font-size:0.92em;color:#2a8fa8;font-weight:600;">Processing…</div>
+    </div>
+
+    <!-- BRD PREVIEW MODAL -->
+    <div id="brdPreviewModalBackdrop" class="brd-preview-modal-backdrop" onclick="if(event.target === this) closeBrdPreviewModal()">
+        <div class="brd-preview-modal">
+            <div class="brd-preview-modal-head">
+                <span>Generated BRD Preview</span>
+                <button class="brd-preview-modal-close" onclick="closeBrdPreviewModal()">Close</button>
+            </div>
+            <div class="brd-preview-modal-body">
+                <textarea id="brdPreview" placeholder="Generated BRD report will appear here..." readonly></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- ESTIMATION PREVIEW MODAL -->
+    <div id="estimationPreviewModalBackdrop" class="brd-preview-modal-backdrop" onclick="if(event.target === this) closeEstimationPreviewModal()">
+        <div class="brd-preview-modal">
+            <div class="brd-preview-modal-head">
+                <span>Estimation Preview</span>
+                <button class="brd-preview-modal-close" onclick="closeEstimationPreviewModal()">Close</button>
+            </div>
+            <div class="brd-preview-modal-body" id="estimationPreviewModalBody" style="padding:20px; overflow-y:auto;">
+                <div id="estimationPreviewSummaryBox"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FDS PREVIEW MODAL -->
+    <div id="fdsPreviewModalBackdrop" class="brd-preview-modal-backdrop" onclick="if(event.target === this) closeFdsPreviewModal()">
+        <div class="brd-preview-modal">
+            <div class="brd-preview-modal-head">
+                <span>FDS Preview</span>
+                <button class="brd-preview-modal-close" onclick="closeFdsPreviewModal()">Close</button>
+            </div>
+            <div class="brd-preview-modal-body">
+                <textarea id="fdsPreviewModalText" placeholder="Generated FDS report will appear here..." readonly></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- TDS PREVIEW MODAL -->
+    <div id="tdsPreviewModalBackdrop" class="brd-preview-modal-backdrop" onclick="if(event.target === this) closeTdsPreviewModal()">
+        <div class="brd-preview-modal">
+            <div class="brd-preview-modal-head">
+                <span>TDS Preview</span>
+                <button class="brd-preview-modal-close" onclick="closeTdsPreviewModal()">Close</button>
+            </div>
+            <div class="brd-preview-modal-body">
+                <textarea id="tdsPreviewModalText" placeholder="Generated TDS report will appear here..." readonly></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- TEST CASES PREVIEW MODAL -->
+    <div id="tcPreviewModalBackdrop" class="brd-preview-modal-backdrop" onclick="if(event.target === this) closeTcPreviewModal()">
+        <div class="brd-preview-modal">
+            <div class="brd-preview-modal-head">
+                <span>Test Cases Preview</span>
+                <button class="brd-preview-modal-close" onclick="closeTcPreviewModal()">Close</button>
+            </div>
+            <div class="brd-preview-modal-body">
+                <textarea id="tcPreviewModalText" placeholder="Generated test cases report will appear here..." readonly></textarea>
+            </div>
+        </div>
     </div>
 
     <!-- APPROVAL MODAL -->
@@ -850,13 +1388,18 @@
     </div>
     <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <script src="{{ url_for('static', filename='vendor/mermaid.min.js') }}"></script>
     <script>
         // ── State ────────────────────────────────────────────────
         const state = {
             cardPath: '',
             brdTxtPath: '',
             brdDocxPath: '',
+            requirementGenerated: false,
+            estimationGenerated: false,
+            fdsGenerated: false,
+            tdsGenerated: false,
+            estimationBrdOptions: [],
             estimationTxtPath: '',
             estimationDocxPath: '',
             fdsTxtPath: '',
@@ -865,6 +1408,12 @@
             tdsDocxPath: '',
             tdsJsonPath: '',
             tdsSections: {},
+            tdsSectionOrder: [],
+            tdsPreviewText: '',
+            tcDocxPath: '',
+            tcJsonPath: '',
+            tcPreviewText: '',
+            relatedFolder: '',
                 activeProjectSlug: '',
                 activeProjectName: '',
                 projectMode: '',
@@ -885,11 +1434,35 @@
         };
 
             let robotChatDrag = null;
+            const currentRole = "{{ (current_role or '')|lower }}";
+            const CODEX_PORTAL_URL = "{{ (codex_portal_url or 'http://localhost:3000')|e }}";
+            const roleAgentAccess = {
+                admin: ['requirement', 'estimation', 'fds', 'tds', 'testcases'],
+                business_lead: ['requirement', 'fds'],
+                team_lead: ['tds', 'testcases'],
+            };
+
+            function allowedAgentsForRole() {
+                return roleAgentAccess[currentRole] || [];
+            }
+
+            function canAccessAgent(agentName) {
+                return allowedAgentsForRole().includes(agentName);
+            }
+
+            function firstAllowedAgentTab() {
+                const allowed = allowedAgentsForRole();
+                return allowed.length ? allowed[0] : 'home';
+            }
 
         // ── Tab switching ─────────────────────────────────────────
         function showTab(name, btn) {
+                if (['requirement', 'estimation', 'fds', 'tds', 'testcases'].includes(name) && !canAccessAgent(name)) {
+                    setStatus('Your role does not have access to ' + name.toUpperCase() + ' Agent.', true);
+                    return;
+                }
                 if (name !== 'home' && name !== 'projects' && name !== 'chatbot' && !state.activeProjectName) {
-                    setStatus('Select or create a project from Projects first.', true);
+                    setStatus('Select or create a project from Home or Projects first.', true);
                     return;
                 }
             document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -903,37 +1476,86 @@
                 showTab('projects');
             }
 
+            function openCodexPortal() {
+                const targetUrl = (CODEX_PORTAL_URL || '').trim() || 'http://localhost:3000';
+                window.open(targetUrl, '_blank', 'noopener,noreferrer');
+                setStatus('Opened Codex at ' + targetUrl + '.');
+            }
+
             function lockAgents() {
-                ['requirement', 'estimation', 'fds', 'tds'].forEach(name => {
+                ['requirement', 'estimation', 'fds', 'tds', 'testcases', 'dashboard', 'codex'].forEach(name => {
                     const b = document.getElementById('tabBtn-' + name);
                     if (b) b.classList.add('hidden-before-project');
                 });
             }
 
             function unlockAgents() {
-                ['requirement', 'estimation', 'fds', 'tds'].forEach(name => {
+                ['requirement', 'estimation', 'fds', 'tds', 'testcases'].forEach(name => {
                     const b = document.getElementById('tabBtn-' + name);
-                    if (b) b.classList.remove('hidden-before-project');
+                    if (!b) return;
+                    if (canAccessAgent(name)) b.classList.remove('hidden-before-project');
+                    else b.classList.add('hidden-before-project');
                 });
+                const dashBtn = document.getElementById('tabBtn-dashboard');
+                if (dashBtn) dashBtn.classList.remove('hidden-before-project');
+                const codexBtn = document.getElementById('tabBtn-codex');
+                if (codexBtn) codexBtn.classList.remove('hidden-before-project');
             }
 
             function updateActiveProjectInfo() {
+                const homeEl = document.getElementById('homeActiveProjectInfo');
                 const el = document.getElementById('activeProjectInfo');
                 if (!state.activeProjectName) {
-                    el.style.display = 'none';
-                    el.textContent = '';
+                    [homeEl, el].forEach(target => {
+                        if (!target) return;
+                        target.style.display = 'none';
+                        target.textContent = '';
+                    });
                     return;
                 }
                 const modeLabel = state.projectMode === 'existing' ? 'Existing' : 'New';
-                el.style.display = 'inline-block';
-                el.textContent = 'Active Project (' + modeLabel + '): ' + state.activeProjectName;
+                const relatedFolderLabel = state.relatedFolder ? ' | Related Folder: ' + state.relatedFolder : '';
+                [homeEl, el].forEach(target => {
+                    if (!target) return;
+                    target.style.display = 'inline-block';
+                    target.textContent = 'Active Project (' + modeLabel + '): ' + state.activeProjectName + relatedFolderLabel;
+                });
+            }
+
+            function _populateProjectSelect(selectId, projects) {
+                const sel = document.getElementById(selectId);
+                if (!sel) return;
+                sel.innerHTML = '';
+
+                if (!projects.length) {
+                    const opt = document.createElement('option');
+                    opt.value = '';
+                    opt.textContent = 'No existing projects found';
+                    sel.appendChild(opt);
+                    return;
+                }
+
+                projects.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.slug;
+                    opt.textContent = p.display_name + ' (' + p.slug + ')';
+                    sel.appendChild(opt);
+                });
+
+                if (state.activeProjectSlug) {
+                    sel.value = state.activeProjectSlug;
+                }
             }
 
             async function loadProjects() {
-                const sel = document.getElementById('existingProjects');
-                const summary = document.getElementById('projectsSummary');
-                sel.innerHTML = '';
-                summary.textContent = 'Loading projects...';
+                const summaryTargets = [
+                    document.getElementById('projectsSummary'),
+                    document.getElementById('homeProjectsSummary')
+                ].filter(Boolean);
+
+                summaryTargets.forEach(summary => {
+                    summary.textContent = 'Loading projects...';
+                });
 
                 try {
                     const resp = await fetch('/api/projects');
@@ -941,31 +1563,201 @@
                     if (data.error) throw new Error(data.error);
                     state.projectsCatalog = Array.isArray(data) ? data : [];
 
-                    if (!state.projectsCatalog.length) {
-                        const opt = document.createElement('option');
-                        opt.value = '';
-                        opt.textContent = 'No existing projects found';
-                        sel.appendChild(opt);
-                        summary.textContent = '0 projects found. Create a new project to continue.';
-                        return;
-                    }
+                    _populateProjectSelect('existingProjects', state.projectsCatalog);
+                    _populateProjectSelect('homeExistingProjects', state.projectsCatalog);
 
-                    state.projectsCatalog.forEach(p => {
-                        const opt = document.createElement('option');
-                        opt.value = p.slug;
-                        opt.textContent = p.display_name + ' (' + p.slug + ')';
-                        sel.appendChild(opt);
+                    const summaryText = state.projectsCatalog.length
+                        ? state.projectsCatalog.length + ' project(s) found.'
+                        : '0 projects found. Create a new project to continue.';
+                    summaryTargets.forEach(summary => {
+                        summary.textContent = summaryText;
                     });
 
-                    summary.textContent = state.projectsCatalog.length + ' project(s) found.';
+                    if (state.activeProjectSlug) {
+                        loadEstimationBrdOptions();
+                        loadTdsFdsOptions();
+                        loadTcTdsOptions();
+                    } else {
+                        clearEstimationBrdOptions('Select an existing project to load BRD options.');
+                        clearTdsFdsOptions('Select an existing project to load FDS options.');
+                    }
                 } catch (e) {
-                    summary.textContent = 'Could not load projects from server.';
+                    summaryTargets.forEach(summary => {
+                        summary.textContent = 'Could not load projects from server.';
+                    });
+                    clearEstimationBrdOptions('Could not load BRD options from server.');
+                    clearTdsFdsOptions('Could not load FDS options from server.');
                     setStatus('Failed to load projects: ' + e, true);
                 }
             }
 
-            function useSelectedProject() {
-                const slug = document.getElementById('existingProjects').value;
+            function clearEstimationBrdOptions(message = 'No BRD options available.') {
+                state.estimationBrdOptions = [];
+                const sel = document.getElementById('estimationBrdSelect');
+                if (sel) {
+                    sel.innerHTML = '';
+                    const opt = document.createElement('option');
+                    opt.value = '';
+                    opt.textContent = 'No BRDs available';
+                    sel.appendChild(opt);
+                }
+                const summary = document.getElementById('estimationBrdSummary');
+                if (summary) summary.textContent = message;
+
+                const fdsSel = document.getElementById('fdsBrdSelect');
+                if (fdsSel) {
+                    fdsSel.innerHTML = '';
+                    const opt = document.createElement('option');
+                    opt.value = '';
+                    opt.textContent = 'No BRDs available';
+                    fdsSel.appendChild(opt);
+                }
+                const fdsSummary = document.getElementById('fdsBrdSummary');
+                if (fdsSummary) fdsSummary.textContent = message;
+
+                const tdsSel = document.getElementById('tdsBrdSelect');
+                if (tdsSel) {
+                    tdsSel.innerHTML = '';
+                    const opt = document.createElement('option');
+                    opt.value = '';
+                    opt.textContent = 'No FDS available';
+                    tdsSel.appendChild(opt);
+                }
+                const tdsSummary = document.getElementById('tdsBrdSummary');
+                if (tdsSummary) tdsSummary.textContent = message.replace('BRD', 'FDS').replace('BRDs', 'FDS');
+            }
+
+            function populateEstimationBrdOptions(options) {
+                const sel = document.getElementById('estimationBrdSelect');
+                if (!sel) return;
+                sel.innerHTML = '';
+
+                if (!options.length) {
+                    clearEstimationBrdOptions('No BRDs found in this project yet. Generate BRD from Requirement Agent first.');
+                    return;
+                }
+
+                options.forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item.brd_txt_path;
+                    const cardTag = item.has_card ? 'card linked' : 'no A2A card';
+                    opt.textContent = item.brd_name + ' (' + cardTag + ')';
+                    sel.appendChild(opt);
+                });
+
+                const fdsSel = document.getElementById('fdsBrdSelect');
+                if (fdsSel) {
+                    fdsSel.innerHTML = '';
+                    options.forEach(item => {
+                        const opt = document.createElement('option');
+                        opt.value = item.brd_txt_path;
+                        const cardTag = item.has_card ? 'card linked' : 'no A2A card';
+                        opt.textContent = item.brd_name + ' (' + cardTag + ')';
+                        fdsSel.appendChild(opt);
+                    });
+                }
+
+            }
+
+            function clearTdsFdsOptions(message = 'No FDS options available.') {
+                const tdsSel = document.getElementById('tdsBrdSelect');
+                if (tdsSel) {
+                    tdsSel.innerHTML = '';
+                    const opt = document.createElement('option');
+                    opt.value = '';
+                    opt.textContent = 'No FDS available';
+                    tdsSel.appendChild(opt);
+                }
+                const tdsSummary = document.getElementById('tdsBrdSummary');
+                if (tdsSummary) tdsSummary.textContent = message;
+            }
+
+            function populateTdsFdsOptions(options) {
+                const tdsSel = document.getElementById('tdsBrdSelect');
+                if (!tdsSel) return;
+                tdsSel.innerHTML = '';
+
+                if (!options.length) {
+                    clearTdsFdsOptions('No FDS found in this project yet. Generate FDS first.');
+                    return;
+                }
+
+                options.forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item.fds_txt_path;
+                    const cardTag = item.has_tds_card ? 'tds card linked' : 'tds card missing';
+                    opt.textContent = item.fds_name + ' (' + cardTag + ')';
+                    tdsSel.appendChild(opt);
+                });
+            }
+
+            async function loadTdsFdsOptions() {
+                if (!state.activeProjectSlug) {
+                    clearTdsFdsOptions('Select an existing project to load FDS options.');
+                    return;
+                }
+
+                const tdsSummary = document.getElementById('tdsBrdSummary');
+                if (tdsSummary) tdsSummary.textContent = 'Loading FDS for project...';
+
+                try {
+                    const resp = await fetch('/api/project-fds-options?project_slug=' + encodeURIComponent(state.activeProjectSlug));
+                    const data = await resp.json();
+                    if (data.error) throw new Error(data.error);
+
+                    const options = Array.isArray(data.options) ? data.options : [];
+                    populateTdsFdsOptions(options);
+
+                    if (tdsSummary) {
+                        tdsSummary.textContent = options.length
+                            ? options.length + ' FDS option(s) found for this project.'
+                            : 'No FDS found in this project yet. Generate FDS first.';
+                    }
+                } catch (e) {
+                    clearTdsFdsOptions('Could not load FDS options from server.');
+                    setStatus('Failed to load FDS options: ' + e, true);
+                }
+            }
+
+            async function loadEstimationBrdOptions() {
+                if (!state.activeProjectSlug) {
+                    clearEstimationBrdOptions('Select an existing project to load BRD options.');
+                    return;
+                }
+
+                const summary = document.getElementById('estimationBrdSummary');
+                if (summary) summary.textContent = 'Loading BRDs for project...';
+
+                try {
+                    const resp = await fetch('/api/project-brd-options?project_slug=' + encodeURIComponent(state.activeProjectSlug));
+                    const data = await resp.json();
+                    if (data.error) throw new Error(data.error);
+
+                    const options = Array.isArray(data.options) ? data.options : [];
+                    state.estimationBrdOptions = options;
+                    populateEstimationBrdOptions(options);
+
+                    if (summary) {
+                        summary.textContent = options.length
+                            ? options.length + ' BRD option(s) found for this project.'
+                            : 'No BRDs found in this project yet. Generate BRD from Requirement Agent first.';
+                    }
+
+                    const fdsSummary = document.getElementById('fdsBrdSummary');
+                    if (fdsSummary) {
+                        fdsSummary.textContent = options.length
+                            ? options.length + ' BRD option(s) found for this project.'
+                            : 'No BRDs found in this project yet. Generate BRD from Requirement Agent first.';
+                    }
+
+                } catch (e) {
+                    clearEstimationBrdOptions('Could not load BRD options from server.');
+                    setStatus('Failed to load BRD options: ' + e, true);
+                }
+            }
+
+            function useSelectedProject(selectId = 'existingProjects') {
+                const slug = document.getElementById(selectId).value;
                 if (!slug) {
                     alert('No project selected.');
                     return;
@@ -979,14 +1771,39 @@
                 state.activeProjectSlug = project.slug;
                 state.activeProjectName = project.display_name;
                 state.projectMode = 'existing';
+                state.requirementGenerated = false;
+                state.estimationGenerated = false;
+                state.fdsGenerated = false;
+                state.tdsGenerated = false;
+                state.isApproved = false;
+                state.approval = null;
+                state.isEstimationApproved = false;
+                state.estimationApproval = null;
+                state.isFdsApproved = false;
+                state.fdsApproval = null;
+                state.isTdsApproved = false;
+                state.tdsApproval = null;
+                state.relatedFolder = '';
                 updateActiveProjectInfo();
+                updateRequirementActionVisibility();
+                updateEstimationActionVisibility();
+                updateFdsActionVisibility();
+                updateTdsActionVisibility();
                 unlockAgents();
+                loadEstimationBrdOptions();
+                loadTdsFdsOptions();
+                loadTcTdsOptions();
                 setStatus('Project selected: ' + project.display_name + '. Agents unlocked.');
-                showTab('requirement', document.getElementById('tabBtn-requirement'));
+                const firstTab = firstAllowedAgentTab();
+                showTab(firstTab, document.getElementById('tabBtn-' + firstTab));
             }
 
-            function createNewProject() {
-                const name = document.getElementById('newProjectName').value.trim();
+            function useHomeSelectedProject() {
+                useSelectedProject('homeExistingProjects');
+            }
+
+            function createNewProject(inputId = 'newProjectName') {
+                const name = document.getElementById(inputId).value.trim();
                 if (!name) {
                     alert('Enter a new project name first.');
                     return;
@@ -995,10 +1812,34 @@
                 state.activeProjectSlug = '';
                 state.activeProjectName = name;
                 state.projectMode = 'new';
+                state.requirementGenerated = false;
+                state.estimationGenerated = false;
+                state.fdsGenerated = false;
+                state.tdsGenerated = false;
+                state.isApproved = false;
+                state.approval = null;
+                state.isEstimationApproved = false;
+                state.estimationApproval = null;
+                state.isFdsApproved = false;
+                state.fdsApproval = null;
+                state.isTdsApproved = false;
+                state.tdsApproval = null;
+                state.relatedFolder = '';
+                clearEstimationBrdOptions('BRD options will be available after the first BRD is generated for this new project.');
+                clearTdsFdsOptions('FDS options will be available after the first FDS is generated for this new project.');
                 updateActiveProjectInfo();
+                updateRequirementActionVisibility();
+                updateEstimationActionVisibility();
+                updateFdsActionVisibility();
+                updateTdsActionVisibility();
                 unlockAgents();
                 setStatus('New project prepared: ' + name + '. Agents unlocked.');
-                showTab('requirement', document.getElementById('tabBtn-requirement'));
+                const firstTab = firstAllowedAgentTab();
+                showTab(firstTab, document.getElementById('tabBtn-' + firstTab));
+            }
+
+            function createHomeProject() {
+                createNewProject('homeNewProjectName');
             }
          
         // ── Status bar ────────────────────────────────────────────
@@ -1032,7 +1873,44 @@
 
         function isMermaidDiagramText(text) {
             const cleaned = (text || '').trim();
-            return cleaned.startsWith('flowchart TD') || cleaned.startsWith('sequenceDiagram') || cleaned.startsWith('erDiagram');
+            return cleaned.startsWith('flowchart TD')
+                || cleaned.startsWith('graph TD')
+                || cleaned.startsWith('graph LR')
+                || cleaned.startsWith('graph RL')
+                || cleaned.startsWith('graph BT')
+                || cleaned.startsWith('sequenceDiagram')
+                || cleaned.startsWith('erDiagram');
+        }
+
+        function toBase64UrlUTF8(text) {
+            const bytes = new TextEncoder().encode(text || '');
+            let binary = '';
+            bytes.forEach(b => { binary += String.fromCharCode(b); });
+            return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+        }
+
+        async function renderMermaidInkFallback(container) {
+            const nodes = Array.from(container.querySelectorAll('.mermaid'));
+            for (const node of nodes) {
+                const source = (node.textContent || '').trim();
+                if (!source) continue;
+                const encoded = toBase64UrlUTF8(source);
+                const url = 'https://mermaid.ink/img/' + encoded + '?bgColor=white';
+
+                const img = document.createElement('img');
+                img.src = url;
+                img.alt = 'Mermaid diagram';
+                img.style.maxWidth = '100%';
+                img.style.height = 'auto';
+                img.style.display = 'block';
+                img.style.margin = '0 auto';
+
+                const shell = node.parentElement;
+                if (shell) {
+                    shell.innerHTML = '';
+                    shell.appendChild(img);
+                }
+            }
         }
 
         async function renderTDSSections(sections, sectionOrder) {
@@ -1081,6 +1959,7 @@
             });
 
             if (!window.mermaid) {
+                await renderMermaidInkFallback(container);
                 return;
             }
 
@@ -1313,6 +2192,69 @@
             document.getElementById('loadingLabel').textContent = label;
         }
 
+        function updateRequirementActionVisibility() {
+            const generated = !!state.requirementGenerated;
+            const approved = !!state.isApproved;
+
+            const generateActions = document.getElementById('requirementGenerateActions');
+            const postGenerationActions = document.getElementById('requirementPostGenerationActions');
+            const postApprovalActions = document.getElementById('requirementPostApprovalActions');
+            const editPanel = document.getElementById('brdEditPanel');
+            const emailPanel = document.getElementById('brdEmailPanel');
+
+            if (generateActions) generateActions.style.display = generated ? 'none' : 'flex';
+            if (postGenerationActions) postGenerationActions.style.display = generated ? 'flex' : 'none';
+            if (postApprovalActions) postApprovalActions.style.display = approved ? 'flex' : 'none';
+
+            if (!generated && editPanel) editPanel.classList.remove('active');
+            if (!approved && emailPanel) emailPanel.classList.remove('active');
+        }
+
+        function updateEstimationActionVisibility() {
+            const generated = !!state.estimationGenerated;
+            const approved = !!state.isEstimationApproved;
+
+            const generateActions = document.getElementById('estimationGenerateActions');
+            const postGenerationActions = document.getElementById('estimationPostGenerationActions');
+            const postApprovalActions = document.getElementById('estimationPostApprovalActions');
+            const emailPanel = document.getElementById('estimationEmailPanel');
+
+            if (generateActions) generateActions.style.display = generated ? 'none' : 'flex';
+            if (postGenerationActions) postGenerationActions.style.display = generated ? 'flex' : 'none';
+            if (postApprovalActions) postApprovalActions.style.display = approved ? 'flex' : 'none';
+            if (!approved && emailPanel) emailPanel.classList.remove('active');
+        }
+
+        function updateFdsActionVisibility() {
+            const generated = !!state.fdsGenerated;
+            const approved = !!state.isFdsApproved;
+
+            const generateActions = document.getElementById('fdsGenerateActions');
+            const postGenerationActions = document.getElementById('fdsPostGenerationActions');
+            const postApprovalActions = document.getElementById('fdsPostApprovalActions');
+            const emailPanel = document.getElementById('fdsEmailPanel');
+
+            if (generateActions) generateActions.style.display = generated ? 'none' : 'flex';
+            if (postGenerationActions) postGenerationActions.style.display = generated ? 'flex' : 'none';
+            if (postApprovalActions) postApprovalActions.style.display = approved ? 'flex' : 'none';
+            if (!approved && emailPanel) emailPanel.classList.remove('active');
+        }
+
+        function updateTdsActionVisibility() {
+            const generated = !!state.tdsGenerated;
+            const approved = !!state.isTdsApproved;
+
+            const generateActions = document.getElementById('tdsGenerateActions');
+            const postGenerationActions = document.getElementById('tdsPostGenerationActions');
+            const postApprovalActions = document.getElementById('tdsPostApprovalActions');
+            const emailPanel = document.getElementById('tdsEmailPanel');
+
+            if (generateActions) generateActions.style.display = generated ? 'none' : 'flex';
+            if (postGenerationActions) postGenerationActions.style.display = generated ? 'flex' : 'none';
+            if (postApprovalActions) postApprovalActions.style.display = approved ? 'flex' : 'none';
+            if (!approved && emailPanel) emailPanel.classList.remove('active');
+        }
+
         // ── Job polling ───────────────────────────────────────────
         function pollJob(jobId, onDone, onError, label = 'Processing\u2026') {
             setLoading(true, label);
@@ -1381,18 +2323,34 @@
                 result => {
                     document.getElementById('brdPreview').value = result.brd_text || '';
                     document.getElementById('brdEdit').value    = result.brd_text || '';
+                    openBrdPreviewModal();
+                    document.getElementById('brdEditPanel').classList.remove('active');
+                    document.getElementById('brdEmailPanel').classList.remove('active');
                     state.cardPath    = result.card_path    || '';
                     state.brdTxtPath  = result.txt_path     || '';
                     state.brdDocxPath = result.docx_path    || '';
+                    state.requirementGenerated = true;
                     state.isApproved = false;
                     state.approval = null;
                     document.getElementById('approvalSummary').style.display = 'none';
+                    updateRequirementActionVisibility();
+                    refreshDashboard();
                     if (result.project_name) {
                         state.activeProjectName = result.project_name;
                         updateActiveProjectInfo();
                     }
+                    if (result.project_slug) {
+                        state.activeProjectSlug = result.project_slug;
+                    }
+                    state.relatedFolder = result.related_folder || '';
+                    updateActiveProjectInfo();
+                    loadEstimationBrdOptions();
+                    loadTdsFdsOptions();
+                    loadTcTdsOptions();
                     setStatus('BRD generated \u2714  Project: ' + (result.project_name || '') +
-                              '  |  Requirements: ' + (result.stats?.total_requirements ?? ''));
+                              '  |  Requirements: ' + (result.stats?.total_requirements ?? '') +
+                              (result.related_file ? '  |  Related File: ' + result.related_file : '') +
+                              (result.related_folder ? '  |  Related Folder: ' + result.related_folder : ''));
                     setAgentStatus('idle');
                 },
                 err => {
@@ -1404,13 +2362,171 @@
         }
 
         function openApprovalModal() {
-            if (!state.cardPath) {
+            if (!state.requirementGenerated || !state.cardPath) {
                 alert('Generate a BRD first before approval.');
                 return;
             }
             document.getElementById('approverNameInput').value = getDefaultApproverName();
             document.getElementById('approverPositionInput').value = 'Business Owner';
             document.getElementById('approvalModalBackdrop').style.display = 'flex';
+        }
+
+        function toggleBrdPanel(panelName) {
+            const editPanel = document.getElementById('brdEditPanel');
+            const emailPanel = document.getElementById('brdEmailPanel');
+            if (!editPanel || !emailPanel) return;
+
+            if (!state.requirementGenerated) {
+                alert('Generate a BRD first, then edit it.');
+                return;
+            }
+
+            const shouldShowEdit = panelName === 'edit' && !editPanel.classList.contains('active');
+            const shouldShowEmail = panelName === 'email' && !emailPanel.classList.contains('active');
+
+            editPanel.classList.toggle('active', shouldShowEdit);
+            emailPanel.classList.toggle('active', shouldShowEmail);
+
+            if (panelName === 'edit' && shouldShowEdit) {
+                const editArea = document.getElementById('brdEdit');
+                const previewText = document.getElementById('brdPreview').value || '';
+                if (editArea && !editArea.value.trim() && previewText.trim()) {
+                    editArea.value = previewText;
+                }
+                if (editArea) editArea.focus();
+            }
+
+            if (panelName === 'edit') {
+                emailPanel.classList.remove('active');
+            } else if (panelName === 'email') {
+                editPanel.classList.remove('active');
+            }
+        }
+
+        function openBrdPreviewModal() {
+            const backdrop = document.getElementById('brdPreviewModalBackdrop');
+            if (backdrop) backdrop.classList.add('active');
+        }
+
+        function closeBrdPreviewModal() {
+            const backdrop = document.getElementById('brdPreviewModalBackdrop');
+            if (backdrop) backdrop.classList.remove('active');
+        }
+
+        function _buildEstimationPreviewHTML(previewText) {
+            const lines = (previewText || '').split('\n');
+            let html = '';
+            let inBreakdown = false;
+
+            lines.forEach(line => {
+                const trimmed = line.trim();
+                if (!trimmed || /^─+$/.test(trimmed)) return;
+
+                if (trimmed === 'PROJECT SIZE') {
+                    html += '<div style="margin-bottom:18px"><div style="font-size:0.72em;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6b7a99;margin-bottom:4px">Project Size</div>';
+                } else if (trimmed === 'INVESTMENT RANGE') {
+                    html += '</div><div style="margin-bottom:18px"><div style="font-size:0.72em;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6b7a99;margin-bottom:4px">Investment Range</div>';
+                } else if (trimmed.startsWith('EFFORT BREAKDOWN')) {
+                    inBreakdown = true;
+                    html += '</div><div style="margin-bottom:18px"><div style="font-size:0.72em;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6b7a99;margin-bottom:10px">Effort Breakdown</div><table style="width:100%;border-collapse:collapse;font-size:0.88em">';
+                } else if (inBreakdown && trimmed.startsWith('(Original:')) {
+                    inBreakdown = false;
+                    html += '</table><div style="margin-top:8px;font-size:0.8em;color:#6b7a99">' + _esc(trimmed) + '</div></div>';
+                } else if (inBreakdown && trimmed.includes(':')) {
+                    const colonIdx = trimmed.indexOf(':');
+                    const label = trimmed.slice(0, colonIdx).trim();
+                    const val = trimmed.slice(colonIdx + 1).trim();
+                    const isBold = label.startsWith('TOTAL');
+                    html += '<tr style="border-top:1px solid #e8ecf2"><td style="padding:7px 10px 7px 0;color:' + (isBold ? '#163b61' : '#22313f') + ';font-weight:' + (isBold ? '700' : '400') + '">' + _esc(label) + '</td><td style="padding:7px 0;text-align:right;font-variant-numeric:tabular-nums;font-weight:' + (isBold ? '700' : '400') + ';color:' + (isBold ? '#163b61' : '#22313f') + '">' + _esc(val) + '</td></tr>';
+                } else {
+                    html += '<div style="font-size:1.18em;font-weight:700;color:#163b61;margin-bottom:2px">' + _esc(trimmed) + '</div>';
+                }
+            });
+            return html || '<p style="color:#6b7a99">No estimation data available yet. Generate estimation first.</p>';
+        }
+
+        function _esc(str) {
+            return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        function openEstimationPreviewModal() {
+            const previewText = document.getElementById('estimationPreview').value;
+            const box = document.getElementById('estimationPreviewSummaryBox');
+            if (box) box.innerHTML = _buildEstimationPreviewHTML(previewText);
+            const backdrop = document.getElementById('estimationPreviewModalBackdrop');
+            if (backdrop) backdrop.classList.add('active');
+        }
+
+        function closeEstimationPreviewModal() {
+            const backdrop = document.getElementById('estimationPreviewModalBackdrop');
+            if (backdrop) backdrop.classList.remove('active');
+        }
+
+        function openFdsPreviewModal() {
+            const previewText = document.getElementById('fdsPreview').value.trim();
+            if (!previewText) {
+                alert('Generate FDS first before preview.');
+                return;
+            }
+            const modalText = document.getElementById('fdsPreviewModalText');
+            if (modalText) modalText.value = previewText;
+            const backdrop = document.getElementById('fdsPreviewModalBackdrop');
+            if (backdrop) backdrop.classList.add('active');
+        }
+
+        function closeFdsPreviewModal() {
+            const backdrop = document.getElementById('fdsPreviewModalBackdrop');
+            if (backdrop) backdrop.classList.remove('active');
+        }
+
+        function _buildTdsPreviewText() {
+            const sections = state.tdsSections || {};
+            const preferredOrder = Array.isArray(state.tdsSectionOrder) ? state.tdsSectionOrder : [];
+            const keys = preferredOrder.length ? preferredOrder : Object.keys(sections);
+            if (!keys.length) return '';
+
+            const parts = [];
+            keys.forEach(sectionName => {
+                const body = sections[sectionName] || '';
+                parts.push(sectionName);
+                parts.push('-'.repeat(String(sectionName).length));
+                parts.push(body);
+                parts.push('');
+            });
+            return parts.join('\n').trim();
+        }
+
+        function openTdsPreviewModal() {
+            let previewText = (state.tdsPreviewText || '').trim();
+            if (!previewText) {
+                previewText = _buildTdsPreviewText();
+                state.tdsPreviewText = previewText;
+                const hiddenPreview = document.getElementById('tdsPreview');
+                if (hiddenPreview) hiddenPreview.value = previewText;
+            }
+            if (!previewText) {
+                alert('Generate TDS first before preview.');
+                return;
+            }
+
+            const modalText = document.getElementById('tdsPreviewModalText');
+            if (modalText) modalText.value = previewText;
+            const backdrop = document.getElementById('tdsPreviewModalBackdrop');
+            if (backdrop) backdrop.classList.add('active');
+        }
+
+        function closeTdsPreviewModal() {
+            const backdrop = document.getElementById('tdsPreviewModalBackdrop');
+            if (backdrop) backdrop.classList.remove('active');
+        }
+
+        function openBrdEmailPanel() {
+            const editPanel = document.getElementById('brdEditPanel');
+            const emailPanel = document.getElementById('brdEmailPanel');
+            if (emailPanel) emailPanel.classList.add('active');
+            if (editPanel) editPanel.classList.remove('active');
+            const emailInput = document.getElementById('brdEmail');
+            if (emailInput) emailInput.focus();
         }
 
         function closeApprovalModal() {
@@ -1519,6 +2635,8 @@
             const summary = document.getElementById('approvalSummary');
             summary.style.display = 'block';
             summary.textContent = 'Approved by ' + approvedBy + ' (' + approverRole + '). Card updated and ready for estimation.';
+            updateRequirementActionVisibility();
+            refreshDashboard();
 
             closeApprovalModal();
             setStatus('BRD approved ✔ A2A card updated. You can now send to Estimation.');
@@ -1542,7 +2660,7 @@
                 resp = await fetch('/api/run-estimation', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ card_path: state.cardPath }),
+                    body: JSON.stringify({ brd_txt_path: state.brdTxtPath || '' }),
                 });
                 data = await resp.json();
             } catch (e) {
@@ -1557,9 +2675,12 @@
                 result => {
                     state.estimationTxtPath  = result.estimation_txt_path  || '';
                     state.estimationDocxPath = result.estimation_docx_path || '';
+                    state.estimationGenerated = true;
                     state.isEstimationApproved = false;
                     state.estimationApproval = null;
                     document.getElementById('estimationApprovalSummary').style.display = 'none';
+                    updateEstimationActionVisibility();
+                    refreshDashboard();
                     document.querySelector('[onclick*="estimation"]').click();
                     
                     // Build preview with size, investment, and hours breakdown
@@ -1576,7 +2697,7 @@
                         previewText += '(Original: ' + result.breakdown.total_original + ' hours + 32-hour buffer)';
                     }
                     document.getElementById('estimationPreview').value = previewText;
-                    document.getElementById('cardPath').value = state.cardPath || '';
+                    openEstimationPreviewModal();
                     setStatus(
                         'Estimation complete ✔  Size: ' + result.size +
                         '  |  Total: ' + result.total_with_buffer + ' hrs (with buffer)' +
@@ -1592,19 +2713,170 @@
             );
         }
 
-        // ── Regenerate BRD after edit ─────────────────────────────
-        function regenerateBRD() {
+        // ── Save edited BRD content ──────────────────────────────
+        async function saveEditedBRD() {
+            if (!state.cardPath) {
+                alert('No card available. Generate a BRD first.');
+                return;
+            }
+
             const edited = document.getElementById('brdEdit').value.trim();
-            if (!edited) { alert('No edited BRD content to regenerate from.'); return; }
+            if (!edited) { alert('No edited BRD content to save.'); return; }
             document.getElementById('brdPreview').value = edited;
-            setStatus('BRD preview updated with edited content.');
+
+            setAgentStatus('running', 'Requirement');
+            setStatus('Saving BRD edits...');
+
+            let resp, data;
+            try {
+                resp = await fetch('/api/save-brd-edit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        card_path: state.cardPath,
+                        brd_text: edited,
+                        txt_path: state.brdTxtPath || '',
+                        docx_path: state.brdDocxPath || '',
+                    }),
+                });
+                data = await resp.json();
+            } catch (e) {
+                setStatus('Network error while saving BRD edits: ' + e, true);
+                setAgentStatus('error');
+                return;
+            }
+
+            if (data.error) {
+                setStatus(data.error, true);
+                setAgentStatus('error');
+                return;
+            }
+
+            state.brdTxtPath = data.txt_path || state.brdTxtPath;
+            state.brdDocxPath = data.docx_path || state.brdDocxPath;
+            state.isApproved = false;
+            state.approval = data.approval || null;
+            document.getElementById('approvalSummary').style.display = 'none';
+            updateRequirementActionVisibility();
+            refreshDashboard();
+            setStatus(data.message || 'Edited BRD saved successfully.');
+            setAgentStatus('idle');
         }
 
         // ── Send Mail ─────────────────────────────────────────────
+        function openEstimationEmailPanel() {
+            const panel = document.getElementById('estimationEmailPanel');
+            if (!panel) return;
+            const isActive = panel.classList.contains('active');
+            panel.classList.toggle('active', !isActive);
+            if (!isActive) {
+                const emailInput = document.getElementById('estimationEmail');
+                if (emailInput) emailInput.focus();
+            }
+        }
+
+        async function sendMailEstimation() {
+            const email = document.getElementById('estimationEmail').value.trim();
+            if (!email) { alert('Please enter a recipient email address.'); return; }
+            const body = document.getElementById('estimationPreview').value.trim();
+            const attachmentPath = state.estimationDocxPath || state.estimationTxtPath || '';
+            let resp, data;
+            try {
+                resp = await fetch('/api/send-mail', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email,
+                        subject: 'Estimation Report',
+                        body: body,
+                        attachment_path: attachmentPath,
+                    }),
+                });
+                data = await resp.json();
+            } catch (e) {
+                setStatus('Network error: ' + e, true); return;
+            }
+            if (data.error) { setStatus(data.error, true); return; }
+            setStatus(data.message || 'Estimation mail sent.');
+        }
+
+        function openFdsEmailPanel() {
+            const panel = document.getElementById('fdsEmailPanel');
+            if (!panel) return;
+            const isActive = panel.classList.contains('active');
+            panel.classList.toggle('active', !isActive);
+            if (!isActive) {
+                const emailInput = document.getElementById('fdsEmail');
+                if (emailInput) emailInput.focus();
+            }
+        }
+
+        async function sendMailFDS() {
+            const email = document.getElementById('fdsEmail').value.trim();
+            if (!email) { alert('Please enter a recipient email address.'); return; }
+            const body = document.getElementById('fdsPreview').value.trim();
+            const attachmentPath = state.fdsDocxPath || state.fdsTxtPath || '';
+            let resp, data;
+            try {
+                resp = await fetch('/api/send-mail', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email,
+                        subject: 'FDS Report',
+                        body,
+                        attachment_path: attachmentPath,
+                    }),
+                });
+                data = await resp.json();
+            } catch (e) {
+                setStatus('Network error: ' + e, true); return;
+            }
+            if (data.error) { setStatus(data.error, true); return; }
+            setStatus(data.message || 'FDS mail sent.');
+        }
+
+        function openTdsEmailPanel() {
+            const panel = document.getElementById('tdsEmailPanel');
+            if (!panel) return;
+            const isActive = panel.classList.contains('active');
+            panel.classList.toggle('active', !isActive);
+            if (!isActive) {
+                const emailInput = document.getElementById('tdsEmail');
+                if (emailInput) emailInput.focus();
+            }
+        }
+
+        async function sendMailTDS() {
+            const email = document.getElementById('tdsEmail').value.trim();
+            if (!email) { alert('Please enter a recipient email address.'); return; }
+            const body = document.getElementById('tdsPreview').value.trim();
+            const attachmentPath = state.tdsDocxPath || state.tdsJsonPath || '';
+            let resp, data;
+            try {
+                resp = await fetch('/api/send-mail', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email,
+                        subject: 'TDS Report',
+                        body,
+                        attachment_path: attachmentPath,
+                    }),
+                });
+                data = await resp.json();
+            } catch (e) {
+                setStatus('Network error: ' + e, true); return;
+            }
+            if (data.error) { setStatus(data.error, true); return; }
+            setStatus(data.message || 'TDS mail sent.');
+        }
+
         async function sendMailBRD() {
             const email = document.getElementById('brdEmail').value.trim();
             if (!email) { alert('Please enter a BRD team email address.'); return; }
             const brd = document.getElementById('brdPreview').value.trim();
+            const attachmentPath = state.brdDocxPath || state.brdTxtPath || '';
             let resp, data;
             try {
                 resp = await fetch('/api/send-mail', {
@@ -1614,7 +2886,7 @@
                         email,
                         subject: 'BRD Report',
                         body: brd,
-                        attachment_path: state.brdTxtPath || '',
+                        attachment_path: attachmentPath,
                     }),
                 });
                 data = await resp.json();
@@ -1637,17 +2909,12 @@
 
         // ── Estimation tab: run estimation from card ──────────────
         async function generateEstimation() {
-            const path = document.getElementById('cardPath').value.trim();
+            const sel = document.getElementById('estimationBrdSelect');
+            const selectedBrdPath = sel ? sel.value.trim() : '';
             const file = document.getElementById('cardFile').files[0];
-            let cardPath = path || state.cardPath;
 
-            if (!cardPath && !file) {
-                alert('Please provide an A2A card path or upload a card file.'); return;
-            }
-
-            // If a file was uploaded, upload it first (not yet supported — prompt path)
-            if (!cardPath && file) {
-                alert('Please enter the card file path in the text field. File upload for cards is not yet supported in this tab.');
+            if (!selectedBrdPath && !file) {
+                alert('Please choose a BRD or upload an A2A card file.');
                 return;
             }
 
@@ -1655,10 +2922,12 @@
             setStatus('Running Estimation Agent\u2026');
             let resp, data;
             try {
+                const form = new FormData();
+                if (selectedBrdPath) form.append('brd_txt_path', selectedBrdPath);
+                if (file) form.append('card_file', file);
                 resp = await fetch('/api/run-estimation', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ card_path: cardPath }),
+                    body: form,
                 });
                 data = await resp.json();
             } catch (e) {
@@ -1673,9 +2942,12 @@
                 result => {
                     state.estimationTxtPath  = result.estimation_txt_path  || '';
                     state.estimationDocxPath = result.estimation_docx_path || '';
+                    state.estimationGenerated = true;
                     state.isEstimationApproved = false;
                     state.estimationApproval = null;
                     document.getElementById('estimationApprovalSummary').style.display = 'none';
+                    updateEstimationActionVisibility();
+                    refreshDashboard();
                     
                     // Build preview with size, investment, and hours breakdown
                     let previewText = 'PROJECT SIZE\n' + result.size + '\n\nINVESTMENT RANGE\n' + result.investment + '\n\n';
@@ -1691,9 +2963,9 @@
                         previewText += '(Original: ' + result.breakdown.total_original + ' hours + 32-hour buffer)';
                     }
                     document.getElementById('estimationPreview').value = previewText;
-                    if (cardPath) {
-                        state.cardPath = cardPath;
-                        document.getElementById('cardPath').value = cardPath;
+                    openEstimationPreviewModal();
+                    if (result.card_path) {
+                        state.cardPath = result.card_path;
                     }
                     setStatus(
                         'Estimation complete \u2714  Size: ' + result.size +
@@ -1762,14 +3034,16 @@
             const summary = document.getElementById('estimationApprovalSummary');
             summary.style.display = 'block';
             summary.textContent = 'Estimation approved by ' + approvedBy + ' (' + approverRole + '). Card updated.';
+            updateEstimationActionVisibility();
+            refreshDashboard();
 
             closeEstimationApprovalModal();
             setStatus('Estimation approved ✔ A2A card updated.');
         }
 
         async function submitFdsApproval() {
-            if (!state.tdsCardPath) {
-                alert('No TDS handoff card available. Generate FDS first.');
+            if (!state.fdsGenerated || !state.cardPath) {
+                alert('No FDS available. Generate FDS first.');
                 return;
             }
 
@@ -1789,7 +3063,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        card_path: state.tdsCardPath,
+                        card_path: state.cardPath,
                         approved_by: approvedBy,
                         approver_role: approverRole,
                         comments: 'Approved via Web UI FDS popup.',
@@ -1813,6 +3087,8 @@
             const summary = document.getElementById('fdsApprovalSummary');
             summary.style.display = 'block';
             summary.textContent = 'FDS approved by ' + approvedBy + ' (' + approverRole + '). Card updated and ready for TDS.';
+            updateFdsActionVisibility();
+            refreshDashboard();
 
             closeFdsApprovalModal();
             setStatus('FDS approved ✔ handoff card updated. You can now send to TDS.');
@@ -1866,17 +3142,20 @@
             const summary = document.getElementById('tdsApprovalSummary');
             summary.style.display = 'block';
             summary.textContent = 'TDS approved by ' + approvedBy + ' (' + approverRole + '). Card updated.';
+            updateTdsActionVisibility();
+            refreshDashboard();
 
             closeTdsApprovalModal();
             setStatus('TDS approved ✔ handoff card updated.');
         }
 
         async function generateFDS() {
-            const inputPath = document.getElementById('fdsCardPath').value.trim();
-            const cardPath = inputPath || state.cardPath;
+            const sel = document.getElementById('fdsBrdSelect');
+            const selectedBrdPath = sel ? sel.value.trim() : '';
+            const file = document.getElementById('fdsCardFile').files[0];
 
-            if (!cardPath) {
-                alert('No A2A card available. Generate BRD first.');
+            if (!selectedBrdPath && !file) {
+                alert('Please choose a BRD or upload an A2A card file.');
                 return;
             }
 
@@ -1884,10 +3163,12 @@
             setStatus('Running FDS Agent…');
             let resp, data;
             try {
+                const form = new FormData();
+                if (selectedBrdPath) form.append('brd_txt_path', selectedBrdPath);
+                if (file) form.append('card_file', file);
                 resp = await fetch('/api/run-fds', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ card_path: cardPath }),
+                    body: form,
                 });
                 data = await resp.json();
             } catch (e) {
@@ -1907,25 +3188,35 @@
                     state.fdsTxtPath = result.fds_txt_path || '';
                     state.fdsDocxPath = result.fds_docx_path || '';
                     state.tdsCardPath = result.tds_card_path || '';
-                    state.cardPath = cardPath;
+                    state.cardPath = result.card_path || state.cardPath;
+                    state.fdsGenerated = true;
                     state.isFdsApproved = false;
                     state.fdsApproval = null;
                     document.getElementById('fdsApprovalSummary').style.display = 'none';
+                    updateFdsActionVisibility();
+                    refreshDashboard();
                     state.isTdsApproved = false;
                     state.tdsApproval = null;
+                    state.tdsGenerated = false;
                     document.getElementById('tdsApprovalSummary').style.display = 'none';
+                    updateTdsActionVisibility();
 
-                    document.getElementById('fdsCardPath').value = cardPath;
                     document.getElementById('fdsPreview').value = result.fds_text || '';
 
                     if (result.project_name) {
                         state.activeProjectName = result.project_name;
                         updateActiveProjectInfo();
                     }
+                    state.relatedFolder = result.related_folder || '';
+                    updateActiveProjectInfo();
+                    loadTdsFdsOptions();
+                    loadTcTdsOptions();
 
                     setStatus(
                         'FDS complete ✔  Sections: ' + (result.sections_count ?? '') +
-                        '  |  TDS card prepared: ' + (state.tdsCardPath ? 'Yes' : 'No')
+                        '  |  TDS card prepared: ' + (state.tdsCardPath ? 'Yes' : 'No') +
+                        (result.related_file ? '  |  Related File: ' + result.related_file : '') +
+                        (result.related_folder ? '  |  Related Folder: ' + result.related_folder : '')
                     );
                     setAgentStatus('idle');
                 },
@@ -1942,12 +3233,13 @@
                 alert('Approve estimation first before sending to FDS.');
                 return;
             }
-            if (!state.cardPath) {
+            if (!state.brdTxtPath) {
                 alert('No card available. Generate BRD first.');
                 return;
             }
 
-            document.getElementById('fdsCardPath').value = state.cardPath;
+            const sel = document.getElementById('fdsBrdSelect');
+            if (sel) sel.value = state.brdTxtPath;
             showTab('fds', document.getElementById('tabBtn-fds'));
             generateFDS();
         }
@@ -1969,7 +3261,7 @@
         }
 
         function sendToTDS() {
-            if (!state.tdsCardPath) {
+            if (!state.fdsTxtPath) {
                 alert('Generate FDS first to create a TDS input card.');
                 return;
             }
@@ -1977,30 +3269,38 @@
                 alert('Approve FDS first before sending to TDS.');
                 return;
             }
-            document.getElementById('tdsCardPathInput').value = state.tdsCardPath;
-            setStatus('TDS handoff ready. Using card: ' + state.tdsCardPath);
+            const sel = document.getElementById('tdsBrdSelect');
+            if (sel) sel.value = state.fdsTxtPath;
+            setStatus('TDS handoff ready. Using selected FDS source.');
             showTab('tds', document.getElementById('tabBtn-tds'));
             generateTDS();
         }
 
         async function generateTDS() {
-            const inputPath = document.getElementById('tdsCardPathInput').value.trim();
-            const cardPath = inputPath || state.tdsCardPath;
+            const sel = document.getElementById('tdsBrdSelect');
+            const selectedFdsPath = sel ? sel.value.trim() : '';
+            const file = document.getElementById('tdsCardFile').files[0];
 
-            if (!cardPath) {
-                alert('No TDS card available. Generate FDS first.');
+            if (!selectedFdsPath && !file) {
+                alert('Please choose a FDS or upload a TDS card file.');
                 return;
             }
 
             setAgentStatus('running', 'TDS');
             setStatus('Running TDS Agent…');
             renderTDSSections({}, []);
+            state.tdsSectionOrder = [];
+            state.tdsPreviewText = '';
+            const hiddenPreview = document.getElementById('tdsPreview');
+            if (hiddenPreview) hiddenPreview.value = '';
             let resp, data;
             try {
+                const form = new FormData();
+                if (selectedFdsPath) form.append('fds_txt_path', selectedFdsPath);
+                if (file) form.append('card_file', file);
                 resp = await fetch('/api/run-tds', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ card_path: cardPath }),
+                    body: form,
                 });
                 data = await resp.json();
             } catch (e) {
@@ -2017,25 +3317,35 @@
             pollJob(
                 data.job_id,
                 result => {
-                    state.tdsCardPath = cardPath;
+                    state.tdsCardPath = result.card_path || state.tdsCardPath;
                     state.tdsDocxPath = result.tds_docx_path || '';
                     state.tdsJsonPath = result.tds_json_path || '';
                     state.tdsSections = result.sections || {};
+                    state.tdsSectionOrder = result.section_order || [];
+                    state.tdsPreviewText = result.tds_preview || _buildTdsPreviewText();
+                    state.tdsGenerated = true;
                     state.isTdsApproved = false;
                     state.tdsApproval = null;
                     document.getElementById('tdsApprovalSummary').style.display = 'none';
+                    updateTdsActionVisibility();
+                    refreshDashboard();
 
-                    document.getElementById('tdsCardPathInput').value = cardPath;
-                    renderTDSSections(state.tdsSections, result.section_order || []);
+                    renderTDSSections(state.tdsSections, state.tdsSectionOrder);
+                    const tdsPreviewEl = document.getElementById('tdsPreview');
+                    if (tdsPreviewEl) tdsPreviewEl.value = state.tdsPreviewText;
 
                     if (result.project_name) {
                         state.activeProjectName = result.project_name;
                         updateActiveProjectInfo();
                     }
+                    state.relatedFolder = result.related_folder || '';
+                    updateActiveProjectInfo();
 
                     setStatus(
                         'TDS complete ✔  Sections: ' + (result.sections_count ?? '') +
-                        '  |  Outputs ready for download.'
+                        '  |  Outputs ready for download.' +
+                        (result.related_file ? '  |  Related File: ' + result.related_file : '') +
+                        (result.related_folder ? '  |  Related Folder: ' + result.related_folder : '')
                     );
                     setAgentStatus('idle');
                 },
@@ -2061,6 +3371,261 @@
                 return;
             }
             window.location.href = '/api/download?path=' + encodeURIComponent(path);
+        }
+
+        // ── Test Cases ────────────────────────────────────────────
+        function loadTcTdsOptions() {
+            const sel = document.getElementById('tcTdsSelect');
+            const summary = document.getElementById('tcTdsSummary');
+            if (!sel) return;
+            if (!state.activeProjectName) {
+                sel.innerHTML = '<option value="">— select project first —</option>';
+                if (summary) summary.textContent = 'Select an existing project to load TDS options.';
+                return;
+            }
+            fetch('/api/project-tds-options?project_slug=' + encodeURIComponent(state.activeProjectSlug))
+                .then(r => r.json())
+                .then(data => {
+                    const opts = data.options || [];
+                    if (!opts.length) {
+                        sel.innerHTML = '<option value="">— no TDS files yet —</option>';
+                        if (summary) summary.textContent = 'Generate TDS first to unlock test case generation.';
+                        return;
+                    }
+                    sel.innerHTML = opts.map(o =>
+                        `<option value="${o.tds_json_path}">${o.tds_name}</option>`
+                    ).join('');
+                    if (summary) summary.textContent = opts.length + ' TDS file(s) available.';
+                })
+                .catch(() => {
+                    if (summary) summary.textContent = 'Could not load TDS options.';
+                });
+        }
+
+        async function generateTestCases() {
+            const sel = document.getElementById('tcTdsSelect');
+            const selectedTdsPath = sel ? sel.value.trim() : '';
+            const file = document.getElementById('tcCardFile').files[0];
+
+            if (!selectedTdsPath && !file) {
+                alert('Please choose a TDS file or upload a TDS card file.');
+                return;
+            }
+
+            setStatus('Running Test Cases Agent…');
+            document.getElementById('tcPostGenerationActions').style.display = 'none';
+
+            let resp, data;
+            try {
+                const form = new FormData();
+                if (selectedTdsPath) form.append('tds_json_path', selectedTdsPath);
+                if (file) form.append('card_file', file);
+                resp = await fetch('/api/run-test-cases', { method: 'POST', body: form });
+                data = await resp.json();
+            } catch (e) {
+                setStatus('Network error: ' + e, true);
+                return;
+            }
+            if (data.error) {
+                setStatus(data.error, true);
+                return;
+            }
+
+            pollJob(
+                data.job_id,
+                result => {
+                    state.tcDocxPath = result.tc_docx_path || '';
+                    state.tcJsonPath = result.tc_json_path || '';
+                    state.tcPreviewText = result.tc_preview || '';
+                    document.getElementById('tcPostGenerationActions').style.display = '';
+                    setStatus('Test cases generated ✔  Ready to download.');
+                },
+                err => setStatus('Test Cases failed: ' + err.split('\n')[0], true),
+                'Running Test Cases Agent (this may take a moment)…'
+            );
+        }
+
+        function downloadTC(format) {
+            const path = format === 'word' ? state.tcDocxPath : state.tcJsonPath;
+            if (!path) { alert('Generate test cases first.'); return; }
+            window.location.href = '/api/download?path=' + encodeURIComponent(path);
+        }
+
+        function openTcPreviewModal() {
+            const previewText = (state.tcPreviewText || '').trim();
+            if (!previewText) {
+                alert('Generate test cases first before preview.');
+                return;
+            }
+
+            const modalText = document.getElementById('tcPreviewModalText');
+            if (modalText) modalText.value = previewText;
+            const backdrop = document.getElementById('tcPreviewModalBackdrop');
+            if (backdrop) backdrop.classList.add('active');
+        }
+
+        function closeTcPreviewModal() {
+            const backdrop = document.getElementById('tcPreviewModalBackdrop');
+            if (backdrop) backdrop.classList.remove('active');
+        }
+
+        // ── Dashboard ─────────────────────────────────────────────
+        function refreshDashboard() {
+            const noProject    = document.getElementById('dashNoProject');
+            const brdListWrap  = document.getElementById('dashBrdList');
+            const journeyDetail= document.getElementById('dashJourneyDetail');
+            const projectName  = document.getElementById('dashProjectName');
+
+            if (!state.activeProjectName) {
+                if (noProject)    noProject.style.display = '';
+                if (brdListWrap)  brdListWrap.style.display = 'none';
+                if (journeyDetail) journeyDetail.style.display = 'none';
+                if (projectName)  projectName.textContent = 'Select or create a project to see its BRDs.';
+                return;
+            }
+
+            if (noProject) noProject.style.display = 'none';
+            if (projectName) projectName.textContent = 'Project: ' + state.activeProjectName;
+
+            // Load BRD list for this project
+            loadDashBrdList();
+        }
+
+        function loadDashBrdList() {
+            const brdListWrap = document.getElementById('dashBrdList');
+            const brdCards    = document.getElementById('dashBrdCards');
+            const brdNote     = document.getElementById('dashBrdNote');
+            if (!brdCards) return;
+
+            // Hide journey detail when reloading list
+            const journeyDetail = document.getElementById('dashJourneyDetail');
+            if (journeyDetail) journeyDetail.style.display = 'none';
+
+            brdCards.innerHTML = '<span style="font-size:0.82em;color:#667;">Loading...</span>';
+            if (brdListWrap) brdListWrap.style.display = 'block';
+
+            fetch('/api/project-brd-options?project_slug=' + encodeURIComponent(state.activeProjectSlug))
+                .then(r => r.json())
+                .then(data => {
+                    const options = data.options || [];
+                    brdCards.innerHTML = '';
+                    if (options.length === 0) {
+                        if (brdNote) brdNote.textContent = 'No BRDs found for this project yet.';
+                        return;
+                    }
+                    if (brdNote) brdNote.textContent = 'Click a BRD to view its SDLC journey.';
+                    options.forEach(opt => {
+                        const card = document.createElement('div');
+                        card.className = 'dash-brd-card';
+                        card.dataset.cardPath = opt.card_path || '';
+                        card.dataset.brdName  = opt.brd_name;
+
+                        let badgeClass = 'no-card';
+                        let badgeText  = 'No card';
+                        if (opt.has_card) {
+                            if (opt.approval_status === 'approved') {
+                                badgeClass = 'approved'; badgeText = 'BRD Approved';
+                            } else {
+                                badgeClass = 'pending'; badgeText = 'In Progress';
+                            }
+                        }
+
+                        card.innerHTML = `
+                            <div class="dash-brd-card-name">${opt.brd_name}</div>
+                            <span class="dash-brd-card-badge ${badgeClass}">${badgeText}</span>
+                        `;
+                        card.addEventListener('click', () => {
+                            document.querySelectorAll('.dash-brd-card').forEach(c => c.classList.remove('selected'));
+                            card.classList.add('selected');
+                            if (opt.has_card && opt.card_path) {
+                                openDashJourney(opt.card_path, opt.brd_name);
+                            } else {
+                                openDashJourneyEmpty(opt.brd_name);
+                            }
+                        });
+                        brdCards.appendChild(card);
+                    });
+                })
+                .catch(() => {
+                    brdCards.innerHTML = '<span style="color:#c0392b;font-size:0.82em;">Failed to load BRDs.</span>';
+                });
+        }
+
+        function openDashJourney(cardPath, brdName) {
+            const detail = document.getElementById('dashJourneyDetail');
+            const nameEl = document.getElementById('dashJourneyBrdName');
+            if (nameEl) nameEl.textContent = brdName;
+
+            // Reset stepper
+            ['req-gen','req-approve','est-gen','est-approve','fds-gen','fds-approve','tds-gen','tds-approve'].forEach(id => {
+                const el = document.getElementById('dstep-' + id);
+                const sub = document.getElementById('dsub-' + id);
+                if (el) { el.classList.remove('done','active','pending'); el.classList.add('pending'); }
+                if (sub) sub.textContent = 'Loading...';
+            });
+            if (detail) detail.style.display = 'block';
+
+            fetch('/api/brd-journey?card_path=' + encodeURIComponent(cardPath))
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) { alert('Error: ' + data.error); return; }
+                    renderDashJourney(data);
+                })
+                .catch(() => alert('Failed to fetch journey status.'));
+        }
+
+        function openDashJourneyEmpty(brdName) {
+            const detail = document.getElementById('dashJourneyDetail');
+            const nameEl = document.getElementById('dashJourneyBrdName');
+            if (nameEl) nameEl.textContent = brdName;
+            // Show all steps as pending
+            renderDashJourney({
+                req_generated:false, req_approved:false, req_approver:'',
+                est_generated:false, est_approved:false, est_approver:'',
+                fds_generated:false, fds_approved:false, fds_approver:'',
+                tds_generated:false, tds_approved:false, tds_approver:''
+            });
+            if (detail) detail.style.display = 'block';
+        }
+
+        function renderDashJourney(data) {
+            const steps = [
+                { id: 'req-gen',     done: data.req_generated, label: d => d ? 'BRD generated' : 'Not started', approver: '' },
+                { id: 'req-approve', done: data.req_approved,  label: d => d ? 'Approved' + (data.req_approver ? ' by ' + data.req_approver : '') : 'Awaiting approval' },
+                { id: 'est-gen',     done: data.est_generated, label: d => d ? 'Estimation generated' : 'Not started' },
+                { id: 'est-approve', done: data.est_approved,  label: d => d ? 'Approved' + (data.est_approver ? ' by ' + data.est_approver : '') : 'Awaiting approval' },
+                { id: 'fds-gen',     done: data.fds_generated, label: d => d ? 'FDS generated' : 'Not started' },
+                { id: 'fds-approve', done: data.fds_approved,  label: d => d ? 'Approved' + (data.fds_approver ? ' by ' + data.fds_approver : '') : 'Awaiting approval' },
+                { id: 'tds-gen',     done: data.tds_generated, label: d => d ? 'TDS generated' : 'Not started' },
+                { id: 'tds-approve', done: data.tds_approved,  label: d => d ? 'Approved' + (data.tds_approver ? ' by ' + data.tds_approver : '') : 'Awaiting approval' },
+            ];
+            const firstPending = steps.findIndex(s => !s.done);
+            let doneCount = 0;
+            steps.forEach((step, i) => {
+                const el  = document.getElementById('dstep-' + step.id);
+                const sub = document.getElementById('dsub-' + step.id);
+                if (!el) return;
+                el.classList.remove('done','active','pending');
+                if (step.done) {
+                    el.classList.add('done'); doneCount++;
+                } else if (i === firstPending) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.add('pending');
+                }
+                if (sub) sub.textContent = step.label(step.done);
+            });
+            const pct = Math.round((doneCount / steps.length) * 100);
+            const bar = document.getElementById('dashProgressBar');
+            const pctLabel = document.getElementById('dashProgressPct');
+            if (bar) bar.style.width = pct + '%';
+            if (pctLabel) pctLabel.textContent = pct + '%';
+        }
+
+        function closeDashJourney() {
+            const detail = document.getElementById('dashJourneyDetail');
+            if (detail) detail.style.display = 'none';
+            document.querySelectorAll('.dash-brd-card').forEach(c => c.classList.remove('selected'));
         }
 
         // ── Initial page setup ───────────────────────────────────
@@ -2092,9 +3657,14 @@
 
             lockAgents();
             updateActiveProjectInfo();
+            refreshDashboard();
+            updateRequirementActionVisibility();
+            updateEstimationActionVisibility();
+            updateFdsActionVisibility();
+            updateTdsActionVisibility();
             updateAgentStatusPill();
             loadProjects();
-            setStatus('Start on Home, then click Next to choose a project from Projects.');
+            setStatus('Start on Home, then choose or create a project. Role access: ' + (currentRole || 'none') + '.');
         });
     </script>
 </body>

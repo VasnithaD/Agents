@@ -4,19 +4,23 @@ import io
 import json
 import os
 import re
-import shutil
 import ssl
-import subprocess
-import tempfile
 import time
 import urllib.error
 import urllib.request
 from datetime import datetime
 from pathlib import Path
 
+import shutil
+import subprocess
+import tempfile
+
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Inches, Pt, RGBColor
+from rag_agent_context import ground_prompt_with_rag, get_rag_related_artifacts
+
+from test_case_generator import generate_requirement_section
 
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
@@ -53,6 +57,29 @@ DEFAULT_TDS_SECTION_PLAN = [
         "focus": "API endpoints and linked NFR controls from FDS.",
     },
 ]
+
+MANDATORY_TDS_TEXT_SECTIONS = [
+    {
+        "title": "Requirement Pseudocode",
+        "diagram_type": "text",
+        "focus": "Structured pseudocode for the implemented requirement flow based on FDS.",
+    },
+]
+
+
+def _ensure_tds_text_sections(section_plan: list) -> list:
+    plan = list(section_plan or [])
+    existing_titles = {
+        sanitize_line(str(section.get("title", "")).lower())
+        for section in plan
+        if isinstance(section, dict)
+    }
+    for section in MANDATORY_TDS_TEXT_SECTIONS:
+        title_key = sanitize_line(section["title"].lower())
+        if title_key not in existing_titles:
+            plan.append(dict(section))
+            existing_titles.add(title_key)
+    return plan[:10]
 
 
 def build_ssl_context():
@@ -170,6 +197,10 @@ def setup_session():
 
 
 def ask(prompt, user_id, username, session_id):
+    grounded_prompt = ground_prompt_with_rag(
+        prompt,
+        task_label="TDS generation from FDS",
+    )
     endpoint = (
         "call/chatlite"
         "?force_async=false"
@@ -189,7 +220,7 @@ def ask(prompt, user_id, username, session_id):
             "model_name": "gpt-4o-mini",
             "stream": False,
             "webScraping": False,
-            "user_query": prompt,
+            "user_query": grounded_prompt,
         },
     )
     return resp.get("Response", "")
@@ -444,6 +475,8 @@ API_NFR_FALLBACK = """flowchart TD
 
 def _fallback_for_diagram_type(diagram_type: str) -> str:
     normalized = (diagram_type or "").strip().lower()
+    if normalized == "text":
+        return ""
     if normalized.startswith("sequencediagram"):
         return COMPONENT_SEQ_FALLBACK
     if normalized.startswith("erdiagram"):
@@ -453,6 +486,8 @@ def _fallback_for_diagram_type(diagram_type: str) -> str:
 
 def _normalize_diagram_type(diagram_type: str) -> str:
     normalized = (diagram_type or "").strip().lower()
+    if normalized == "text":
+        return "text"
     if normalized.startswith("sequencediagram"):
         return "sequenceDiagram"
     if normalized.startswith("erdiagram"):
@@ -473,11 +508,11 @@ def derive_tds_section_plan(project_name: str, fds_context: str, user_id, userna
 
     parsed = _extract_json_object(raw)
     if not isinstance(parsed, dict):
-        return DEFAULT_TDS_SECTION_PLAN
+        return _ensure_tds_text_sections(DEFAULT_TDS_SECTION_PLAN)
 
     sections = parsed.get("sections")
     if not isinstance(sections, list) or not sections:
-        return DEFAULT_TDS_SECTION_PLAN
+        return _ensure_tds_text_sections(DEFAULT_TDS_SECTION_PLAN)
 
     plan = []
     for section in sections:
@@ -499,9 +534,9 @@ def derive_tds_section_plan(project_name: str, fds_context: str, user_id, userna
         )
 
     if not plan:
-        return DEFAULT_TDS_SECTION_PLAN
+        return _ensure_tds_text_sections(DEFAULT_TDS_SECTION_PLAN)
 
-    return plan[:10]
+    return _ensure_tds_text_sections(plan)
 
 
 def sanitize_line(text: str) -> str:
@@ -555,6 +590,44 @@ def load_tds_a2a_card(card_path: Path) -> dict:
     return card
 
 
+def _load_json_file(path: Path):
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            return json.load(handle)
+    except Exception:
+        return None
+
+
+def extract_brd_requirements(card: dict, card_path: Path) -> list:
+    payload = card.get("payload", {}) if isinstance(card, dict) else {}
+    requirements = payload.get("requirements", []) if isinstance(payload, dict) else []
+
+    if isinstance(requirements, list) and requirements:
+        return [req for req in requirements if isinstance(req, dict)]
+
+    artifacts = card.get("artifacts", {}) if isinstance(card, dict) else {}
+    linked_cards = []
+    estimation_card = artifacts.get("estimation_card")
+    if estimation_card:
+        linked_cards.append(Path(estimation_card))
+
+    input_card = artifacts.get("input_card")
+    if input_card:
+        linked_cards.append(Path(input_card))
+
+    for linked in linked_cards:
+        resolved = linked if linked.is_absolute() else (card_path.parent / linked).resolve()
+        source = _load_json_file(resolved)
+        if not isinstance(source, dict):
+            continue
+        source_payload = source.get("payload", {})
+        source_requirements = source_payload.get("requirements", []) if isinstance(source_payload, dict) else []
+        if isinstance(source_requirements, list) and source_requirements:
+            return [req for req in source_requirements if isinstance(req, dict)]
+
+    return []
+
+
 def build_fds_context(card: dict) -> str:
     payload = card.get("payload", {})
     sections = payload.get("fds_sections", {})
@@ -584,16 +657,33 @@ def get_project_name(card: dict) -> str:
 
 def resolve_output_dir(card_path: Path, card: dict) -> Path:
     artifacts = card.get("artifacts", {})
-    output_dir = artifacts.get("output_dir") or "."
-    candidate = Path(output_dir)
-    if candidate.is_absolute():
-        return candidate
-    return (card_path.parent / candidate).resolve()
+    output_dir = (artifacts.get("output_dir") or "").strip()
+
+    # Prefer project-scoped storage: project/tds.
+    # If the stored output_dir points to cards, move one level up to project root.
+    if output_dir:
+        candidate = Path(output_dir)
+        if not candidate.is_absolute():
+            candidate = (card_path.parent / candidate).resolve()
+        if candidate.name.lower() == "cards":
+            project_dir = candidate.parent
+        else:
+            project_dir = candidate
+    else:
+        project_dir = card_path.parent.parent if card_path.parent.name.lower() == "cards" else card_path.parent
+
+    return (project_dir / "tds").resolve()
 
 
-def run_tds_from_card(card: dict) -> dict:
+def run_tds_from_card(card: dict, card_path: Path = None) -> dict:
     project_name = get_project_name(card)
     fds_context = build_fds_context(card)
+    requirements = extract_brd_requirements(card, card_path or Path.cwd())
+
+    rag_seed = f"Project: {project_name}\n\n{fds_context}"
+    rag_artifacts = get_rag_related_artifacts(rag_seed, "TDS generation from FDS")
+    related_file = rag_artifacts.get("related_file", "")
+    related_folder = rag_artifacts.get("related_folder", "")
 
     user_id, username, session_id = setup_session()
 
@@ -609,6 +699,15 @@ def run_tds_from_card(card: dict) -> dict:
         section_order.append(section_name)
 
         print(f"[tds] Step {idx}/{total_sections} — Generating {section_name} ...")
+
+        # Text sections (pseudocode / test cases) are handled by test_case_generator
+        if diagram_type == "text":
+            ask_fn = lambda prompt: ask(prompt, user_id, username, session_id)
+            sections[section_name] = generate_requirement_section(
+                section_name, project_name, fds_context, ask_fn
+            )
+            continue
+
         prompt = PROMPT_DYNAMIC_SECTION_DIAGRAM.format(
             section_title=section_name,
             section_focus=section_focus,
@@ -622,9 +721,12 @@ def run_tds_from_card(card: dict) -> dict:
 
     return {
         "project_name": project_name,
+        "requirements": requirements,
         "sections": sections,
         "section_order": section_order,
         "section_plan": section_plan,
+        "related_file": related_file,
+        "related_folder": related_folder,
     }
 
 
@@ -653,35 +755,206 @@ def add_preformatted_block(doc, text):
     run = para.add_run(text)
     run.font.name = "Consolas"
     run.font.size = Pt(9)
+    para.alignment = WD_ALIGN_PARAGRAPH.LEFT
     return para
 
 
+def _strip_markdown_fences(text: str) -> str:
+    cleaned = (text or "").strip()
+    fenced = re.search(r"```(?:[A-Za-z0-9_+-]+)?\s*([\s\S]*?)```", cleaned)
+    if fenced:
+        return fenced.group(1).strip()
+    return cleaned
+
+
+def _is_code_focused_section(section_name: str) -> bool:
+    name = (section_name or "").strip().lower()
+    return (
+        "pseudocode" in name
+        or "junit" in name
+        or "test skeleton" in name
+        or "sample code" in name
+    )
+
+
+def _normalize_code_text(text: str) -> str:
+    lines = _strip_markdown_fences(text).replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    normalized = []
+    blank_pending = False
+    for line in lines:
+        cleaned = line.rstrip()
+        if not cleaned.strip():
+            if normalized and not blank_pending:
+                normalized.append("")
+            blank_pending = True
+            continue
+        normalized.append(cleaned)
+        blank_pending = False
+    return "\n".join(normalized).strip()
+
+
+def add_strict_code_block(doc, text: str):
+    """Render generated code/pseudocode as a single strict preformatted block."""
+    normalized = _normalize_code_text(text)
+    if not normalized:
+        add_body_paragraph(doc, "Not generated.")
+        return
+    add_preformatted_block(doc, normalized)
+
+
 def is_mermaid_diagram(content: str) -> bool:
-    stripped = content.strip()
-    return stripped.startswith("flowchart TD") or stripped.startswith("sequenceDiagram") or stripped.startswith("erDiagram")
+    stripped = (content or "").strip()
+    return (
+        stripped.startswith("flowchart TD")
+        or stripped.startswith("graph TD")
+        or stripped.startswith("graph LR")
+        or stripped.startswith("graph RL")
+        or stripped.startswith("graph BT")
+        or stripped.startswith("sequenceDiagram")
+        or stripped.startswith("erDiagram")
+    )
 
 
-def render_mermaid_png(diagram_text: str) -> bytes:
-    local_png = _render_mermaid_png_local(diagram_text)
-    if local_png is not None:
-        return local_png
+def extract_mermaid_block(content: str) -> str:
+    lines = (content or "").splitlines()
+    start_index = None
+    for index, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.lower() == "mermaid":
+            start_index = index + 1
+            break
+        if stripped.startswith((
+            "flowchart TD",
+            "graph TD",
+            "graph LR",
+            "graph RL",
+            "graph BT",
+            "sequenceDiagram",
+            "erDiagram",
+        )):
+            start_index = index
+            break
 
-    encoded = base64.urlsafe_b64encode(diagram_text.encode("utf-8")).decode("ascii")
-    # mermaid.ink renders Mermaid syntax directly to PNG for embedding in documents.
-    url = f"https://mermaid.ink/img/{encoded}?bgColor=white"
-    req = urllib.request.Request(url, method="GET")
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        return resp.read()
+    if start_index is None:
+        return ""
+
+    diagram_lines = []
+    for line in lines[start_index:]:
+        stripped = line.strip()
+        if not stripped:
+            if diagram_lines:
+                break
+            continue
+
+        looks_like_diagram = (
+            stripped.startswith((
+                "flowchart TD",
+                "graph TD",
+                "graph LR",
+                "graph RL",
+                "graph BT",
+                "sequenceDiagram",
+                "erDiagram",
+                "subgraph",
+                "participant ",
+                "actor ",
+                "classDef ",
+                "class ",
+                "style ",
+                "linkStyle ",
+                "%%",
+                "end",
+            ))
+            or "-->" in stripped
+            or "->>" in stripped
+            or "-->>" in stripped
+            or "||--" in stripped
+            or "}|" in stripped
+            or re.match(r"^[A-Za-z0-9_]+\s*\[.*\]", stripped)
+            or re.match(r"^[A-Za-z0-9_]+\s*\{\{.*\}\}", stripped)
+        )
+        if not looks_like_diagram and diagram_lines:
+            break
+
+        diagram_lines.append(line.rstrip())
+
+    candidate = "\n".join(diagram_lines).strip()
+    return candidate if is_mermaid_diagram(candidate) else ""
 
 
 def _resolve_mmdc_command():
+    """Return path to mmdc CLI if available (env var, local workspace, then PATH)."""
     configured = os.getenv("MERMAID_MMDC_PATH")
     if configured and Path(configured).exists():
         return configured
-    return shutil.which("mmdc")
+
+    local_candidates = [
+        SCRIPT_DIR / "node_modules" / ".bin" / "mmdc.cmd",
+        SCRIPT_DIR / "node_modules" / ".bin" / "mmdc",
+        SCRIPT_DIR / "mmdc.cmd",
+        SCRIPT_DIR / "mmdc",
+    ]
+    for candidate in local_candidates:
+        if candidate.exists():
+            return str(candidate)
+
+    return shutil.which("mmdc.cmd") or shutil.which("mmdc")
+
+
+def _sanitize_mermaid_for_render(diagram_text: str) -> str:
+    """Remove lines that commonly trigger Mermaid parse failures while preserving intent."""
+    lines = (diagram_text or "").splitlines()
+    if not lines:
+        return ""
+
+    sanitized = []
+    for index, line in enumerate(lines):
+        stripped = line.strip()
+
+        if index == 0:
+            sanitized.append(stripped)
+            continue
+
+        if not stripped:
+            sanitized.append("")
+            continue
+
+        # Mermaid fails on dangling connectors (for example: "A -->" with no target).
+        if re.search(r"(-->|->>|-->>|\|\|--|\}\|)\s*$", stripped):
+            continue
+
+        sanitized.append(line.rstrip())
+
+    while sanitized and not sanitized[-1].strip():
+        sanitized.pop()
+
+    return "\n".join(sanitized).strip()
+
+
+def _render_mermaid_png_remote(diagram_text: str) -> bytes:
+    import ssl
+    encoded = base64.urlsafe_b64encode(diagram_text.encode("utf-8")).decode("ascii")
+    # mermaid.ink renders Mermaid syntax directly to PNG for embedding in documents.
+    url = f"https://mermaid.ink/img/{encoded}?bgColor=white"
+    req = urllib.request.Request(
+        url,
+        method="GET",
+        headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+            "Accept": "image/png,image/*;q=0.9,*/*;q=0.8",
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return resp.read()
+    except Exception:
+        # Fallback for restrictive enterprise TLS middleboxes.
+        with urllib.request.urlopen(req, timeout=30, context=ssl._create_unverified_context()) as resp:
+            return resp.read()
 
 
 def _render_mermaid_png_local(diagram_text: str):
+    """Render diagram via local mmdc CLI. Returns bytes or None on failure."""
     mmdc = _resolve_mmdc_command()
     if not mmdc:
         return None
@@ -692,17 +965,7 @@ def _render_mermaid_png_local(diagram_text: str):
 
     try:
         input_path.write_text(diagram_text, encoding="utf-8")
-        cmd = [
-            mmdc,
-            "-i",
-            str(input_path),
-            "-o",
-            str(output_path),
-            "-b",
-            "white",
-            "-w",
-            "1600",
-        ]
+        cmd = [mmdc, "-i", str(input_path), "-o", str(output_path), "-b", "white", "-w", "1600"]
         subprocess.run(cmd, check=True, capture_output=True, text=True)
         return output_path.read_bytes()
     except Exception as exc:
@@ -719,6 +982,26 @@ def _render_mermaid_png_local(diagram_text: str):
             pass
 
 
+def render_mermaid_png(diagram_text: str) -> bytes:
+    # Try local mmdc first (faster, no network dependency)
+    local_png = _render_mermaid_png_local(diagram_text)
+    if local_png is not None:
+        return local_png
+
+    try:
+        return _render_mermaid_png_remote(diagram_text)
+    except urllib.error.HTTPError as exc:
+        # Retry once after light sanitization for malformed Mermaid output.
+        if exc.code == 400:
+            sanitized = _sanitize_mermaid_for_render(diagram_text)
+            if sanitized and sanitized != (diagram_text or "").strip():
+                local_retry = _render_mermaid_png_local(sanitized)
+                if local_retry is not None:
+                    return local_retry
+                return _render_mermaid_png_remote(sanitized)
+        raise
+
+
 def add_mermaid_image(doc, diagram_text: str):
     png_bytes = render_mermaid_png(diagram_text)
     image_stream = io.BytesIO(png_bytes)
@@ -727,20 +1010,31 @@ def add_mermaid_image(doc, diagram_text: str):
     last_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
 
-def add_section_content(doc, content: str):
-    if is_mermaid_diagram(content):
+def add_section_content(doc, section_name: str, content: str):
+    text = (content or "").strip()
+
+    if _is_code_focused_section(section_name):
+        add_strict_code_block(doc, text)
+        return
+
+    mermaid_block = text if is_mermaid_diagram(text) else extract_mermaid_block(text)
+    if mermaid_block:
         try:
-            add_mermaid_image(doc, content)
-            return
+            add_mermaid_image(doc, mermaid_block)
+            prose_only = text.replace(mermaid_block, "").strip()
+            if prose_only:
+                text = prose_only
+            else:
+                return
         except Exception as exc:
             add_body_paragraph(
                 doc,
                 "Diagram render failed, keeping Mermaid source. "
-                "Install Mermaid CLI (mmdc) locally or allow access to mermaid.ink. "
+                "Allow access to mermaid.ink for remote image rendering. "
                 f"Error: {exc}",
             )
 
-    lines = content.splitlines()
+    lines = text.splitlines()
     buffer = []
     in_code_block = False
 
@@ -788,7 +1082,46 @@ def add_section_content(doc, content: str):
     flush_buffer()
 
 
-def build_tds_docx(project_name: str, sections: dict, section_order: list, source_card_name: str, source_fds_docx: str):
+def add_requirements_table(doc, requirements: list):
+    if not requirements:
+        add_body_paragraph(doc, "No BRD requirements were found in the source card payload.")
+        return
+
+    table = doc.add_table(rows=1, cols=4)
+    table.style = "Table Grid"
+
+    headers = ["Requirement ID", "Category", "Priority", "Requirement (Verbatim from BRD)"]
+    for index, header in enumerate(headers):
+        table.rows[0].cells[index].text = header
+        header_run = table.rows[0].cells[index].paragraphs[0].runs[0]
+        header_run.bold = True
+
+    for req in requirements:
+        req_id = str(req.get("id", "")).strip()
+        category = str(req.get("category", "")).strip()
+        priority = str(req.get("priority", "")).strip()
+        description = str(req.get("description", "")).strip()
+
+        if not (req_id or category or priority or description):
+            continue
+
+        row = table.add_row().cells
+        row[0].text = req_id
+        row[1].text = category
+        row[2].text = priority
+        row[3].text = description
+
+
+def build_tds_docx(
+    project_name: str,
+    requirements: list,
+    sections: dict,
+    section_order: list,
+    source_card_name: str,
+    source_fds_docx: str,
+    related_folder: str = "",
+    related_file: str = "",
+):
     doc = Document()
 
     for section in doc.sections:
@@ -809,7 +1142,9 @@ def build_tds_docx(project_name: str, sections: dict, section_order: list, sourc
         f"Date: {datetime.now().strftime('%Y-%m-%d')}\n"
         f"Prepared By: {USER_NAME}\n"
         f"Source A2A Card: {source_card_name}\n"
-        f"Source FDS: {source_fds_docx}"
+        f"Source FDS: {source_fds_docx}\n"
+        f"Related File: {related_file or 'N/A'}\n"
+        f"Related Folder: {related_folder or 'N/A'}"
     )
 
     doc.add_page_break()
@@ -820,12 +1155,17 @@ def build_tds_docx(project_name: str, sections: dict, section_order: list, sourc
         "Version: 1.0\n"
         "Status: Draft\n"
         f"Generated On: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-        f"Generated From: {source_card_name}",
+        f"Generated From: {source_card_name}\n"
+        f"Related File: {related_file or 'N/A'}\n"
+        f"Related Folder: {related_folder or 'N/A'}",
     )
 
-    for index, section_name in enumerate(section_order, start=2):
+    add_heading(doc, "2. BRD Requirements (Verbatim)", level=1)
+    add_requirements_table(doc, requirements)
+
+    for index, section_name in enumerate(section_order, start=3):
         add_heading(doc, f"{index}. {section_name}", level=1)
-        add_section_content(doc, sections.get(section_name, "Not generated."))
+        add_section_content(doc, section_name, sections.get(section_name, "Not generated."))
 
     return doc
 
@@ -856,7 +1196,7 @@ def main():
         print(str(exc))
         sys.exit(1)
 
-    result = run_tds_from_card(card)
+    result = run_tds_from_card(card, card_path)
     output_dir = resolve_output_dir(card_path, card)
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -865,12 +1205,17 @@ def main():
     json_path = output_dir / f"TDS_{timestamp}.json"
 
     source_fds_docx = card.get("artifacts", {}).get("fds_docx", "Not specified")
+    display_folder = result.get("related_folder") or str(output_dir)
+    display_file = result.get("related_file") or ""
     doc = build_tds_docx(
         result["project_name"],
+        result.get("requirements", []),
         result["sections"],
         result.get("section_order", list(result["sections"].keys())),
         card_path.name,
         source_fds_docx,
+        related_folder=display_folder,
+        related_file=display_file,
     )
     doc.save(str(docx_path))
 
@@ -880,6 +1225,9 @@ def main():
                 "project": result["project_name"],
                 "generated_at": datetime.now().isoformat(),
                 "source_card": str(card_path),
+                "related_file": display_file,
+                "related_folder": display_folder,
+                "requirements": result.get("requirements", []),
                 "section_plan": result.get("section_plan", []),
                 "sections": result["sections"],
             },

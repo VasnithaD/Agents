@@ -4,6 +4,7 @@ import os
 import json
 import argparse
 import glob
+import io
 import urllib.request
 import urllib.error
 import ssl
@@ -16,6 +17,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.oxml import parse_xml
 from docx.oxml.shared import OxmlElement
+from rag_agent_context import ground_prompt_with_rag, get_rag_related_artifacts
  
 # Load environment variables
 SCRIPT_DIR = Path(__file__).parent.resolve()
@@ -130,6 +132,10 @@ def setup_session():
 # ------------------------------------------------------------------ #
  
 def ask(prompt, user_id, username, session_id):
+    grounded_prompt = ground_prompt_with_rag(
+        prompt,
+        task_label="FDS generation from BRD",
+    )
     endpoint = (
         "call/chatlite"
         "?force_async=false"
@@ -147,7 +153,7 @@ def ask(prompt, user_id, username, session_id):
         "model_name":  "gpt-4o-mini",
         "stream":      False,
         "webScraping": False,
-        "user_query":  prompt,
+        "user_query":  grounded_prompt,
     })
     return resp.get("Response", "")
  
@@ -244,55 +250,46 @@ Rules:
 - Output ONLY Mermaid flowchart syntax, no explanations.
 - First line must be exactly: flowchart TD
 - Use rectangle nodes for process steps, e.g., A[Submit Request]
-- Use one decision node, e.g., D{{Manager Approves?}}
-- Use arrows between nodes, e.g., A --> B
-- Include 8 to 15 nodes.
-- Keep node labels short and business-readable.
- 
-Reference pattern:
-flowchart TD
-    A[Employee Submits Leave Request] --> B[Validate Request Data]
-    B --> C[Send to Reporting Manager]
-    C --> D{{Manager Approves?}}
-    D -->|Yes| E[Update Leave Balance]
-    D -->|No| F[Notify Rejection]
-    E --> G[Send Approval Notification]
-    F --> G
- 
-FDS Content:
-{fds}
-"""
- 
- 
+ - Use one decision node, e.g., D{{Manager Approves?}}
+ - Use arrows between nodes, e.g., A --> B
+ - Include 8 to 15 nodes.
+ - Keep node labels short and business-readable.
+
+ Reference pattern:
+ flowchart TD
+     A[Employee Submits Leave Request] --> B[Validate Request Data]
+     B --> C[Send to Reporting Manager]
+     C --> D{{Manager Approves?}}
+     D -->|Yes| E[Update Leave Balance]
+     D -->|No| F[Notify Rejection]
+     E --> G[Send Approval Notification]
+     F --> G
+
+ FDS Content:
+ {fds}
+ """
+
+
 def sanitize_line(text: str) -> str:
     """Normalize noisy model output while keeping business content intact."""
     if not text:
         return ""
- 
+
     cleaned = text.strip()
     cleaned = re.sub(r"^\s{0,3}#{1,6}\s*", "", cleaned)
     cleaned = re.sub(r"^[-*]\s+", "", cleaned)
- 
-    # Remove ALL bold/italic markdown markers anywhere in the line.
     cleaned = re.sub(r"\*{1,3}", "", cleaned)
     cleaned = re.sub(r"_{1,2}(.*?)_{1,2}", r"\1", cleaned)
- 
-    if (
-        (cleaned.startswith('"') and cleaned.endswith('"'))
-        or (cleaned.startswith("'") and cleaned.endswith("'"))
-    ) and len(cleaned) > 1:
-        cleaned = cleaned[1:-1].strip()
- 
     cleaned = cleaned.strip("`")
     cleaned = re.sub(r"\s+", " ", cleaned)
     return cleaned.strip()
- 
- 
+
+
 def sanitize_multiline_text(text: str) -> str:
-    lines = [sanitize_line(line) for line in text.splitlines()]
+    lines = [sanitize_line(line) for line in (text or "").splitlines()]
     compact = []
     blank_pending = False
- 
+
     for line in lines:
         if not line:
             if compact and not blank_pending:
@@ -301,89 +298,65 @@ def sanitize_multiline_text(text: str) -> str:
             continue
         compact.append(line)
         blank_pending = False
- 
+
     return "\n".join(compact).strip()
- 
- 
-def sanitize_mermaid(raw_text: str) -> str:
-    text = raw_text.strip()
+
+
+def build_fallback_workflow_diagram(sections: dict) -> str:
+    """Build a conservative fallback workflow diagram when model output is malformed."""
+    start_step = "Start Request"
+    process_step = "Validate Request"
+    decision_step = "Business Rule Check?"
+    success_step = "Process Approved Path"
+    fail_step = "Handle Rejection"
+    close_step = "Notify and Close"
+
+    workflows = (sections.get("User Workflows") or "").strip()
+    if workflows:
+        lines = [l.strip() for l in workflows.splitlines() if l.strip()]
+        if lines:
+            start_step = lines[0][:60]
+            if len(lines) > 1:
+                process_step = lines[1][:60]
+            if len(lines) > 2:
+                close_step = lines[-1][:60]
+
+    diagram_lines = [
+        "flowchart TD",
+        f"    A[{start_step}] --> B[{process_step}]",
+        f"    B --> C{{{{{decision_step}}}}}",
+        f"    C -->|Yes| D[{success_step}]",
+        f"    C -->|No| E[{fail_step}]",
+        f"    D --> F[{close_step}]",
+        f"    E --> F[{close_step}]",
+    ]
+    return "\n".join(diagram_lines)
+
+
+def ensure_workflow_diagram_format(diagram_text: str, sections: dict) -> str:
+    """Normalize Mermaid workflow output and guarantee a valid flowchart fallback."""
+    text = (diagram_text or "").strip()
     fence = re.search(r"```(?:mermaid)?\s*(.*?)```", text, flags=re.S | re.I)
     if fence:
         text = fence.group(1).strip()
- 
+
     lines = [line.rstrip() for line in text.splitlines() if line.strip()]
     if not lines:
-        return "flowchart TD\n    A[Start] --> B[Process] --> C[End]"
- 
-    if not lines[0].lower().startswith("flowchart"):
+        return build_fallback_workflow_diagram(sections)
+
+    # Convert old Mermaid syntax to modern style expected by frontend checks.
+    if lines[0].lower().startswith("graph "):
+        lines[0] = re.sub(r"^graph", "flowchart", lines[0], count=1, flags=re.I)
+    if not lines[0].lower().startswith("flowchart td"):
         lines.insert(0, "flowchart TD")
- 
-    # Remove quote wrappers around diagram lines.
-    lines = [sanitize_line(line) for line in lines if sanitize_line(line)]
- 
-    return "\n".join(lines)
- 
- 
-def build_fallback_workflow_diagram(sections: dict) -> str:
-    process_text = sections.get("Process Flows", "")
-    candidates = []
-    for line in process_text.splitlines():
-        cleaned = sanitize_line(line)
-        cleaned = re.sub(r"^\d+[\.)\-\s]+", "", cleaned)
-        if cleaned:
-            candidates.append(cleaned)
- 
-    steps = candidates[:6] if candidates else [
-        "Employee submits leave request",
-        "System validates leave data",
-        "Manager reviews request",
-        "HR receives outcome",
-    ]
- 
-    node_ids = ["A", "B", "C", "E", "F", "G"]
-    diagram_lines = ["flowchart TD"]
- 
-    # Build a linear pre-decision path with rectangle nodes.
-    prev_id = None
-    for idx, step in enumerate(steps[:3]):
-        nid = node_ids[idx]
-        label = step[:60]
-        diagram_lines.append(f"    {nid}[{label}]")
-        if prev_id:
-            diagram_lines.append(f"    {prev_id} --> {nid}")
-        prev_id = nid
- 
-    if prev_id is None:
-        diagram_lines.append("    A[Start Leave Request]")
-        prev_id = "A"
- 
-    diagram_lines.append("    D{Manager Approves?}")
-    diagram_lines.append(f"    {prev_id} --> D")
- 
-    approve_step = steps[3] if len(steps) > 3 else "Update leave balance"
-    reject_step = steps[4] if len(steps) > 4 else "Notify rejection to employee"
-    close_step = steps[5] if len(steps) > 5 else "Close request and audit log"
- 
-    diagram_lines.append(f"    E[{approve_step[:60]}]")
-    diagram_lines.append(f"    F[{reject_step[:60]}]")
-    diagram_lines.append(f"    G[{close_step[:60]}]")
-    diagram_lines.append("    D -->|Yes| E")
-    diagram_lines.append("    D -->|No| F")
-    diagram_lines.append("    E --> G")
-    diagram_lines.append("    F --> G")
- 
-    return "\n".join(diagram_lines)
- 
- 
-def ensure_workflow_diagram_format(diagram_text: str, sections: dict) -> str:
-    diagram = sanitize_mermaid(diagram_text)
+
+    diagram = "\n".join(lines)
     has_arrow = "-->" in diagram
     has_rect = "[" in diagram and "]" in diagram
     has_decision = "{" in diagram and "}" in diagram
- 
+
     if has_arrow and has_rect and has_decision:
         return diagram
- 
     return build_fallback_workflow_diagram(sections)
  
  
@@ -606,9 +579,169 @@ def _add_body_para(doc, text, indent_left=0):
     run.font.size = Pt(11)
     run.font.name = "Calibri"
     return para
+
+
+def add_preformatted_block(doc, text):
+    para = doc.add_paragraph()
+    run = para.add_run(text)
+    run.font.name = "Consolas"
+    run.font.size = Pt(9)
+    return para
+
+
+def is_mermaid_diagram(content: str) -> bool:
+    stripped = (content or "").strip()
+    return (
+        stripped.startswith("flowchart TD")
+        or stripped.startswith("graph TD")
+        or stripped.startswith("graph LR")
+        or stripped.startswith("graph RL")
+        or stripped.startswith("graph BT")
+        or stripped.startswith("sequenceDiagram")
+        or stripped.startswith("erDiagram")
+    )
+
+
+def extract_mermaid_block(content: str) -> str:
+    lines = content.splitlines()
+    start_index = None
+    for index, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.lower() == "mermaid":
+            start_index = index + 1
+            break
+        if stripped.startswith((
+            "flowchart TD",
+            "graph TD",
+            "graph LR",
+            "graph RL",
+            "graph BT",
+            "sequenceDiagram",
+            "erDiagram",
+        )):
+            start_index = index
+            break
+
+    if start_index is None:
+        return ""
+
+    diagram_lines = []
+    for line in lines[start_index:]:
+        stripped = line.strip()
+        if not stripped:
+            if diagram_lines:
+                break
+            continue
+
+        looks_like_diagram = (
+            stripped.startswith((
+                "flowchart TD",
+                "graph TD",
+                "graph LR",
+                "graph RL",
+                "graph BT",
+                "sequenceDiagram",
+                "erDiagram",
+                "subgraph",
+                "participant ",
+                "actor ",
+                "classDef ",
+                "class ",
+                "style ",
+                "linkStyle ",
+                "%%",
+                "end",
+            ))
+            or "-->" in stripped
+            or "->>" in stripped
+            or "-->>" in stripped
+            or "||--" in stripped
+            or "}|" in stripped
+            or re.match(r"^[A-Za-z0-9_]+\s*\[.*\]", stripped)
+            or re.match(r"^[A-Za-z0-9_]+\s*\{\{.*\}\}", stripped)
+        )
+        if not looks_like_diagram and diagram_lines:
+            break
+
+        diagram_lines.append(line.rstrip())
+
+    candidate = "\n".join(diagram_lines).strip()
+    return candidate if is_mermaid_diagram(candidate) else ""
+
+
+def render_mermaid_png(diagram_text: str) -> bytes:
+    import base64
+    import ssl
+
+    encoded = base64.urlsafe_b64encode(diagram_text.encode("utf-8")).decode("ascii")
+    url = f"https://mermaid.ink/img/{encoded}?bgColor=white"
+    req = urllib.request.Request(
+        url,
+        method="GET",
+        headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+            "Accept": "image/png,image/*;q=0.9,*/*;q=0.8",
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return resp.read()
+    except Exception:
+        # Fallback for restrictive enterprise TLS middleboxes.
+        with urllib.request.urlopen(req, timeout=30, context=ssl._create_unverified_context()) as resp:
+            return resp.read()
+
+
+def add_mermaid_image(doc, diagram_text: str):
+    png_bytes = render_mermaid_png(diagram_text)
+    image_stream = io.BytesIO(png_bytes)
+    doc.add_picture(image_stream, width=Inches(6.2))
+    last_para = doc.paragraphs[-1]
+    last_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+
+def add_section_content(doc, section_name: str, content: str):
+    text = (content or "").strip()
+    if not text:
+        _add_body_para(doc, "Not enough detail provided in requirements.")
+        return
+
+    mermaid_block = text if is_mermaid_diagram(text) else extract_mermaid_block(text)
+    if mermaid_block:
+        try:
+            add_mermaid_image(doc, mermaid_block)
+            prose_only = text.replace(mermaid_block, "").strip()
+            if prose_only:
+                text = prose_only
+            else:
+                return
+        except Exception as exc:
+            _add_body_para(doc, f"Diagram render failed, keeping Mermaid source. Error: {exc}")
+
+    if not detect_and_add_table(doc, section_name, text):
+        for line in text.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+
+            is_bullet = re.match(r'^[-•]\s+', line) or re.match(r'^\d+[.)\s]\s+', line)
+            cleaned = re.sub(r'^[-•]\s+', '', line)
+            cleaned = re.sub(r'^\d+[.)\s]\s+', '', cleaned)
+
+            if cleaned.startswith(("flowchart TD", "sequenceDiagram", "erDiagram")):
+                add_preformatted_block(doc, cleaned)
+            else:
+                _add_body_para(doc, ("• " if is_bullet else "") + cleaned, indent_left=0.3 if is_bullet else 0)
  
  
-def build_fds_docx(sections: dict, summary: dict, user_name: str, workflow_diagram: str = ""):
+def build_fds_docx(
+    sections: dict,
+    summary: dict,
+    user_name: str,
+    workflow_diagram: str = "",
+    related_folder: str = "",
+    related_file: str = "",
+):
     doc = Document()
  
     # Page margins
@@ -626,7 +759,11 @@ def build_fds_docx(sections: dict, summary: dict, user_name: str, workflow_diagr
     meta = doc.add_paragraph()
     meta.alignment = WD_ALIGN_PARAGRAPH.CENTER
     _set_para_spacing(meta, space_before_pt=0, space_after_pt=4, line_spacing_pt=13)
-    run = meta.add_run(f"Generated by: {user_name}     |     Date: {datetime.now().strftime('%Y-%m-%d')}")
+    run = meta.add_run(
+        f"Generated by: {user_name}     |     Date: {datetime.now().strftime('%Y-%m-%d')}\n"
+        f"Related File: {related_file or 'N/A'}\n"
+        f"Related Folder: {related_folder or 'N/A'}"
+    )
     run.font.size = Pt(10)
     run.font.name = "Calibri"
     run.font.color.rgb = RGBColor(0x60, 0x60, 0x60)
@@ -637,20 +774,13 @@ def build_fds_docx(sections: dict, summary: dict, user_name: str, workflow_diagr
     for section, content in sections.items():
         h = doc.add_heading(section, level=1)
         _set_para_spacing(h, space_before_pt=14, space_after_pt=4, line_spacing_pt=16)
- 
-        # Try to detect and add as table first
-        if not detect_and_add_table(doc, section, content):
-            # Otherwise add as regular paragraphs
-            for line in content.splitlines():
-                line = line.strip()
-                if not line:
-                    continue
-                # Detect list items (lines starting with -, •, or digit+dot)
-                is_bullet = re.match(r'^[-•]\s+', line) or re.match(r'^\d+[.)\s]\s+', line)
-                text = re.sub(r'^[-•]\s+', '', line)
-                text = re.sub(r'^\d+[.)\s]\s+', '', text)
-                p = _add_body_para(doc, ("• " if is_bullet else "") + text,
-                                   indent_left=0.3 if is_bullet else 0)
+
+        add_section_content(doc, section, content)
+
+    if workflow_diagram:
+        h = doc.add_heading("Workflow Diagram", level=1)
+        _set_para_spacing(h, space_before_pt=14, space_after_pt=4, line_spacing_pt=16)
+        add_section_content(doc, "Workflow Diagram", workflow_diagram)
  
     return doc
  
@@ -775,10 +905,19 @@ def resolve_project_paths(card_path: Path, card: dict):
     return project_dir, fds_dir, cards_dir, docx_path, txt_path
 
 
-def build_fds_txt(project_name: str, sections: dict, summary: dict, workflow_diagram: str = "") -> str:
+def build_fds_txt(
+    project_name: str,
+    sections: dict,
+    summary: dict,
+    workflow_diagram: str = "",
+    related_folder: str = "",
+    related_file: str = "",
+) -> str:
     lines = []
     lines.append("FUNCTIONAL DESIGN SPECIFICATION")
     lines.append(f"Project: {project_name}")
+    lines.append(f"Related File: {related_file or 'N/A'}")
+    lines.append(f"Related Folder: {related_folder or 'N/A'}")
     lines.append(f"Generated At: {datetime.now().isoformat()}")
     lines.append("")
     lines.append("SUMMARY")
@@ -830,6 +969,14 @@ def save_tds_a2a_card(
     import uuid
 
     slug = re.sub(r"[^a-z0-9]+", "_", project_name.lower()).strip("_") or "project"
+    source_payload = input_card.get("payload", {}) if isinstance(input_card, dict) else {}
+    source_requirements = source_payload.get("requirements", [])
+    if not isinstance(source_requirements, list):
+        source_requirements = []
+
+    source_artifacts = input_card.get("artifacts", {}) if isinstance(input_card, dict) else {}
+    source_brd_txt = str(source_artifacts.get("brd_txt", "")).strip()
+    source_card_id = str(input_card.get("card_id", "")).strip() if isinstance(input_card, dict) else ""
 
     card = {
         "a2a_version": "1.0",
@@ -866,6 +1013,7 @@ def save_tds_a2a_card(
             "fds_sections": sections,
             "raw_fds": raw_fds,
             "summary": summary,
+            "requirements": source_requirements,
         },
 
         "stats": {
@@ -875,7 +1023,23 @@ def save_tds_a2a_card(
         "status": "ready_for_tds",
     }
 
-    card_path = output_dir / f"tds_a2a_card_{slug}.json"
+    # Use a BRD-specific card name when possible to avoid cross-project/card overwrites.
+    if source_brd_txt:
+        try:
+            brd_stem = Path(source_brd_txt).stem
+        except Exception:
+            brd_stem = ""
+        safe_stem = re.sub(r"[^A-Za-z0-9._-]+", "_", brd_stem).strip("_")
+        if safe_stem:
+            card_filename = f"{safe_stem}_fds_tds_a2a_card.json"
+        else:
+            card_filename = f"fds_a2a_card_{slug}.json"
+    elif source_card_id:
+        card_filename = f"fds_tds_a2a_card_{source_card_id[:8]}.json"
+    else:
+        card_filename = f"fds_a2a_card_{slug}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+
+    card_path = output_dir / card_filename
     with open(card_path, "w", encoding="utf-8") as f:
         json.dump(card, f, indent=2)
 
@@ -893,6 +1057,10 @@ def run_fds_pipeline(card_path_str: str) -> dict:
     requirements_text = extract_requirements_text(input_card)
     project_name = get_project_name_from_card(input_card)
 
+    rag_artifacts = get_rag_related_artifacts(requirements_text, "FDS generation from BRD")
+    related_file = rag_artifacts.get("related_file", "")
+    related_folder = rag_artifacts.get("related_folder", "")
+
     result = run_fds(requirements_text)
 
     user_id, username, session_id = setup_session()
@@ -905,16 +1073,27 @@ def run_fds_pipeline(card_path_str: str) -> dict:
     workflow_diagram = ensure_workflow_diagram_format(raw_workflow, result["sections"])
 
     project_dir, fds_dir, cards_dir, docx_path, txt_path = resolve_project_paths(card_path, input_card)
+    display_folder = related_folder or str(fds_dir)
+    display_file = related_file or ""
 
     doc = build_fds_docx(
         result["sections"],
         result["summary"],
         USER_NAME or "FDS Agent",
         workflow_diagram,
+        related_folder=display_folder,
+        related_file=display_file,
     )
     doc.save(str(docx_path))
 
-    txt_content = build_fds_txt(project_name, result["sections"], result["summary"], workflow_diagram)
+    txt_content = build_fds_txt(
+        project_name,
+        result["sections"],
+        result["summary"],
+        workflow_diagram,
+        related_folder=display_folder,
+        related_file=display_file,
+    )
     txt_path.write_text(txt_content, encoding="utf-8")
 
     tds_card_path = save_tds_a2a_card(
@@ -939,7 +1118,8 @@ def run_fds_pipeline(card_path_str: str) -> dict:
         "sections": result["sections"],
         "summary": result["summary"],
         "project_dir": str(project_dir),
-        "fds_dir": str(fds_dir),
+        "fds_dir": display_folder,
+        "fds_file": display_file,
         "cards_dir": str(cards_dir),
     }
 

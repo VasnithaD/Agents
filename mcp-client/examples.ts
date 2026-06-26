@@ -5,7 +5,7 @@
  * the VS Code and GitHub tools.
  */
 
-import MCPClient from './src/client';
+import MCPClient from '../src/client';
 
 async function examples() {
   const client = new MCPClient('http://localhost:3000');

@@ -3,7 +3,7 @@
  * Comprehensive examples of LLM tool usage with all operations
  */
 
-import MCPClient from './src/client';
+import MCPClient from '../src/client';
 
 const client = new MCPClient('http://localhost:3000');
 

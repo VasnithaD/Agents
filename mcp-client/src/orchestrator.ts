@@ -137,6 +137,10 @@ export class Orchestrator {
         modelId,
         false,
         false,
+        {
+          includeWorkspace,
+          includeRAG,
+        },
       );
 
       if (!agentResult.success) {

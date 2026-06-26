@@ -176,6 +176,18 @@ interface AgentLLMResponse {
   files: AgentFile[];
 }
 
+interface ChangeBackup {
+  path: string;
+  existed: boolean;
+  previousContent?: string;
+}
+
+interface ChangeSet {
+  id: string;
+  createdAt: string;
+  files: ChangeBackup[];
+}
+
 export interface AgentResult {
   success: boolean;
   message: string;
@@ -197,6 +209,8 @@ export interface AgentResult {
     filesGenerated: number;
     avgMsPerFile: number;
   };
+  undoAvailable?: boolean;
+  changeSetId?: string;
   error?: string;
   rawResponse?: string;
 }
@@ -204,16 +218,71 @@ export interface AgentResult {
 export interface AgentExecutionOptions {
   reactMode?: boolean;
   humanFeedback?: string;
+  includeWorkspace?: boolean;
+  includeRAG?: boolean;
 }
 
 export class AgentHandler {
   private hpe: HPEClient;
   private workspacePath: string;
+  private changeSets: Map<string, ChangeSet>;
 
   constructor(workspacePath: string) {
     this.workspacePath = workspacePath;
     this.hpe = getHPEClient();
+    this.changeSets = new Map<string, ChangeSet>();
     console.log('✓ Agent handler ready (HPE ChatHPE API)');
+  }
+
+  private createChangeSet(backups: ChangeBackup[]): string | undefined {
+    if (!backups.length) return undefined;
+    const id = `chg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    this.changeSets.set(id, {
+      id,
+      createdAt: new Date().toISOString(),
+      files: backups,
+    });
+
+    // Keep memory bounded: newest 30 change sets.
+    if (this.changeSets.size > 30) {
+      const oldest = this.changeSets.keys().next().value;
+      if (oldest) this.changeSets.delete(oldest);
+    }
+    return id;
+  }
+
+  /**
+   * Undo a previously-applied change set.
+   */
+  undoChangeSet(changeSetId: string): { success: boolean; message: string; restoredFiles: string[] } {
+    const entry = this.changeSets.get(changeSetId);
+    if (!entry) {
+      return { success: false, message: `Change set not found: ${changeSetId}`, restoredFiles: [] };
+    }
+
+    const restored: string[] = [];
+    for (const f of entry.files) {
+      const abs = path.resolve(this.workspacePath, f.path);
+      if (!abs.startsWith(this.workspacePath)) continue;
+      try {
+        if (f.existed) {
+          fs.mkdirSync(path.dirname(abs), { recursive: true });
+          fs.writeFileSync(abs, f.previousContent || '', 'utf-8');
+        } else if (fs.existsSync(abs)) {
+          fs.unlinkSync(abs);
+        }
+        restored.push(f.path);
+      } catch (err) {
+        console.warn(`[Agent] Undo failed for ${f.path}:`, (err as Error).message);
+      }
+    }
+
+    this.changeSets.delete(changeSetId);
+    return {
+      success: true,
+      message: `Undo applied for ${restored.length} file(s)`,
+      restoredFiles: restored,
+    };
   }
 
   setWorkspace(newPath: string): void { this.workspacePath = newPath; }
@@ -230,21 +299,23 @@ export class AgentHandler {
     const startedAtDate = new Date();
     const startedAt = startedAtDate.toISOString();
     const t0 = Date.now();
+    const includeWorkspace = options.includeWorkspace !== false;
+    const includeRAG = options.includeRAG !== false;
     const ragStart = Date.now();
-    const workspaceContext = this.getWorkspaceContext();
+    const workspaceContext = includeWorkspace ? this.getWorkspaceContext() : '(workspace context disabled)';
     const injectedContext  = this.readContextFiles(contextFiles);
-    const useProjectContext = this.shouldUseProjectContext(prompt, contextFiles);
+    const useProjectContext = (includeWorkspace || includeRAG) && this.shouldUseProjectContext(prompt, contextFiles);
     console.log(`[Agent] Project-context mode: ${useProjectContext ? 'ON' : 'OFF (generic request)'}`);
 
     // ── AST ENRICHMENT: Check if prompt mentions specific classes/methods ────
     // If user is updating an existing file, fetch it completely via AST
-    const astEnrichedContext = useProjectContext ? this.enrichPromptWithAST(prompt) : '';
+    const astEnrichedContext = useProjectContext && includeRAG ? this.enrichPromptWithAST(prompt) : '';
     const enrichedPrompt = astEnrichedContext ? `${prompt}\n\n[ENRICHED WITH COMPLETE CODE FROM AST]\n${astEnrichedContext}` : prompt;
 
     // ── RAG: similarity search on prompt + first 600 chars of attached spec ──
     const attachedSummary = injectedContext.substring(0, 600);
     // Use multi-query retrieval for initial context (task-level)
-    const ragData = useProjectContext
+    const ragData = useProjectContext && includeRAG
       ? await ragRetriever.retrieveMultiWithSources(
           [enrichedPrompt, attachedSummary.substring(0, 300)].filter(Boolean),
           10  // topK per query
@@ -273,9 +344,15 @@ export class AgentHandler {
     );
     const updateExistingMode = this.isExistingFileUpdateRequest(enrichedPrompt, contextFiles);
     const genericCodeMode = intent === 'codegen' && this.shouldUseGenericCodeMode(prompt, contextFiles, useProjectContext);
+    const inferredTargetFiles = updateExistingMode
+      ? await this.inferRelatedWorkspaceFiles(enrichedPrompt, includeRAG)
+      : [];
     console.log(`[Agent] Intent: ${intent}`);
     console.log(`[Agent] Existing-file update mode: ${updateExistingMode}`);
     console.log(`[Agent] Generic-code mode: ${genericCodeMode ? 'ON' : 'OFF'}`);
+    if (updateExistingMode) {
+      console.log(`[Agent] Inferred related file scope: ${inferredTargetFiles.length > 0 ? inferredTargetFiles.join(', ') : '(none inferred)'}`);
+    }
 
     const withTimings = (result: AgentResult): AgentResult => {
       const completedAt = new Date().toISOString();
@@ -298,7 +375,7 @@ export class AgentHandler {
     };
 
     if (intent === 'qa') {
-      const result = await this.executeQA(finalPrompt, ragSection, contextSection, ragSources, modelId);
+      const result = await this.executeQA(finalPrompt, ragSection, contextSection, ragSources, includeRAG, modelId);
       return withTimings({ ...result, executionMode: 'qa' });
     }
 
@@ -306,7 +383,7 @@ export class AgentHandler {
     const result = genericCodeMode
       ? await this.executeGenericCodeGen(finalPrompt, modelId)
       : await this.executeBatchedCodeGen(
-          finalPrompt, ragSection, contextSection, workspaceContext, ragSources, forceOverwrite, saveToWorkspace, updateExistingMode, modelId
+          finalPrompt, ragSection, contextSection, workspaceContext, ragSources, forceOverwrite, saveToWorkspace, updateExistingMode, includeRAG, modelId, inferredTargetFiles
         );
     return withTimings({
       ...result,
@@ -437,8 +514,57 @@ export class AgentHandler {
     const hasSpec = /\b(tds|fds|brd|spec|requirement)\b/.test(p) ||
       contextFiles.some(f => /tds|fds|brd|spec/i.test(path.basename(f)));
     const asksUpdate = /\b(update|modify|change|enhance|extend|add feature|existing file|existing code|into existing|in existing)\b/.test(p);
+    const asksRevise = /\b(revise|revision|fix this|fix that|handle exception|adjust|tweak|correct)\b/.test(p);
     const asksGreenfield = /\b(create new project|from scratch|scaffold|boilerplate|generate full project)\b/.test(p);
-    return hasSpec && asksUpdate && !asksGreenfield;
+    const mentionsProjectCode = /\b(src\/|pom\.xml|application\.yml|java|spring|service|controller|impl|commonutil|checklist|quote)\b/.test(p);
+    return !asksGreenfield && ((hasSpec && asksUpdate) || ((asksUpdate || asksRevise) && mentionsProjectCode));
+  }
+
+  /**
+   * Infer likely target files for revise/fix prompts that do not name explicit file paths.
+   * This keeps updates surgical by narrowing generation to existing files only.
+   */
+  private async inferRelatedWorkspaceFiles(prompt: string, includeRAG: boolean): Promise<string[]> {
+    const found = new Set<string>();
+
+    // 1) Symbol-based lookup from class-like names in prompt.
+    const classNamePattern = /\b([A-Z][A-Za-z0-9]{2,})\b/g;
+    const classNames = Array.from(new Set(prompt.match(classNamePattern) || [])).slice(0, 6);
+    for (const className of classNames) {
+      try {
+        const paths = ragRetriever.retrieveFilesWithSymbol(className) || [];
+        for (const filePath of paths) {
+          const normalized = filePath.replace(/\\/g, '/');
+          const rel = path.relative(this.workspacePath, normalized).replace(/\\/g, '/');
+          if (!rel.startsWith('..') && fs.existsSync(path.resolve(this.workspacePath, rel))) {
+            found.add(rel);
+          }
+        }
+      } catch {
+        // best-effort inference; ignore symbol lookup failures
+      }
+    }
+
+    // 2) Retrieval source fallback when symbol lookup did not find enough files.
+    if (includeRAG && found.size < 2) {
+      try {
+        const { sources } = await ragRetriever.retrieveMultiWithSources(
+          [prompt, prompt.split(' ').slice(0, 10).join(' ')].filter(Boolean),
+          8,
+        );
+        for (const s of sources) {
+          const normalized = s.path.replace(/\\/g, '/');
+          const rel = path.relative(this.workspacePath, normalized).replace(/\\/g, '/');
+          if (!rel.startsWith('..') && fs.existsSync(path.resolve(this.workspacePath, rel))) {
+            found.add(rel);
+          }
+        }
+      } catch {
+        // best-effort inference; ignore retrieval failures
+      }
+    }
+
+    return Array.from(found).slice(0, 8);
   }
 
   /**
@@ -509,13 +635,16 @@ export class AgentHandler {
     ragSection: string,
     contextSection: string,
     initialSources: RagSource[],
+    includeRAG: boolean,
     modelId?: string,
   ): Promise<AgentResult> {
     // For Q&A, retrieve MORE chunks with higher topK to get deeper coverage
-    const { context: deepContext, sources: deepSources } = await ragRetriever.retrieveMultiWithSources(
-      [prompt, prompt.split(' ').slice(0, 8).join(' ')],
-      15  // topK per query — gives up to 30 unique chunks of 1800 chars each
-    );
+    const { context: deepContext, sources: deepSources } = includeRAG
+      ? await ragRetriever.retrieveMultiWithSources(
+          [prompt, prompt.split(' ').slice(0, 8).join(' ')],
+          15  // topK per query — gives up to 30 unique chunks of 1800 chars each
+        )
+      : { context: '', sources: [] as RagSource[] };
     // merge sources, deduplicate by path
     const sourceMap = new Map<string, RagSource>();
     for (const s of [...initialSources, ...deepSources]) {
@@ -575,12 +704,15 @@ ${prompt}`;
     forceOverwrite: boolean,
     saveToWorkspace: boolean,
     updateExistingMode: boolean,
+    includeRAG: boolean,
     modelId?: string,
+    targetFilesHint: string[] = [],
   ): Promise<AgentResult> {
 
     const sharedCtx = `${CODE_GEN_SYSTEM_PROMPT}${ragSection}${contextSection}`;
     const allFilesWritten: string[] = [];
     const allFileContents: { [p: string]: string } = {};
+    const changeBackups = new Map<string, ChangeBackup>();
     const updatedExistingFiles: string[] = [];
     const createdNewFiles: string[] = [];
     // accumulate all RAG sources across every per-file call
@@ -599,7 +731,11 @@ ${prompt}`;
         `Your goal is to implement the requested TDS/spec feature by modifying EXISTING files first.\n` +
         `Do NOT generate a brand-new project structure, controllers, repositories, pom.xml, Docker files, or README unless explicitly required by the spec.\n` +
         `Prioritize files that already exist in the workspace or are clearly present in the knowledge base context.\n` +
-        `Only include new files when strictly necessary for the feature; keep them minimal and directly related.\n\n`
+        `Only include new files when strictly necessary for the feature; keep them minimal and directly related.\n` +
+        `For revise/fix requests without explicit file paths, include ONLY the minimum impacted files (normally 1-3).\n` +
+        (targetFilesHint.length > 0
+          ? `TARGET FILE HINTS (highest priority):\n${targetFilesHint.map(f => `  - ${f}`).join('\n')}\n\n`
+          : '\n')
         :
         `Produce the COMPLETE list of every file needed so the project is immediately buildable and runnable \n` +
         `with zero manual edits. This means:\n` +
@@ -636,6 +772,25 @@ ${prompt}`;
 
     // In existing-update mode, reduce drift by preferring files that already exist on disk.
     if (updateExistingMode) {
+      if (targetFilesHint.length > 0) {
+        const hintSet = new Set(targetFilesHint.map(h => h.replace(/\\/g, '/').toLowerCase()));
+        const narrowedByHint = manifest.files.filter(f => {
+          const normalized = f.path.replace(/\\/g, '/').toLowerCase();
+          return hintSet.has(normalized) || hintSet.has(path.basename(normalized));
+        });
+        if (narrowedByHint.length > 0) {
+          console.log(`[Agent] Existing-update mode: narrowed manifest by inferred hints from ${manifest.files.length} to ${narrowedByHint.length} file(s)`);
+          manifest.files = narrowedByHint;
+        } else {
+          console.log('[Agent] Existing-update mode: manifest missed inferred target files; using inferred targets directly');
+          manifest.files = targetFilesHint.map(filePath => ({
+            path: filePath,
+            purpose: 'Targeted existing-file revision inferred from prompt/context',
+            lines: 120,
+          }));
+        }
+      }
+
       const existingOnly = manifest.files.filter(f => {
         const absPath = path.resolve(this.workspacePath, f.path);
         return absPath.startsWith(this.workspacePath) && fs.existsSync(absPath);
@@ -682,8 +837,25 @@ ${prompt}`;
     for (let i = 0; i < manifest.files.length; i++) {
       const entry = manifest.files[i];
       const estimatedLines = entry.lines || 200;
+      const entryAbsPath = path.resolve(this.workspacePath, entry.path);
 
       console.log(`[Agent] File ${i + 1}/${manifest.files.length} — ${entry.path} (~${estimatedLines} lines)`);
+
+      // Read the current file first in update mode to reduce accidental regressions.
+      let existingFileSection = '';
+      if (updateExistingMode && entryAbsPath.startsWith(this.workspacePath) && fs.existsSync(entryAbsPath)) {
+        try {
+          const existingContent = fs.readFileSync(entryAbsPath, 'utf-8');
+          const MAX_EXISTING_CHARS = 25_000;
+          const trimmed = existingContent.length > MAX_EXISTING_CHARS
+            ? existingContent.slice(0, MAX_EXISTING_CHARS) + `\n\n[...existing file truncated at ${MAX_EXISTING_CHARS} chars]`
+            : existingContent;
+          existingFileSection = `\n\n── CURRENT FILE CONTENT (${entry.path}) ──\n${trimmed}\n── END CURRENT FILE CONTENT ──`;
+          console.log(`[Agent] Read existing file before generation: ${entry.path}`);
+        } catch (err: any) {
+          console.warn(`[Agent] Could not read existing file ${entry.path}: ${err.message}`);
+        }
+      }
 
       // ── Targeted RAG retrieval for THIS specific file ────────────────────
       const fileName = path.basename(entry.path, path.extname(entry.path));
@@ -713,7 +885,9 @@ ${prompt}`;
         fileRagQueries.push(`${fileName} async await methods properties types`);
       }
       
-      const { context: fileRagContext, sources: fileSources } = await ragRetriever.retrieveMultiWithSources(fileRagQueries, topKForFile);
+      const { context: fileRagContext, sources: fileSources } = includeRAG
+        ? await ragRetriever.retrieveMultiWithSources(fileRagQueries, topKForFile)
+        : { context: '', sources: [] as RagSource[] };
       // merge per-file sources into the global map
       for (const s of fileSources) {
         const ex = sourceMap.get(s.path);
@@ -728,7 +902,7 @@ ${prompt}`;
       const fileTypeRules = this.getFileTypeRules(entry.path, estimatedLines);
 
       const filePrompt = this.capPrompt(
-        `${CODE_GEN_SYSTEM_PROMPT}${fileRagSection}${contextSection}\n\nOverall task: ${prompt}\n\n` +
+        `${CODE_GEN_SYSTEM_PROMPT}${fileRagSection}${contextSection}${existingFileSection}\n\nOverall task: ${prompt}\n\n` +
         `FILE ${i + 1} of ${manifest.files.length}: ${entry.path}\n` +
         `Purpose: ${entry.purpose}\n` +
         `Expected size: ~${estimatedLines} lines\n\n` +
@@ -776,6 +950,14 @@ ${prompt}`;
               allFilesWritten.push(file.path);
               allFileContents[file.path] = file.content;
               if (saveToWorkspace) {
+                if (!changeBackups.has(file.path)) {
+                  const existed = fs.existsSync(absPath);
+                  changeBackups.set(file.path, {
+                    path: file.path,
+                    existed,
+                    previousContent: existed ? fs.readFileSync(absPath, 'utf-8') : undefined,
+                  });
+                }
                 fs.mkdirSync(path.dirname(absPath), { recursive: true });
                 fs.writeFileSync(absPath, file.content, 'utf-8');
                 if (existingSet.has(file.path)) updatedExistingFiles.push(file.path);
@@ -800,6 +982,9 @@ ${prompt}`;
     }
 
     const generatedCount = allFilesWritten.length;
+    const changeSetId = saveToWorkspace && generatedCount > 0
+      ? this.createChangeSet(Array.from(changeBackups.values()))
+      : undefined;
     return {
       success: generatedCount > 0,
       message: generatedCount > 0
@@ -813,6 +998,8 @@ ${prompt}`;
         ? this.buildUpdateTips(updateExistingMode, updatedExistingFiles, createdNewFiles)
         : ['Auto-save is disabled. Review the generated files and save only the ones you want.'],
       ragSources: Array.from(sourceMap.values()).sort((a, b) => b.linesRead - a.linesRead),
+      undoAvailable: !!changeSetId,
+      changeSetId,
     };
   }
 
@@ -860,6 +1047,7 @@ ${prompt}`;
       }
       const filesWritten: string[] = [];
       const fileContents: { [p: string]: string } = {};
+      const changeBackups = new Map<string, ChangeBackup>();
       for (const file of parsed.files || []) {
         if (!file.path || file.content === undefined) continue;
         const absPath = path.resolve(this.workspacePath, file.path);
@@ -867,15 +1055,28 @@ ${prompt}`;
         filesWritten.push(file.path);
         fileContents[file.path] = file.content;
         if (saveToWorkspace) {
+          if (!changeBackups.has(file.path)) {
+            const existed = fs.existsSync(absPath);
+            changeBackups.set(file.path, {
+              path: file.path,
+              existed,
+              previousContent: existed ? fs.readFileSync(absPath, 'utf-8') : undefined,
+            });
+          }
           fs.mkdirSync(path.dirname(absPath), { recursive: true });
           fs.writeFileSync(absPath, file.content, 'utf-8');
         }
       }
+      const changeSetId = saveToWorkspace && filesWritten.length > 0
+        ? this.createChangeSet(Array.from(changeBackups.values()))
+        : undefined;
       return {
         success: true,
         message: `${parsed.message || 'Done'}${saveToWorkspace ? '' : ' (not saved to workspace)'}`,
         filesWritten,
         fileContents,
+        undoAvailable: !!changeSetId,
+        changeSetId,
       };
     } catch (err: any) {
       return { success: false, message: 'LLM call failed', filesWritten: [], fileContents: {}, error: err.message };

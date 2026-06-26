@@ -566,6 +566,12 @@ app.post('/api/smart/mcp', async (req: Request, res: Response) => {
       const repo = github.repo || process.env.GITHUB_REPO || '';
       const head = github.head || github.branch || '';
       const base = github.base || 'main';
+      const branchMode = github.branchMode === 'create_new_branch' ? 'create_new_branch' : 'existing_branch';
+      const filePath = String(github.filePath || '').trim();
+      const content = typeof github.content === 'string' ? github.content : '';
+      const commitMessage = String(github.commitMessage || (filePath ? `Smart Mode: update ${filePath}` : 'Smart Mode commit')).trim();
+      const shouldCommitCode = !!filePath && !!content.trim();
+      const shouldOpenPR = github.openPR !== false;
       const title = github.title || `AI Smart PR - ${new Date().toLocaleDateString()}`;
       const body = github.body || `Created via Smart MCP workflow at ${new Date().toISOString()}`;
 
@@ -599,6 +605,87 @@ app.post('/api/smart/mcp', async (req: Request, res: Response) => {
         return respond('failed', { pr: null }, ['Set GITHUB_TOKEN, GITHUB_OWNER, and GITHUB_REPO']);
       }
 
+      let commitData: any = null;
+      if (shouldCommitCode) {
+        const commitCallId = '1.1';
+        tool_calls.push({
+          id: commitCallId,
+          tool: 'github',
+          operation: branchMode === 'create_new_branch' ? 'create_branch_and_commit_file' : 'commit_file_to_existing_branch',
+          input: { owner, repo, branchMode, head, base, filePath, commitMessage },
+          depends_on: [callId],
+        });
+
+        let targetBranch = head;
+        if (branchMode === 'create_new_branch') {
+          try {
+            const { data: baseRef } = await octokit.rest.git.getRef({ owner, repo, ref: `heads/${base}` });
+            try {
+              await octokit.rest.git.createRef({ owner, repo, ref: `refs/heads/${head}`, sha: baseRef.object.sha });
+            } catch (refErr: any) {
+              if (refErr.status !== 422) throw refErr;
+            }
+          } catch (branchError) {
+            const msg = `Failed to create/find branch ${head} from ${base}: ${(branchError as Error).message}`;
+            errors.push({ code: 'GITHUB_BRANCH_CREATE_FAILED', message: msg });
+            tool_results.push({ id: commitCallId, ok: false, data: null, error: { message: msg } });
+            return respond('failed', { pr: null }, ['Verify base/head branch names and permissions']);
+          }
+        } else {
+          try {
+            await octokit.rest.repos.getBranch({ owner, repo, branch: head });
+          } catch (branchError) {
+            const msg = `Head branch ${head} not found: ${(branchError as Error).message}`;
+            errors.push({ code: 'GITHUB_BRANCH_NOT_FOUND', message: msg });
+            tool_results.push({ id: commitCallId, ok: false, data: null, error: { message: msg } });
+            return respond('failed', { pr: null }, ['Use an existing branch or switch to Create New Branch + Push']);
+          }
+        }
+
+        let existingSha: string | undefined;
+        try {
+          const { data: existing } = await octokit.rest.repos.getContent({ owner, repo, path: filePath, ref: targetBranch });
+          if (!Array.isArray(existing)) existingSha = (existing as any).sha;
+        } catch (existingErr: any) {
+          if (existingErr.status !== 404) {
+            const msg = `Unable to inspect file ${filePath}: ${existingErr.message}`;
+            errors.push({ code: 'GITHUB_FILE_CHECK_FAILED', message: msg });
+            tool_results.push({ id: commitCallId, ok: false, data: null, error: { message: msg } });
+            return respond('failed', { pr: null }, ['Check repository path and permissions']);
+          }
+        }
+
+        const commitBody: any = {
+          owner,
+          repo,
+          path: filePath,
+          message: commitMessage,
+          content: Buffer.from(content).toString('base64'),
+          branch: targetBranch,
+        };
+        if (existingSha) commitBody.sha = existingSha;
+
+        try {
+          const { data: commitRes } = await octokit.rest.repos.createOrUpdateFileContents(commitBody);
+          commitData = {
+            branch: targetBranch,
+            filePath,
+            commitSha: commitRes.commit.sha,
+            commitUrl: (commitRes.commit as any).html_url,
+          };
+          tool_results.push({ id: commitCallId, ok: true, data: commitData, error: null });
+        } catch (commitError) {
+          const msg = `Failed to commit ${filePath}: ${(commitError as Error).message}`;
+          errors.push({ code: 'GITHUB_COMMIT_FAILED', message: msg });
+          tool_results.push({ id: commitCallId, ok: false, data: null, error: { message: msg } });
+          return respond('failed', { pr: null }, ['Fix file path/content and retry commit']);
+        }
+      }
+
+      if (!shouldOpenPR) {
+        return respond('success', { pr: null, commit: commitData }, ['Code pushed successfully. Open PR later from GitHub or rerun with PR enabled.']);
+      }
+
       const { data: prData } = await octokit.rest.pulls.create({ owner, repo, head, base, title, body });
       const pr = {
         number: prData.number,
@@ -608,8 +695,8 @@ app.post('/api/smart/mcp', async (req: Request, res: Response) => {
         head: prData.head.ref,
         base: prData.base.ref,
       };
-      tool_results.push({ id: callId, ok: true, data: pr, error: null });
-      return respond('success', { pr }, ['Share PR URL for review', 'Add reviewers and labels']);
+      tool_results.push({ id: callId, ok: true, data: { pr, commit: commitData }, error: null });
+      return respond('success', { pr, commit: commitData }, ['Share PR URL for review', 'Add reviewers and labels']);
     }
 
     // Flow 2: GitHub issues + VectorBase-style semantic document retrieval
@@ -768,6 +855,8 @@ app.post('/api/agent', async (req: Request, res: Response) => {
       saveToWorkspace,
       reactMode,
       humanFeedback,
+      includeWorkspace,
+      includeRAG,
     } = req.body;
     if (!prompt) return res.status(400).json({ success: false, error: 'prompt required' });
 
@@ -782,6 +871,8 @@ app.post('/api/agent', async (req: Request, res: Response) => {
       {
         reactMode: reactMode === true,
         humanFeedback: typeof humanFeedback === 'string' ? humanFeedback : '',
+        includeWorkspace: includeWorkspace !== false,
+        includeRAG: includeRAG !== false,
       },
     );
     res.json(result);
@@ -1199,19 +1290,35 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 const PORT = parseInt(process.env.MCP_SERVER_PORT || '3000');
 const HOST = process.env.MCP_SERVER_HOST || '0.0.0.0';
 
-app.listen(PORT, HOST, () => {
-  console.log(`\n🚀 MCP Server running on http://127.0.0.1:${PORT}`);
-  console.log(`📁 Workspace: ${workspacePath}`);
-  console.log(`\nEndpoints:`);
-  console.log(`  GET  /health              - Health check`);
-  console.log(`  POST /api/terminal/exec   - Execute terminal command`);
-  console.log(`  POST /api/orchestrate     - Smart mode: unified context coordination`);
-  console.log(`  POST /api/agent           - AI agent workflow (independent)`);
-  console.log(`  POST /rpc                 - MCP JSON-RPC`);
+function startServer(port: number): void {
+  const server = app.listen(port, HOST, () => {
+    console.log(`\n🚀 MCP Server running on http://127.0.0.1:${port}`);
+    console.log(`📁 Workspace: ${workspacePath}`);
+    console.log(`\nEndpoints:`);
+    console.log(`  GET  /health              - Health check`);
+    console.log(`  POST /api/terminal/exec   - Execute terminal command`);
+    console.log(`  POST /api/orchestrate     - Smart mode: unified context coordination`);
+    console.log(`  POST /api/agent           - AI agent workflow (independent)`);
+    console.log(`  POST /rpc                 - MCP JSON-RPC`);
 
-  // Boot RAG index (non-blocking — runs in background)
-  initializeRAG().catch(err => console.warn('[RAG] Initialization error:', err));
-});
+    // Boot RAG index (non-blocking — runs in background)
+    initializeRAG().catch(err => console.warn('[RAG] Initialization error:', err));
+  });
+
+  server.on('error', (err: NodeJS.ErrnoException) => {
+    if (err.code === 'EADDRINUSE') {
+      const nextPort = port + 1;
+      console.warn(`[Server] Port ${port} is in use. Retrying on ${nextPort}...`);
+      startServer(nextPort);
+      return;
+    }
+
+    console.error('[Server] Failed to start:', err);
+    process.exit(1);
+  });
+}
+
+startServer(PORT);
 
 export default app;
 

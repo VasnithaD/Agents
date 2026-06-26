@@ -367,6 +367,9 @@
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
     backdrop-filter: blur(12px);
+    position: relative;
+    z-index: 25;
+    overflow: visible;
   }
   .tab {
     padding: 10px 22px; cursor: pointer;
@@ -376,6 +379,7 @@
     border-bottom: 2px solid transparent;
     user-select: none; white-space: nowrap;
     transition: all 0.2s; letter-spacing: 0.3px;
+    overflow: visible;
   }
   .tab:hover { color: var(--accent2); background: var(--hover); }
   .tab.active {
@@ -383,6 +387,102 @@
     border-bottom: 2px solid var(--accent);
     font-weight: 600;
     box-shadow: inset 0 -2px 0 var(--accent), 0 0 12px rgba(1,169,130,0.1);
+  }
+  .tab-help {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    margin-left: 6px;
+    border-radius: 50%;
+    border: 1px solid rgba(1,169,130,0.45);
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    color: #d6fff2;
+    background: radial-gradient(circle at 30% 30%, rgba(0,212,160,0.45), rgba(1,169,130,0.18));
+    box-shadow: 0 0 10px rgba(1,169,130,0.28), inset 0 0 8px rgba(0,212,160,0.25);
+    position: relative;
+    cursor: help;
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
+  }
+  .tab-help:hover,
+  .tab-help:focus-visible {
+    transform: translateY(-1px) scale(1.05);
+    box-shadow: 0 0 16px rgba(0,212,160,0.35), inset 0 0 8px rgba(0,212,160,0.25);
+    outline: none;
+  }
+  .tab-help::after {
+    content: attr(data-tooltip-title) "\A" attr(data-tooltip-desc);
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 10px);
+    transform: translateX(-50%);
+    min-width: 260px;
+    max-width: 320px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(1,169,130,0.4);
+    background:
+      linear-gradient(155deg, rgba(11,28,22,0.96), rgba(7,36,29,0.93)),
+      radial-gradient(circle at 20% 0%, rgba(0,212,160,0.2), transparent 45%);
+    color: #d6fff2;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.4;
+    box-shadow:
+      0 14px 30px rgba(0,0,0,0.45),
+      0 0 22px rgba(1,169,130,0.22),
+      inset 0 0 0 1px rgba(0,212,160,0.12);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 40;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    white-space: pre-line;
+    backdrop-filter: blur(8px);
+  }
+  .tab-help::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 4px);
+    width: 10px;
+    height: 10px;
+    transform: translateX(-50%) rotate(45deg);
+    background: linear-gradient(145deg, rgba(10,40,30,0.95), rgba(8,30,23,0.95));
+    border-right: 1px solid rgba(1,169,130,0.35);
+    border-bottom: 1px solid rgba(1,169,130,0.35);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease;
+    z-index: 39;
+  }
+  .tab-help:focus-visible::after,
+  .tab-help:hover::after {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-2px);
+  }
+  .tab-help:focus-visible::before,
+  .tab-help:hover::before { opacity: 1; }
+  html[data-theme="light"] .tab-help {
+    color: #005d45;
+    border-color: rgba(1,169,130,0.45);
+    background: radial-gradient(circle at 30% 30%, rgba(0,212,160,0.35), rgba(1,169,130,0.14));
+    box-shadow: 0 0 10px rgba(1,169,130,0.2), inset 0 0 8px rgba(0,212,160,0.18);
+  }
+  html[data-theme="light"] .tab-help::after {
+    color: #063827;
+    border-color: rgba(1,169,130,0.35);
+    background:
+      linear-gradient(155deg, rgba(242,255,249,0.98), rgba(231,250,241,0.97)),
+      radial-gradient(circle at 20% 0%, rgba(0,212,160,0.18), transparent 48%);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.12), 0 0 12px rgba(1,169,130,0.16);
+  }
+  html[data-theme="light"] .tab-help::before {
+    background: linear-gradient(145deg, rgba(240,255,248,0.98), rgba(226,248,237,0.98));
+    border-left-color: rgba(1,169,130,0.32);
+    border-top-color: rgba(1,169,130,0.32);
   }
 
   /* SMART PANEL */
@@ -575,6 +675,92 @@
     margin-bottom: 8px;
     transition: background 0.15s;
   }
+  .pipeline-inspect-modal-box {
+    background: var(--panel);
+    border: 1px solid rgba(79,195,247,0.35);
+    border-radius: 12px;
+    width: min(1120px, 96vw);
+    max-height: 88vh;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .pipeline-inspect-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(79,195,247,0.08);
+  }
+  .pipeline-inspect-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .pipeline-inspect-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .pipeline-inspect-body {
+    padding: 12px 16px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .pipeline-file-block {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: rgba(255,255,255,0.02);
+  }
+  .pipeline-file-head {
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(79,195,247,0.05);
+  }
+  .pipeline-file-path {
+    font-size: 12px;
+    font-family: Consolas, monospace;
+    color: var(--text);
+    word-break: break-all;
+  }
+  .pipeline-file-status {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .pipeline-file-status.updated {
+    border-color: rgba(1,169,130,0.35);
+    color: #4ec94e;
+  }
+  .pipeline-file-status.new {
+    border-color: rgba(79,195,247,0.4);
+    color: #4fc3f7;
+  }
+  .pipeline-file-status.same {
+    border-color: rgba(245,158,11,0.35);
+    color: #f59e0b;
+  }
+  .pipeline-inspect-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    background: rgba(1,169,130,0.04);
+  }
   .rag-sources-pill:hover { background: rgba(99,102,241,0.18); }
   .rag-chevron { font-size: 14px; line-height: 1; color: #818cf8; transition: transform 0.15s; }
   .rag-sources-list {
@@ -729,6 +915,110 @@
     border-color: rgba(1,169,130,0.48);
     transform: translateY(-1px);
   }
+  .smart-pipeline {
+    margin: 12px 0 14px;
+    padding: 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(79,195,247,0.22);
+    background:
+      radial-gradient(900px 180px at 10% 0%, rgba(79,195,247,0.16), transparent 60%),
+      linear-gradient(145deg, rgba(6,17,28,0.92), rgba(7,23,34,0.86));
+    box-shadow: 0 16px 34px rgba(0,0,0,0.28), 0 0 22px rgba(79,195,247,0.12);
+  }
+  .smart-pipeline-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .smart-pipeline-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #dff7ff;
+    letter-spacing: 0.2px;
+  }
+  .smart-pipeline-sub {
+    font-size: 11px;
+    color: #90b5c6;
+  }
+  .smart-pipeline-rail {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 8px;
+    align-items: stretch;
+  }
+  .smart-pipeline-step {
+    position: relative;
+    border-radius: 12px;
+    border: 1px solid rgba(79,195,247,0.18);
+    background: rgba(255,255,255,0.03);
+    padding: 10px 10px 11px;
+    min-height: 74px;
+    overflow: hidden;
+  }
+  .smart-pipeline-step.clickable {
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  }
+  .smart-pipeline-step.clickable:hover {
+    transform: translateY(-1px);
+    border-color: rgba(79,195,247,0.38);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.22);
+  }
+  .smart-pipeline-step::after {
+    content: '→';
+    position: absolute;
+    right: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(79,195,247,0.55);
+    font-size: 14px;
+  }
+  .smart-pipeline-step:last-child::after { display: none; }
+  .smart-pipeline-step.active {
+    background: linear-gradient(145deg, rgba(1,169,130,0.18), rgba(79,195,247,0.12));
+    border-color: rgba(1,169,130,0.38);
+    box-shadow: inset 0 0 0 1px rgba(1,169,130,0.08);
+  }
+  .smart-pipeline-step.done {
+    background: rgba(1,169,130,0.09);
+    border-color: rgba(1,169,130,0.24);
+  }
+  .smart-pipeline-step.locked {
+    opacity: 0.82;
+  }
+  .smart-pipeline-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: #7ecfe8;
+    margin-bottom: 7px;
+  }
+  .smart-pipeline-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: #eefcff;
+    margin-bottom: 4px;
+  }
+  .smart-pipeline-desc {
+    font-size: 10px;
+    color: #a7c8d6;
+    line-height: 1.45;
+  }
+  .delivery-receipt {
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(79,195,247,0.18);
+    background: rgba(79,195,247,0.06);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .delivery-receipt strong { color: var(--text); }
   .smart-action-bar {
     display: flex;
     flex-wrap: wrap;
@@ -787,6 +1077,89 @@
     white-space: pre-wrap;
     max-height: 300px;
     overflow: auto;
+  }
+
+  .smart-route-modal-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 10020;
+    background: rgba(0,0,0,0.68);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.15s ease;
+  }
+  .smart-route-modal-box {
+    width: min(560px, 92vw);
+    border-radius: 16px;
+    border: 1px solid rgba(79,195,247,0.28);
+    background: linear-gradient(145deg, rgba(9,17,27,0.98), rgba(8,24,31,0.96));
+    box-shadow: 0 24px 70px rgba(0,0,0,0.5);
+    overflow: hidden;
+  }
+  .smart-route-modal-header {
+    padding: 16px 18px 10px;
+    border-bottom: 1px solid rgba(79,195,247,0.18);
+  }
+  .smart-route-modal-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #e6fbff;
+    margin-bottom: 4px;
+  }
+  .smart-route-modal-subtitle {
+    font-size: 11px;
+    color: #8eb7c8;
+  }
+  .smart-route-modal-body {
+    padding: 16px 18px 18px;
+  }
+  .smart-route-option-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .smart-route-option {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(79,195,247,0.18);
+    background: rgba(255,255,255,0.04);
+    color: var(--text);
+    cursor: pointer;
+    text-align: left;
+    transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+  .smart-route-option:hover {
+    transform: translateY(-1px);
+    border-color: rgba(79,195,247,0.42);
+    background: rgba(79,195,247,0.08);
+  }
+  .smart-route-option-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #eefcff;
+  }
+  .smart-route-option-desc {
+    font-size: 11px;
+    line-height: 1.45;
+    color: #a8c9d7;
+  }
+  .smart-route-option-pill {
+    display: inline-flex;
+    width: fit-content;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: rgba(1,169,130,0.14);
+    color: #7ef0d0;
+    font-size: 10px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
   }
   @media (max-width: 900px) {
     .agent-cap-grid { grid-template-columns: 1fr; }
@@ -1110,16 +1483,55 @@
     flex-shrink: 0; min-height: 36px;
     backdrop-filter: blur(12px);
   }
+  #gh-editor-shell {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    background: var(--bg);
+    border-left: 2px solid transparent;
+  }
+  #gh-line-gutter {
+    width: 60px;
+    margin: 0;
+    padding: 14px 8px 14px 0;
+    border-right: 1px solid var(--border);
+    background: rgba(1,169,130,0.05);
+    color: var(--muted);
+    font-family: Consolas, 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.65;
+    text-align: right;
+    user-select: none;
+    overflow: hidden;
+    white-space: pre;
+    flex-shrink: 0;
+  }
   #gh-file-editor {
     flex: 1; font-family: Consolas, 'Courier New', monospace;
     font-size: 13px; line-height: 1.65;
     background: var(--bg); color: var(--text);
-    border: none; outline: none; padding: 14px 18px;
+    border: none; outline: none; padding: 14px 14px;
     resize: none; overflow: auto; white-space: pre; box-sizing: border-box;
   }
-  #gh-file-editor:not([readonly]) {
-    border-left: 2px solid var(--accent);
-    background: var(--editor-modified-bg);
+  #gh-file-editor:not([readonly]) { background: var(--editor-modified-bg); }
+  #gh-editor-shell.editing { border-left-color: var(--accent); }
+
+  .code-lines { font-family: Consolas, 'Courier New', monospace; font-size: 12px; line-height: 1.6; }
+  .code-line {
+    display: grid;
+    grid-template-columns: 52px 1fr;
+    column-gap: 10px;
+  }
+  .code-line-no {
+    color: var(--muted);
+    text-align: right;
+    user-select: none;
+    border-right: 1px solid var(--border);
+    padding-right: 8px;
+  }
+  .code-line-text {
+    white-space: pre;
+    overflow-wrap: normal;
   }
   #gh-workflow-bar {
     padding: 10px 14px;
@@ -1321,10 +1733,10 @@
   <!-- MIDDLE -->
   <div id="middle">
     <div class="tab-bar">
-      <div class="tab" id="tab-smart" onclick="switchTab('smart')">Smart Mode <span style="font-size:9px;opacity:.6;font-weight:400">(Unified)</span></div>
-      <div class="tab active" id="tab-agent"  onclick="switchTab('agent')">AI Agent <span style="font-size:9px;opacity:.6;font-weight:400">(Project Builder)</span></div>
-      <div class="tab" id="tab-llm"    onclick="switchTab('llm')">LLM Tools <span style="font-size:9px;opacity:.6;font-weight:400">(Snippet / Refactor)</span></div>
-      <div class="tab" id="tab-github" onclick="switchTab('github')">GitHub</div>
+      <div class="tab" id="tab-smart" onclick="switchTab('smart')">Delivery Hub <span style="font-size:9px;opacity:.6;font-weight:400">(All Sources)</span><span class="tab-help" data-tooltip-title="Orchestrated task execution." data-tooltip-desc="Uses workspace + GitHub + RAG to plan and run end-to-end tasks." tabindex="0">?</span></div>
+      <div class="tab active" id="tab-agent"  onclick="switchTab('agent')">Feature Builder <span style="font-size:9px;opacity:.6;font-weight:400">(Project Changes)</span><span class="tab-help" data-tooltip-title="Feature-level code changes." data-tooltip-desc="Builds or updates project files with context-aware, targeted implementation." tabindex="0">?</span></div>
+      <div class="tab" id="tab-llm"    onclick="switchTab('llm')">Code Studio <span style="font-size:9px;opacity:.6;font-weight:400">(Refactor / Snippets)</span><span class="tab-help" data-tooltip-title="Code refinement workspace." data-tooltip-desc="Refactor, explain, review, or generate snippets from selected code quickly." tabindex="0">?</span></div>
+      <div class="tab" id="tab-github" onclick="switchTab('github')">Repo & PR Hub<span class="tab-help" data-tooltip-title="Repository delivery controls." data-tooltip-desc="Browse files, manage branches, commit updates, and open pull requests." tabindex="0">?</span></div>
     </div>
 
     <!-- SMART MODE -->
@@ -1333,73 +1745,96 @@
         <div class="agent-hero">
           <div class="agent-hero-head">
             <div>
-              <div class="agent-hero-title">Smart Mode: Orchestrated AI</div>
-              <div class="agent-hero-sub">Unified context from workspace, GitHub, and knowledge base for smarter code generation</div>
+              <div class="agent-hero-title">Smart Mode: Delivery Pipeline</div>
+              <div class="agent-hero-sub">One prompt, one pipeline: generate, inspect, apply, commit, branch, and PR with a handoff to AI Agent when needed.</div>
             </div>
-            <div class="agent-hero-badge">Orchestrated Mode</div>
+            <div class="agent-hero-badge">Pipeline First</div>
           </div>
           <div class="agent-cap-grid">
             <div class="agent-cap-card">
-              <div class="agent-cap-title">Workspace Integration</div>
-              <div class="agent-cap-text">Automatically detects and includes relevant files, classes, and symbols from your project.</div>
+              <div class="agent-cap-title">Generate</div>
+              <div class="agent-cap-text">Create new code or update existing files with workspace, GitHub, and RAG grounding.</div>
             </div>
             <div class="agent-cap-card">
-              <div class="agent-cap-title">GitHub Context</div>
-              <div class="agent-cap-text">Incorporates repo structure, branches, and current state for better code recommendations.</div>
+              <div class="agent-cap-title">Inspect</div>
+              <div class="agent-cap-text">Review the resolved file content and see what the AI used before writing anything back.</div>
             </div>
             <div class="agent-cap-card">
-              <div class="agent-cap-title">Knowledge Base RAG</div>
-              <div class="agent-cap-text">Retrieves relevant documentation and patterns from your project's knowledge base.</div>
+              <div class="agent-cap-title">Apply</div>
+              <div class="agent-cap-text">Push the final file into the workspace only after you approve the result.</div>
             </div>
             <div class="agent-cap-card">
-              <div class="agent-cap-title">Source Attribution</div>
-              <div class="agent-cap-text">Shows exactly which workspace files, GitHub resources, and docs informed the generation.</div>
+              <div class="agent-cap-title">Handoff</div>
+              <div class="agent-cap-text">If needed, continue the same generated result in AI Agent for deeper project-level work.</div>
             </div>
           </div>
-          <div class="agent-starters">
-            <button class="agent-starter-btn" onclick="fillSmartPrompt('Update the QuoteService to add a new validation method for quote status')">Update existing service</button>
-            <button class="agent-starter-btn" onclick="fillSmartPrompt('Create a new REST controller endpoint for handling quote submissions')">Add new endpoint</button>
-            <button class="agent-starter-btn" onclick="fillSmartPrompt('Fix the DealsProcessor to handle edge cases in deal reference mapping')">Fix production issue</button>
-            <button class="agent-starter-btn" onclick="applySmartPreset('issues_plus_vector','Search GitHub open issues about authentication and find similar documents in the knowledge base')">Issue + Vector Search</button>
-            <button class="agent-starter-btn" onclick="applySmartPreset('create_pr','Create a pull request for my current branch')">Direct PR Create</button>
-            <button class="agent-starter-btn" onclick="applySmartPreset('orchestrate','Analyze this task and implement it using workspace + GitHub + knowledge base context')">Full Orchestration</button>
+          <div class="smart-pipeline">
+            <div class="smart-pipeline-head">
+              <div>
+                <div class="smart-pipeline-title">Smart Delivery Pipeline</div>
+                <div class="smart-pipeline-sub">Generate, inspect, apply, commit, branch, and PR in one controlled flow.</div>
+              </div>
+              <div class="pipeline-status" id="smart-pipeline-status">Ready</div>
+            </div>
+            <div class="smart-pipeline-rail" id="smart-pipeline-rail">
+              <div class="smart-pipeline-step pending clickable" data-stage="generate" onclick="smartPipelineStepClick('generate')">
+                <div class="smart-pipeline-kicker">Step 1</div>
+                <div class="smart-pipeline-name">Generate</div>
+                <div class="smart-pipeline-desc">Create workspace-aware code or file candidates from the prompt.</div>
+              </div>
+              <div class="smart-pipeline-step pending clickable" data-stage="inspect" onclick="smartPipelineStepClick('inspect')">
+                <div class="smart-pipeline-kicker">Step 2</div>
+                <div class="smart-pipeline-name">Inspect</div>
+                <div class="smart-pipeline-desc">Show diff, sources, and file contents before writing.</div>
+              </div>
+              <div class="smart-pipeline-step pending clickable" data-stage="apply" onclick="smartPipelineStepClick('apply')">
+                <div class="smart-pipeline-kicker">Step 3</div>
+                <div class="smart-pipeline-name">Apply</div>
+                <div class="smart-pipeline-desc">Write the resolved files into the correct workspace paths.</div>
+              </div>
+              <div class="smart-pipeline-step pending clickable" data-stage="commit" onclick="smartPipelineStepClick('commit')">
+                <div class="smart-pipeline-kicker">Step 4</div>
+                <div class="smart-pipeline-name">Commit</div>
+                <div class="smart-pipeline-desc">Persist the result with backups and undo-friendly changesets.</div>
+              </div>
+              <div class="smart-pipeline-step pending clickable" data-stage="branch" onclick="smartPipelineStepClick('branch')">
+                <div class="smart-pipeline-kicker">Step 5</div>
+                <div class="smart-pipeline-name">Branch</div>
+                <div class="smart-pipeline-desc">Separate the work into a reviewable branch when needed.</div>
+              </div>
+              <div class="smart-pipeline-step pending clickable" data-stage="pr" onclick="smartPipelineStepClick('pr')">
+                <div class="smart-pipeline-kicker">Step 6</div>
+                <div class="smart-pipeline-name">PR</div>
+                <div class="smart-pipeline-desc">Open a pull request with the generated change summary.</div>
+              </div>
+            </div>
+            <div class="pipeline-foot">
+              <span class="pipeline-note">Workspace + GitHub + RAG grounded</span>
+              <span class="pipeline-note">Inspect before apply</span>
+              <span class="pipeline-note">Undo-safe delivery</span>
+              <span class="pipeline-note">Validation gate before PR</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Smart mode input -->
       <div id="smart-model-bar" style="display:flex;align-items:center;gap:8px;padding:5px 12px;background:var(--panel);border-top:1px solid var(--border);flex-shrink:0">
         <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;white-space:nowrap">Model</label>
         <select id="smart-model" style="background:var(--input-bg);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;cursor:pointer;flex:1;max-width:320px">
           <option value="">Loading models…</option>
         </select>
       </div>
-      <div class="smart-action-bar">
-        <span class="smart-action-label">Service Route</span>
-        <select id="smart-action" class="smart-action-select" onchange="onSmartActionChange()">
-          <option value="auto">Auto Decide (Best Service Mix)</option>
-          <option value="orchestrate">Code Orchestration</option>
-          <option value="issues_plus_vector">GitHub Issues + Vector Search</option>
-          <option value="create_pr">Direct Pull Request</option>
-        </select>
-        <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted)">
-          <input type="checkbox" id="smart-show-trace" checked> Show MCP trace JSON
-        </label>
-        <input id="smart-pr-repo" class="smart-mini-input" placeholder="repo" style="display:none" />
-        <input id="smart-pr-head" class="smart-mini-input" placeholder="head branch" style="display:none" />
-        <input id="smart-pr-base" class="smart-mini-input" placeholder="base (main)" style="display:none" />
-      </div>
       <div id="smart-input-area">
-        <textarea id="smart-prompt" placeholder="Describe your need - Smart Mode will auto-include workspace context, GitHub state, and relevant knowledge base docs..." rows="3"></textarea>
-        <div style="display:flex;gap:8px;padding:8px 12px;background:rgba(1,169,130,0.04);border-top:1px solid var(--border)">
-          <label style="flex:1;display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);cursor:pointer">
+        <textarea id="smart-prompt" placeholder="Describe the change. Smart Mode will use workspace, GitHub, and knowledge base context, then send the result into the delivery pipeline." rows="4"></textarea>
+        <div style="display:flex;gap:8px;padding:8px 12px;background:rgba(1,169,130,0.04);border-top:1px solid var(--border);flex-wrap:wrap">
+          <label style="flex:1;display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);cursor:pointer;min-width:170px">
             <input type="checkbox" id="smart-include-workspace" checked style="cursor:pointer"> Include Workspace
           </label>
-          <label style="flex:1;display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);cursor:pointer">
+          <label style="flex:1;display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);cursor:pointer;min-width:190px">
             <input type="checkbox" id="smart-include-rag" checked style="cursor:pointer"> Include Knowledge Base
           </label>
-          <label style="flex:1;display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);cursor:pointer">
-            <input type="checkbox" id="smart-include-github" style="cursor:pointer"> Include GitHub (optional)
+          <label style="flex:1;display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);cursor:pointer;min-width:165px">
+            <input type="checkbox" id="smart-include-github" checked style="cursor:pointer"> Include GitHub
           </label>
           <button class="send-btn" id="smart-send-btn" onclick="sendSmartRequest()" style="flex-shrink:0;margin-left:auto">Run Smart</button>
         </div>
@@ -1578,7 +2013,10 @@
           </div>
 
           <!-- Editable content area -->
-          <textarea id="gh-file-editor" placeholder="Select a file from the tree to view and edit..." readonly spellcheck="false"></textarea>
+          <div id="gh-editor-shell">
+            <pre id="gh-line-gutter" aria-hidden="true">1</pre>
+            <textarea id="gh-file-editor" placeholder="Select a file from the tree to view and edit..." readonly spellcheck="false"></textarea>
+          </div>
 
           <!-- Commit + PR workflow bar -->
           <div id="gh-workflow-bar">
@@ -1663,7 +2101,37 @@ const agentFileSessions = {};   // sessionId -> { files: [], contents: {} }
 let fvSession = null, fvIndex = 0;
 let currentWorkspacePath = '';
 let workspaceServices = [];
-const applySessions = {};       // sessionId -> { applied: bool, backups: { [path]: string|null } }
+const applySessions = {};       // sessionId -> { applied: bool, backups: { [path]: string|null }, highRiskConfirmed?: bool }
+const inspectSessions = {};     // sessionId -> true once diff inspection has been reviewed
+const validationSessions = {};  // sessionId -> { passed: bool, override: bool, command?: string, exitCode?: number }
+let smartPipelineLatestSessionId = null;
+let smartPipelineLaunchRoute = null;
+let smartPipelineFlowActive = false;
+const HIGH_RISK_SHRINK_RATIO = 0.6; // block when new file drops below 60% of previous line count
+
+function getLineNumberGutterText(text) {
+  const lineCount = Math.max(1, String(text || '').split('\n').length);
+  let out = '';
+  for (let i = 1; i <= lineCount; i++) out += i + '\n';
+  return out;
+}
+
+function renderCodeWithLineNumbers(text) {
+  const lines = String(text || '').split('\n');
+  return `<div class="code-lines">${lines.map((line, idx) =>
+    `<span class="code-line"><span class="code-line-no">${idx + 1}</span><span class="code-line-text">${line === '' ? '&nbsp;' : esc(line)}</span></span>`
+  ).join('')}</div>`;
+}
+
+function updateGhEditorLineNumbers() {
+  const editor = document.getElementById('gh-file-editor');
+  const gutter = document.getElementById('gh-line-gutter');
+  if (!editor || !gutter) return;
+  gutter.textContent = getLineNumberGutterText(editor.value);
+  gutter.scrollTop = editor.scrollTop;
+  const shell = document.getElementById('gh-editor-shell');
+  if (shell) shell.classList.toggle('editing', !editor.readOnly);
+}
 
 function renderAgentMessage(message) {
   const text = String(message || '');
@@ -1712,6 +2180,291 @@ async function readWorkspaceFileOrNull(filePath) {
   }
 }
 
+function normalizeGeneratedSnippet(content) {
+  const raw = String(content || '');
+  const fenceMatch = raw.match(/^```[a-zA-Z0-9_+-]*\n([\s\S]*?)\n```$/);
+  return (fenceMatch ? fenceMatch[1] : raw).trim();
+}
+
+function inferAppendMergeForExistingFile(filePath, existing, generated) {
+  const normalized = normalizeGeneratedSnippet(generated);
+  if (!normalized) return existing;
+
+  const ext = (filePath.split('.').pop() || '').toLowerCase();
+  const existingLines = existing.split('\n').length;
+  const generatedLines = normalized.split('\n').length;
+
+  // If generated output is close in size to the full file, treat it as replacement.
+  if (generatedLines >= Math.max(120, Math.floor(existingLines * 0.7))) {
+    return normalized;
+  }
+
+  if (ext === 'java') {
+    let snippet = normalized
+      .replace(/^\s*package\s+[\w.]+\s*;\s*/m, '')
+      .replace(/^\s*import\s+[^;]+;\s*/gm, '')
+      .trim();
+
+    // If model returned a tiny class wrapper, extract class body to append inside target class.
+    const firstBrace = snippet.indexOf('{');
+    const lastBrace = snippet.lastIndexOf('}');
+    if (/\bclass\b/.test(snippet) && firstBrace !== -1 && lastBrace > firstBrace) {
+      const inner = snippet.slice(firstBrace + 1, lastBrace).trim();
+      if (inner) snippet = inner;
+    }
+
+    const insertAt = existing.lastIndexOf('\n}');
+    const insertion = `\n${snippet}\n`;
+    if (insertAt >= 0) {
+      return existing.slice(0, insertAt) + insertion + existing.slice(insertAt + 1);
+    }
+    return `${existing.trimEnd()}\n${snippet}\n`;
+  }
+
+  // Generic fallback for non-Java existing files: append at end.
+  return `${existing.trimEnd()}\n${normalized}\n`;
+}
+
+function countLines(text) {
+  return Math.max(1, String(text || '').split('\n').length);
+}
+
+function showHighRiskApplyModal(risks, onConfirm) {
+  const existing = document.getElementById('high-risk-apply-modal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'high-risk-apply-modal';
+  modal.className = 'overwrite-modal-bg';
+
+  const rows = risks.map(r => {
+    const pct = Math.round((r.newLines / r.oldLines) * 100);
+    return `<div class="overwrite-file-row" style="align-items:flex-start;flex-direction:column;gap:2px">` +
+      `<span class="overwrite-file-name">${esc(r.path)}</span>` +
+      `<span style="font-size:10px;color:var(--muted)">Before: ${r.oldLines} lines -> After: ${r.newLines} lines (${pct}% of original)</span>` +
+      `</div>`;
+  }).join('');
+
+  modal.innerHTML = `
+    <div class="overwrite-modal-box" style="border-color:rgba(245,158,11,0.45)">
+      <div class="overwrite-modal-header" style="background:rgba(245,158,11,0.1);border-bottom-color:rgba(245,158,11,0.25);color:#f59e0b">
+        <span style="font-size:18px">⚠</span>
+        <span>High-risk overwrite detected</span>
+      </div>
+      <div class="overwrite-modal-body">
+        <p style="margin:0 0 10px;font-size:12px;color:var(--muted)">
+          The following existing files would shrink significantly. This may indicate unintended code loss.
+        </p>
+        <div class="overwrite-file-list">${rows}</div>
+        <p style="margin:10px 0 0;font-size:11px;color:var(--muted)">
+          Inspect diff carefully before confirming. Click <strong>Apply anyway</strong> only if this reduction is expected.
+        </p>
+      </div>
+      <div class="overwrite-modal-footer">
+        <button class="overwrite-btn-cancel" onclick="document.getElementById('high-risk-apply-modal').remove()">Cancel</button>
+        <button class="overwrite-btn-confirm" id="high-risk-apply-confirm" style="background:rgba(245,158,11,0.18);border-color:rgba(245,158,11,0.5);color:#fbbf24">Apply anyway</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(modal);
+  document.getElementById('high-risk-apply-confirm').onclick = () => {
+    modal.remove();
+    onConfirm();
+  };
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+}
+
+function closePipelineValidationModal() {
+  const modal = document.getElementById('pipeline-validation-modal');
+  if (modal) modal.remove();
+}
+
+async function runPipelineValidationCommand(sessionId, command) {
+  const output = document.getElementById('pipeline-validation-output');
+  const status = document.getElementById('pipeline-validation-status');
+  if (status) status.textContent = `Running: ${command}`;
+  if (output) output.textContent = 'Running...';
+
+  try {
+    const r = await fetch(API + '/api/terminal/exec', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ command, cwd: currentWorkspacePath || undefined })
+    });
+    const d = await r.json();
+
+    const outText = [d.stdout, d.stderr].filter(Boolean).join('\n').trim();
+    if (output) output.textContent = outText || '(no output)';
+
+    if (!validationSessions[sessionId]) validationSessions[sessionId] = { passed: false, override: false };
+    validationSessions[sessionId].command = command;
+    validationSessions[sessionId].exitCode = typeof d.exitCode === 'number' ? d.exitCode : (d.success ? 0 : 1);
+
+    if (d.success && (validationSessions[sessionId].exitCode || 0) === 0) {
+      validationSessions[sessionId].passed = true;
+      validationSessions[sessionId].override = false;
+      if (status) status.textContent = 'Validation passed';
+      smartPipelineSetStage('commit', 'pending', 'Validated');
+      toast('Validation passed. Delivery steps are unlocked.', 'success');
+    } else {
+      validationSessions[sessionId].passed = false;
+      if (status) status.textContent = 'Validation failed';
+      toast('Validation command failed. Fix errors or override risk.', 'warn');
+    }
+  } catch (err) {
+    if (status) status.textContent = 'Validation failed';
+    if (output) output.textContent = String((err && err.message) ? err.message : err);
+    toast('Validation command failed to run.', 'error');
+  }
+}
+
+function openPipelineValidationModal(sessionId) {
+  closePipelineValidationModal();
+  const state = validationSessions[sessionId] || { passed: false, override: false };
+  const modal = document.createElement('div');
+  modal.id = 'pipeline-validation-modal';
+  modal.className = 'overwrite-modal-bg';
+  modal.innerHTML = `
+    <div class="overwrite-modal-box" style="width:min(820px,94vw)">
+      <div class="overwrite-modal-header" style="color:#4fc3f7;border-bottom-color:rgba(79,195,247,0.22);background:rgba(79,195,247,0.08)">
+        <span style="font-size:18px">🧪</span>
+        <span>Validation Gate Before Delivery</span>
+      </div>
+      <div class="overwrite-modal-body">
+        <p style="margin:0 0 8px;font-size:12px;color:var(--muted)">Run at least one verification command before Commit/Branch/PR.</p>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+          <button class="editor-btn" onclick="runPipelineValidationCommand('${sessionId}','npm run build')">Run npm build</button>
+          <button class="editor-btn" onclick="runPipelineValidationCommand('${sessionId}','npm test')">Run npm test</button>
+          <button class="editor-btn" onclick="runPipelineValidationCommand('${sessionId}','mvn test')">Run mvn test</button>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px" id="pipeline-validation-status">${state.passed ? 'Validation passed' : 'Awaiting validation command'}</div>
+        <pre id="pipeline-validation-output" style="margin:0;max-height:280px;overflow:auto;background:var(--code-bg);border:1px solid var(--border);border-radius:6px;padding:8px;font-size:11px;white-space:pre-wrap">${state.command ? `Last command: ${state.command}\nExit code: ${state.exitCode ?? 'n/a'}` : 'No validation command run yet.'}</pre>
+      </div>
+      <div class="overwrite-modal-footer">
+        <button class="overwrite-btn-cancel" onclick="closePipelineValidationModal()">Close</button>
+        <button class="overwrite-btn-cancel" id="pipeline-validation-override">Proceed anyway (risk)</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if (e.target === modal) closePipelineValidationModal(); });
+
+  const overrideBtn = document.getElementById('pipeline-validation-override');
+  if (overrideBtn) {
+    overrideBtn.onclick = () => {
+      if (!validationSessions[sessionId]) validationSessions[sessionId] = { passed: false, override: false };
+      validationSessions[sessionId].override = true;
+      toast('Risk acknowledged. Delivery steps unlocked for this session.', 'warn');
+      closePipelineValidationModal();
+    };
+  }
+}
+
+async function ensurePipelineValidationGate(sessionId) {
+  const state = validationSessions[sessionId];
+  if (state && (state.passed || state.override)) return true;
+  openPipelineValidationModal(sessionId);
+  return false;
+}
+
+function closePipelineInspectModal() {
+  const modal = document.getElementById('pipeline-inspect-modal');
+  if (modal) modal.remove();
+}
+
+async function openPipelineInspectModal(sessionId) {
+  const session = agentFileSessions[sessionId];
+  if (!session || !Array.isArray(session.files) || session.files.length === 0) {
+    toast('No generated files available for inspect.', 'warn');
+    return;
+  }
+  if (!session.resolvedContents) session.resolvedContents = {};
+
+  closePipelineInspectModal();
+  const modal = document.createElement('div');
+  modal.id = 'pipeline-inspect-modal';
+  modal.className = 'overwrite-modal-bg';
+  modal.innerHTML = `
+    <div class="pipeline-inspect-modal-box">
+      <div class="pipeline-inspect-header">
+        <div>
+          <div class="pipeline-inspect-title">Inspect Changes Before Apply</div>
+          <div class="pipeline-inspect-sub">Green = added lines, Red = removed lines, with original/new line numbers.</div>
+        </div>
+        <button class="overwrite-btn-cancel" onclick="closePipelineInspectModal()">Close</button>
+      </div>
+      <div class="pipeline-inspect-body" id="pipeline-inspect-body">Loading workspace diff...</div>
+      <div class="pipeline-inspect-footer">
+        <button class="overwrite-btn-cancel" onclick="closePipelineInspectModal()">Cancel</button>
+        <button class="overwrite-btn-confirm" id="pipeline-inspect-ok">Mark Inspect Done</button>
+      </div>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) closePipelineInspectModal(); });
+  document.body.appendChild(modal);
+
+  const body = document.getElementById('pipeline-inspect-body');
+  let changedCount = 0;
+  let newCount = 0;
+  const blocks = [];
+
+  for (const fp of session.files) {
+    const generated = typeof session.contents?.[fp] === 'string' ? session.contents[fp] : '';
+    const existing = await readWorkspaceFileOrNull(fp);
+    const resolved = existing === null
+      ? normalizeGeneratedSnippet(generated)
+      : inferAppendMergeForExistingFile(fp, existing, generated);
+    session.resolvedContents[fp] = resolved;
+
+    let statusClass = 'same';
+    let statusText = 'UNCHANGED';
+    let diffHtml = '<div style="padding:10px;font-size:11px;color:var(--muted)">No textual changes detected.</div>';
+
+    if (existing === null) {
+      statusClass = 'new';
+      statusText = 'NEW FILE';
+      newCount++;
+      changedCount++;
+      const newFileDiff = computeDiff('', resolved) || '<div style="padding:10px;font-size:11px;color:var(--muted)">All lines are new.</div>';
+      diffHtml = newFileDiff;
+    } else {
+      const diff = computeDiff(existing, resolved);
+      if (diff) {
+        statusClass = 'updated';
+        statusText = 'UPDATED';
+        changedCount++;
+        diffHtml = diff;
+      }
+    }
+
+    blocks.push(
+      `<details class="pipeline-file-block" open>` +
+      `<summary class="pipeline-file-head">` +
+      `<span class="pipeline-file-path">${esc(fp)}</span>` +
+      `<span class="pipeline-file-status ${statusClass}">${statusText}</span>` +
+      `</summary>` +
+      `<div style="padding:8px 10px">${diffHtml}</div>` +
+      `</details>`
+    );
+  }
+
+  body.innerHTML = `
+    <div style="font-size:11px;color:var(--muted);margin-bottom:2px">
+      Files in this apply set: <strong style="color:var(--text)">${session.files.length}</strong>
+      &nbsp;|&nbsp; Changed: <strong style="color:var(--text)">${changedCount}</strong>
+      &nbsp;|&nbsp; New: <strong style="color:var(--text)">${newCount}</strong>
+    </div>
+    ${blocks.join('')}`;
+
+  const okBtn = document.getElementById('pipeline-inspect-ok');
+  if (okBtn) {
+    okBtn.onclick = () => {
+      inspectSessions[sessionId] = true;
+      smartPipelineSetStage('inspect', 'done', 'Inspected');
+      closePipelineInspectModal();
+      toast('Inspect completed. You can apply safely now.', 'success');
+    };
+  }
+}
+
 async function applyGeneratedFiles(sessionId) {
   const session = agentFileSessions[sessionId];
   if (!session || !Array.isArray(session.files) || session.files.length === 0) {
@@ -1719,18 +2472,45 @@ async function applyGeneratedFiles(sessionId) {
     return;
   }
 
-  if (!applySessions[sessionId]) applySessions[sessionId] = { applied: false, backups: {} };
+  if (!applySessions[sessionId]) applySessions[sessionId] = { applied: false, backups: {}, highRiskConfirmed: false };
   if (applySessions[sessionId].applied) {
     toast('This output is already applied. Use Undo first.', 'warn');
     return;
   }
 
-  let applied = 0;
+  const writePlan = [];
+  const highRisk = [];
   for (const fp of session.files) {
-    const content = session.contents?.[fp];
+    const content = (session.resolvedContents && typeof session.resolvedContents[fp] === 'string')
+      ? session.resolvedContents[fp]
+      : session.contents?.[fp];
     if (typeof content !== 'string') continue;
 
     const existing = await readWorkspaceFileOrNull(fp);
+    writePlan.push({ fp, content, existing });
+
+    if (existing !== null) {
+      const oldLines = countLines(existing);
+      const newLines = countLines(content);
+      if (newLines < Math.floor(oldLines * HIGH_RISK_SHRINK_RATIO)) {
+        highRisk.push({ path: fp, oldLines, newLines });
+      }
+    }
+  }
+
+  if (highRisk.length > 0 && !applySessions[sessionId].highRiskConfirmed) {
+    showHighRiskApplyModal(highRisk, async () => {
+      applySessions[sessionId].highRiskConfirmed = true;
+      await applyGeneratedFiles(sessionId);
+    });
+    return;
+  }
+
+  let applied = 0;
+  for (const plan of writePlan) {
+    const fp = plan.fp;
+    const content = plan.content;
+    const existing = plan.existing;
     applySessions[sessionId].backups[fp] = existing; // null => new file
 
     const wr = await fetch(API + '/api/files/write', {
@@ -1775,7 +2555,7 @@ async function undoGeneratedFiles(sessionId) {
     }
   }
 
-  applySessions[sessionId] = { applied: false, backups: {} };
+  applySessions[sessionId] = { applied: false, backups: {}, highRiskConfirmed: false };
   toast(`Undo completed for ${restored} file(s).`, 'success');
 }
 
@@ -1795,7 +2575,9 @@ function renderFileViewer() {
   const filePath = session.files[fvIndex];
   const content  = session.contents[filePath] || '(no content available)';
   document.getElementById('fv-filename').textContent = filePath;
-  document.getElementById('fv-content').textContent  = content;
+  const fvContent = document.getElementById('fv-content');
+  fvContent.dataset.rawContent = content;
+  fvContent.innerHTML = renderCodeWithLineNumbers(content);
   document.getElementById('fv-nav-label').textContent =
     `File ${fvIndex + 1} of ${session.files.length}`;
   document.getElementById('fv-prev').disabled = fvIndex === 0;
@@ -1884,7 +2666,8 @@ async function downloadAgentZip(sessionId) {
 }
 
 function copyViewerContent() {
-  const text = document.getElementById('fv-content').textContent || '';
+  const el = document.getElementById('fv-content');
+  const text = el.dataset.rawContent || '';
   navigator.clipboard.writeText(text).then(() => toast('Copied to clipboard', 'success'));
 }
 
@@ -1976,6 +2759,233 @@ function renderExecutionModeBadge(mode) {
   return `<div style="display:inline-block;margin:4px 0 8px;padding:4px 8px;border:1px solid ${m.color};border-radius:999px;font-size:10px;color:${m.color};background:rgba(255,255,255,0.03)">${esc(m.label)}</div>`;
 }
 
+function renderExecutionReceipt(run) {
+  if (!run) return '';
+  const totalFiles = Array.isArray(run.filesWritten) ? run.filesWritten.length : 0;
+  const updated = Array.isArray(run.updatedExistingFiles) ? run.updatedExistingFiles.length : 0;
+  const created = Array.isArray(run.createdNewFiles) ? run.createdNewFiles.length : 0;
+  const kbFiles = Array.isArray(run.ragSources) ? run.ragSources.length : 0;
+  const hasUndo = !!run.undoAvailable;
+  const changeSet = run.changeSetId ? String(run.changeSetId) : null;
+
+  let html = '<div style="margin-top:8px;padding:8px 10px;border:1px solid rgba(34,197,94,0.35);border-radius:8px;background:rgba(34,197,94,0.08);font-size:11px;color:var(--muted)">';
+  html += '<strong style="color:var(--text)">Execution Receipt:</strong> ';
+  html += `Files generated: <strong>${totalFiles}</strong>`;
+  if (updated > 0 || created > 0) {
+    html += ` &nbsp;|&nbsp; Updated: <strong>${updated}</strong> &nbsp; Created: <strong>${created}</strong>`;
+  }
+  html += ` &nbsp;|&nbsp; KB files read: <strong>${kbFiles}</strong>`;
+  html += ` &nbsp;|&nbsp; Undo available: <strong>${hasUndo ? 'Yes' : 'No'}</strong>`;
+  if (changeSet) {
+    html += `<br><span style="font-size:10px;color:var(--muted)">ChangeSet ID: ${esc(changeSet)}</span>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function smartPipelineSetStage(stage, state, detail) {
+  const el = document.querySelector(`#smart-pipeline-rail [data-stage="${stage}"]`);
+  if (!el) return;
+  el.classList.remove('pending', 'running', 'done', 'skipped', 'error');
+  el.classList.add(state);
+  let badge = el.querySelector('.pipeline-stage-badge');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.className = 'pipeline-stage-badge';
+    el.appendChild(badge);
+  }
+  const labels = {
+    pending: 'Pending',
+    running: 'Running',
+    done: 'Done',
+    skipped: 'Skipped',
+    error: 'Error',
+  };
+  badge.textContent = detail || labels[state] || state;
+}
+
+function smartPipelineReset() {
+  const status = document.getElementById('smart-pipeline-status');
+  if (status) status.textContent = 'Ready';
+  ['generate', 'inspect', 'apply', 'commit', 'branch', 'pr'].forEach(stage => smartPipelineSetStage(stage, 'pending', 'Pending'));
+}
+
+function smartPipelineBegin(routeLabel) {
+  const status = document.getElementById('smart-pipeline-status');
+  if (status) status.textContent = routeLabel || 'Running';
+  smartPipelineSetStage('generate', 'running', 'Generating');
+  smartPipelineSetStage('inspect', 'pending', 'Queued');
+  smartPipelineSetStage('apply', 'pending', 'Queued');
+  smartPipelineSetStage('commit', 'pending', 'Queued');
+  smartPipelineSetStage('branch', 'pending', 'Queued');
+  smartPipelineSetStage('pr', 'pending', 'Queued');
+}
+
+function smartPipelineFinish(run) {
+  const status = document.getElementById('smart-pipeline-status');
+  if (status) status.textContent = run && run.status ? String(run.status).toUpperCase() : 'Done';
+
+  const orchestration = run && run.combined_result && run.combined_result.orchestration;
+  const hasFiles = !!(orchestration && orchestration.fileContents && Object.keys(orchestration.fileContents).length > 0);
+  const hasDocs = !!(run && run.combined_result && run.combined_result.documents && run.combined_result.documents.length > 0);
+  const hasIssues = !!(run && run.combined_result && run.combined_result.issues && run.combined_result.issues.length > 0);
+  const hasPr = !!(run && run.combined_result && run.combined_result.pr);
+  const isCreatePr = !!(run && run.mode === 'create_pr');
+
+  smartPipelineSetStage('generate', 'done', 'Generated');
+  smartPipelineSetStage('inspect', 'done', hasDocs || hasIssues || hasFiles ? 'Inspected' : 'Reviewed');
+  smartPipelineSetStage('apply', hasFiles ? 'done' : 'skipped', hasFiles ? 'Applied' : 'Skipped');
+  smartPipelineSetStage('commit', isCreatePr || hasPr || hasFiles ? 'done' : 'skipped', (isCreatePr || hasPr || hasFiles) ? 'Committed' : 'Skipped');
+  smartPipelineSetStage('branch', isCreatePr || hasPr ? 'done' : 'skipped', (isCreatePr || hasPr) ? 'Branched' : 'Skipped');
+  smartPipelineSetStage('pr', hasPr ? 'done' : (isCreatePr ? 'done' : 'skipped'), hasPr || isCreatePr ? 'PR Ready' : 'Skipped');
+}
+
+function smartPipelineRouteLabel(route) {
+  return route === 'llm' ? 'Code Studio' : 'Feature Builder';
+}
+
+function smartPipelineCloseRouteModal() {
+  const modal = document.getElementById('smart-route-modal');
+  if (modal) modal.remove();
+}
+
+function smartPipelineOpenRouteModal() {
+  smartPipelineCloseRouteModal();
+  const modal = document.createElement('div');
+  modal.id = 'smart-route-modal';
+  modal.className = 'smart-route-modal-bg';
+  modal.innerHTML = `
+    <div class="smart-route-modal-box">
+      <div class="smart-route-modal-header">
+        <div class="smart-route-modal-title">Choose where Generate should run</div>
+        <div class="smart-route-modal-subtitle">Pick the working tab, then enter your prompt there. Smart Mode will keep the pipeline state in sync.</div>
+      </div>
+      <div class="smart-route-modal-body">
+        <div class="smart-route-option-grid">
+          <button class="smart-route-option" onclick="smartPipelineChooseRoute('agent')">
+            <span class="smart-route-option-pill">Feature Builder</span>
+            <span class="smart-route-option-title">Project changes</span>
+            <span class="smart-route-option-desc">Best for file edits, new features, and workspace-aware implementation with targeted code generation.</span>
+          </button>
+          <button class="smart-route-option" onclick="smartPipelineChooseRoute('llm')">
+            <span class="smart-route-option-pill">Code Studio</span>
+            <span class="smart-route-option-title">Refactor / snippets</span>
+            <span class="smart-route-option-desc">Best for code refinement, transformations, and small generated snippets or multi-file structured output.</span>
+          </button>
+        </div>
+      </div>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) smartPipelineCloseRouteModal(); });
+  document.body.appendChild(modal);
+}
+
+function smartPipelineChooseRoute(route) {
+  smartPipelineCloseRouteModal();
+  smartPipelineLaunchRoute = route;
+  smartPipelineFlowActive = true;
+  smartPipelineLatestSessionId = null;
+  smartPipelineBegin(smartPipelineRouteLabel(route));
+  switchTab(route);
+  const input = document.getElementById(route === 'llm' ? 'llm-prompt' : 'agent-prompt');
+  if (input) input.focus();
+  toast(`${smartPipelineRouteLabel(route)} selected for Generate`, 'info');
+}
+
+async function smartPipelineFinalizeGeneratedSession(sessionId, sourceRoute) {
+  const session = agentFileSessions[sessionId];
+  if (!session || !Array.isArray(session.files) || session.files.length === 0) return;
+
+  smartPipelineLatestSessionId = sessionId;
+  inspectSessions[sessionId] = false;
+  validationSessions[sessionId] = { passed: false, override: false };
+  const routeLabel = smartPipelineRouteLabel(sourceRoute || smartPipelineLaunchRoute || 'agent');
+  smartPipelineSetStage('generate', 'done', routeLabel + ' done');
+
+  if (smartPipelineFlowActive) {
+    smartPipelineSetStage('inspect', 'running', 'Inspect files');
+    smartPipelineSetStage('apply', 'pending', 'Ready to apply');
+    switchTab('smart');
+    toast('Files staged. Click Inspect, then Apply to write to workspace.', 'success');
+    smartPipelineFlowActive = false;
+    smartPipelineLaunchRoute = null;
+  } else {
+    smartPipelineSetStage('inspect', 'pending', 'Ready');
+  }
+}
+
+async function smartPipelineStepClick(stage) {
+  if (stage === 'generate') {
+    smartPipelineOpenRouteModal();
+    return;
+  }
+
+  const sessionId = smartPipelineLatestSessionId;
+  const session = sessionId ? agentFileSessions[sessionId] : null;
+  if (!session || !Array.isArray(session.files) || session.files.length === 0) {
+    toast('Generate files first, then use the pipeline steps.', 'warn');
+    return;
+  }
+
+  const firstFile = session.files[0];
+
+  if (stage === 'inspect') {
+    await openPipelineInspectModal(sessionId);
+    switchTab('smart');
+    return;
+  }
+
+  if (stage === 'apply') {
+    if (!inspectSessions[sessionId]) {
+      toast('Inspect is required before Apply. Review the diff first.', 'warn');
+      await openPipelineInspectModal(sessionId);
+      return;
+    }
+    if (applySessions[sessionId] && applySessions[sessionId].applied) {
+      toast('Workspace already updated for this generated session.', 'info');
+      smartPipelineSetStage('apply', 'done', 'Applied');
+      return;
+    }
+    await applyGeneratedFiles(sessionId);
+    smartPipelineSetStage('apply', 'done', 'Applied');
+    return;
+  }
+
+  if (stage === 'commit') {
+    if (!await ensurePipelineValidationGate(sessionId)) {
+      smartPipelineSetStage('commit', 'pending', 'Validation required');
+      return;
+    }
+    if (typeof ghPrefillCommitFromSession === 'function') {
+      ghPrefillCommitFromSession(sessionId, firstFile);
+    }
+    smartPipelineSetStage('commit', 'done', 'Validated + ready');
+    switchTab('github');
+    toast('Commit step opened in Repo & PR Hub', 'info');
+    return;
+  }
+
+  if (stage === 'branch') {
+    if (!await ensurePipelineValidationGate(sessionId)) {
+      smartPipelineSetStage('branch', 'pending', 'Validation required');
+      return;
+    }
+    smartPipelineSetStage('branch', 'done', 'Validated + branch');
+    switchTab('github');
+    toast('Use Repo & PR Hub to create or switch branches.', 'info');
+    return;
+  }
+
+  if (stage === 'pr') {
+    if (!await ensurePipelineValidationGate(sessionId)) {
+      smartPipelineSetStage('pr', 'pending', 'Validation required');
+      return;
+    }
+    smartPipelineSetStage('pr', 'done', 'Validated + PR');
+    switchTab('github');
+    toast('Use Repo & PR Hub to open the pull request.', 'info');
+  }
+}
+
 //  INIT 
 // ── Resizable panels ──────────────────────────────────────────
 function initDragHandle(handleId, leftElId, minLeft, minRight) {
@@ -2062,7 +3072,6 @@ async function init() {
   document.getElementById('smart-prompt').addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendSmartRequest(); }
   });
-  onSmartActionChange();
 }
 
 // ── Model picker (like GitHub Copilot) ─────────────────────
@@ -2395,7 +3404,9 @@ async function ftOpenFile(entry) {
     // Show in file viewer overlay
     const fvOverlay = document.getElementById('file-viewer-overlay');
     document.getElementById('fv-filename').textContent = entry.path;
-    document.getElementById('fv-content').textContent = d.content;
+    const fvContent = document.getElementById('fv-content');
+    fvContent.dataset.rawContent = d.content;
+    fvContent.innerHTML = renderCodeWithLineNumbers(d.content);
     document.getElementById('fv-nav-label').textContent = entry.path;
     document.getElementById('fv-prev').style.display = 'none';
     document.getElementById('fv-next').style.display = 'none';
@@ -2548,33 +3559,12 @@ function fillSmartPrompt(text) {
   document.getElementById('smart-prompt').focus();
 }
 
-function applySmartPreset(mode, promptText) {
-  const sel = document.getElementById('smart-action');
-  if (sel) sel.value = mode;
-  onSmartActionChange();
+function applySmartPreset(_mode, promptText) {
   fillSmartPrompt(promptText);
 }
 
-function onSmartActionChange() {
-  const sel = document.getElementById('smart-action');
-  const mode = sel ? sel.value : 'auto';
-  const repo = document.getElementById('smart-pr-repo');
-  const head = document.getElementById('smart-pr-head');
-  const base = document.getElementById('smart-pr-base');
-  const showPR = mode === 'create_pr';
-  [repo, head, base].forEach(el => { if (el) el.style.display = showPR ? 'inline-block' : 'none'; });
-
-  const includeGithub = document.getElementById('smart-include-github');
-  const includeRag = document.getElementById('smart-include-rag');
-  if (showPR && includeGithub) includeGithub.checked = true;
-  if (mode === 'issues_plus_vector') {
-    if (includeGithub) includeGithub.checked = true;
-    if (includeRag) includeRag.checked = true;
-  }
-}
-
 async function sendSmartRequest() {
-  const prompt = document.getElementById('smart-prompt').value.trim();
+  let prompt = document.getElementById('smart-prompt').value.trim();
   if (!prompt) return;
 
   const btn = document.getElementById('smart-send-btn');
@@ -2584,7 +3574,6 @@ async function sendSmartRequest() {
   const includeWorkspace = document.getElementById('smart-include-workspace').checked;
   const includeRAG = document.getElementById('smart-include-rag').checked;
   const includeGitHub = document.getElementById('smart-include-github').checked;
-  const mode = (document.getElementById('smart-action') || {}).value || 'auto';
   const showTrace = !!(document.getElementById('smart-show-trace') || {}).checked;
 
   let userHtml = `<div class="chat-user-question">${esc(prompt)}</div>`;
@@ -2600,24 +3589,14 @@ async function sendSmartRequest() {
   const userMsgId = addChatMsg('user', userHtml, true, prompt, []);
   document.getElementById('smart-prompt').value = '';
 
+  smartPipelineReset();
+  smartPipelineBegin('Orchestration flow');
+
   const thinkId = addChatMsg('assistant', '<span class="spinner"></span> Smart MCP orchestration in progress…', true);
   try {
-    const body = { task: prompt, mode, includeWorkspace, includeRAG, includeGitHub };
+    const body = { task: prompt, mode: 'orchestrate', includeWorkspace, includeRAG, includeGitHub };
     const modelSel = document.getElementById('smart-model');
     if (modelSel && modelSel.value) body.modelId = modelSel.value;
-
-    if (mode === 'create_pr') {
-      body.github = {
-        repo: (document.getElementById('smart-pr-repo') || {}).value || '',
-        head: (document.getElementById('smart-pr-head') || {}).value || '',
-        base: (document.getElementById('smart-pr-base') || {}).value || 'main',
-        title: `AI Smart PR - ${new Date().toLocaleString()}`,
-        body: `Created via Smart Mode MCP route for task: ${prompt}`,
-      };
-    } else if (mode === 'issues_plus_vector') {
-      body.github = { query: prompt, state: 'open' };
-      body.vector = { query: prompt, topK: 8 };
-    }
 
     const r = await fetch(API + '/api/smart/mcp', {
       method: 'POST',
@@ -2627,6 +3606,8 @@ async function sendSmartRequest() {
 
     const d = await r.json();
     removeChatMsg(thinkId);
+
+    smartPipelineFinish(d);
 
     if (d.status === 'success' || d.status === 'partial') {
       let html = '';
@@ -2645,6 +3626,14 @@ async function sendSmartRequest() {
       if (orchestration && orchestration.executionMode) {
         html += renderExecutionModeBadge(orchestration.executionMode);
       }
+      html += renderExecutionReceipt({
+        filesWritten: orchestration && orchestration.fileContents ? Object.keys(orchestration.fileContents) : [],
+        updatedExistingFiles: orchestration && orchestration.updatedExistingFiles ? orchestration.updatedExistingFiles : [],
+        createdNewFiles: orchestration && orchestration.createdNewFiles ? orchestration.createdNewFiles : [],
+        ragSources: d.combined_result && d.combined_result.documents ? d.combined_result.documents.map(doc => ({ file: doc.file, path: doc.path || doc.file, chunks: 1, linesRead: doc.linesRead || 0 })) : [],
+        undoAvailable: !!(orchestration && orchestration.fileContents && Object.keys(orchestration.fileContents).length > 0),
+        changeSetId: orchestration && orchestration.changeSetId,
+      });
       if (orchestration && orchestration.sources && orchestration.sources.workspace && orchestration.sources.workspace.length > 0) {
         html += `<div style="font-size:11px;color:var(--muted);margin-bottom:8px">`;
         html += `📁 <strong>Workspace files referenced:</strong><br>`;
@@ -2700,9 +3689,11 @@ async function sendSmartRequest() {
         html += '</div>';
       }
 
+      let smartGeneratedSessionId = null;
       if (orchestration && orchestration.fileContents && Object.keys(orchestration.fileContents).length > 0) {
         const files = Object.entries(orchestration.fileContents);
         const sessionId = 'smart_fs_' + Date.now();
+        smartGeneratedSessionId = sessionId;
         const fileNames = files.map(([name]) => name);
         agentFileSessions[sessionId] = {
           files: fileNames,
@@ -2715,9 +3706,19 @@ async function sendSmartRequest() {
         });
         html += `<br><button class="qa-btn" style="margin-top:6px;margin-right:6px" onclick="applyGeneratedFiles('${sessionId}')">Apply</button>`;
         html += `<button class="qa-btn" style="margin-top:6px;margin-right:6px" onclick="undoGeneratedFiles('${sessionId}')">Undo</button>`;
+        html += `<button class="qa-btn" style="margin-top:6px;margin-right:6px" onclick="sendSmartOutputToAgent('${sessionId}')">Continue in AI Agent</button>`;
         html += `<br><button class="qa-btn" style="margin-top:6px;margin-right:6px" onclick="downloadAgentZip('${sessionId}')">Download ZIP</button>`;
         html += `<br><small style="color:var(--muted);font-size:10px">Click file names to preview content before applying.</small>`;
         html += '</div>';
+      }
+
+      if (smartGeneratedSessionId && smartPipelineFlowActive) {
+        await smartPipelineFinalizeGeneratedSession(smartGeneratedSessionId, 'agent');
+      }
+      if (smartPipelineFlowActive && !smartGeneratedSessionId) {
+        smartPipelineFlowActive = false;
+        smartPipelineLaunchRoute = null;
+        smartPipelineSetStage('inspect', 'skipped', 'No files');
       }
 
       if (d.next_actions && d.next_actions.length > 0) {
@@ -2736,14 +3737,34 @@ async function sendSmartRequest() {
       addChatMsg('assistant', html || 'Orchestration completed (no output)', true, null, null, userMsgId);
     } else {
       const msg = (d.errors && d.errors[0] && d.errors[0].message) ? d.errors[0].message : (d.error || 'Unknown error');
+      smartPipelineSetStage('generate', 'error', 'Failed');
       addChatMsg('error', 'Smart Mode error: ' + msg, true, null, null, userMsgId);
     }
   } catch (err) {
+    smartPipelineSetStage('generate', 'error', 'Network error');
     addChatMsg('error', 'Network error: ' + ((err && err.message) ? err.message : String(err)), true, null, null, userMsgId);
   } finally {
     btn.disabled = false;
     btn.textContent = 'Run Smart';
   }
+}
+
+function sendSmartOutputToAgent(sessionId) {
+  const session = agentFileSessions[sessionId];
+  if (!session || !Array.isArray(session.files) || session.files.length === 0) {
+    toast('No Smart output available to send.', 'warn');
+    return;
+  }
+
+  const files = session.files.map(filePath => {
+    const content = (session.contents && session.contents[filePath]) ? session.contents[filePath] : '';
+    return `File: ${filePath}\n\`\`\`\n${content}\n\`\`\``;
+  }).join('\n\n');
+
+  const prompt = `Continue from these Smart Mode generated files and improve/finish them in the AI Agent pipeline. Keep the same file names unless a rename is necessary.\n\n${files}`;
+  fillPrompt(prompt);
+  switchTab('agent');
+  toast('Smart output moved to AI Agent pipeline', 'info');
 }
 
 async function sendAgentRequest(rawPromptOverride, contextFilesOverride, requestOptions = {}) {
@@ -2830,6 +3851,7 @@ async function sendAgentRequest(rawPromptOverride, contextFilesOverride, request
       if (d.timings) {
         html += renderLatencyCard('Latency', d.timings);
       }
+      html += renderExecutionReceipt(d);
 
       if (d.ragSources && d.ragSources.length > 0) {
         const totalLines = d.ragSources.reduce((sum, s) => sum + s.linesRead, 0);
@@ -2951,6 +3973,7 @@ async function sendAgentRequestForce(rawPrompt, contextFiles, modelId, userMsgId
       if (d.timings) {
         html += renderLatencyCard('Latency', d.timings);
       }
+      html += renderExecutionReceipt(d);
       if (d.ragSources && d.ragSources.length > 0) {
         const totalLines = d.ragSources.reduce((sum, s) => sum + s.linesRead, 0);
         const uid = 'rag_' + Date.now();
@@ -3003,6 +4026,7 @@ function ghPrefillCommit(filePath, content) {
   const editor = document.getElementById('gh-file-editor');
   editor.value = content;
   editor.readOnly = false;
+  updateGhEditorLineNumbers();
   document.getElementById('gh-modified-badge').style.display = '';
   const commitMsg = document.getElementById('gh-commit-msg-input');
   if (commitMsg) commitMsg.value = `feat: Add ${filePath.split('/').pop()}`;
@@ -3736,6 +4760,15 @@ async function runLLMOp() {
               outputCode = llmFiles.map(f => `// File: ${f.path}\n${f.content}`).join('\n\n');
             }
 
+            if (llmFiles.length > 0 && smartPipelineFlowActive) {
+              await smartPipelineFinalizeGeneratedSession(llmSessionId, 'llm');
+            }
+            if (smartPipelineFlowActive && llmFiles.length === 0) {
+              smartPipelineFlowActive = false;
+              smartPipelineLaunchRoute = null;
+              smartPipelineSetStage('inspect', 'skipped', 'No files');
+            }
+
             if (out.message) {
               html += `<div style="margin-bottom:10px;color:var(--text)">${esc(out.message)}</div>`;
             }
@@ -3763,6 +4796,17 @@ async function runLLMOp() {
           html += `</div>`;
         } else {
           html = `<div class="result-box success"><strong>Generated${res.language ? ' (' + res.language + ')' : ''}:</strong>\n\n${esc(res.code)}</div>`;
+          if (smartPipelineFlowActive) {
+            const llmSessionId = 'llm_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+            const extMap = {java:'java',python:'py',typescript:'ts',javascript:'js',go:'go',rust:'rs','c++':'cpp'};
+            const generatedName = `generated.${extMap[lang] || 'txt'}`;
+            agentFileSessions[llmSessionId] = {
+              files: [generatedName],
+              contents: { [generatedName]: res.code }
+            };
+            await smartPipelineFinalizeGeneratedSession(llmSessionId, 'llm');
+            html += `<div style="margin-top:8px;font-size:11px;color:var(--muted)">Smart pipeline captured <strong>${esc(generatedName)}</strong> for workspace update.</div>`;
+          }
         }
       }
       else if (op==='refactor_code' && res.refactoredCode) {
@@ -3956,7 +5000,7 @@ function llmViewFiles(btn) {
       <div style="background:var(--code-bg);border:1px solid var(--border);border-radius:0 4px 4px 4px;padding:12px;overflow:auto;max-height:400px;position:relative">
         <button onclick="navigator.clipboard.writeText(${JSON.stringify(f.content)});this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1200)" style="position:absolute;top:6px;right:6px;font-size:10px;padding:2px 8px;background:var(--sidebar);border:1px solid var(--border);border-radius:3px;cursor:pointer;color:var(--text)">Copy</button>
         <button onclick="llmDownloadFile('${esc(f.name)}', this)" style="position:absolute;top:6px;right:62px;font-size:10px;padding:2px 8px;background:var(--sidebar);border:1px solid var(--border);border-radius:3px;cursor:pointer;color:var(--text)">⬇ File</button>
-        <pre style="margin:0;font-size:11px;font-family:Consolas,monospace;white-space:pre-wrap;word-break:break-all;color:var(--text);padding-top:4px">${esc(f.content)}</pre>
+        <div style="margin:0;color:var(--text);padding-top:4px;overflow:auto">${renderCodeWithLineNumbers(f.content)}</div>
       </div>
     `;
     viewer.style.display = 'block';
@@ -4320,6 +5364,7 @@ async function ghOpenFile(filePath, el) {
   openLabel.textContent = `${ghState.repo} / ${ghState.branch} / ${filePath}`;
   editor.value = 'Loading...';
   editor.readOnly = true;
+  updateGhEditorLineNumbers();
   document.getElementById('gh-copy-btn').style.display = 'none';
   document.getElementById('gh-modified-badge').style.display = 'none';
   try {
@@ -4329,6 +5374,7 @@ async function ghOpenFile(filePath, el) {
     if (!d.success) { editor.value = 'Error: ' + d.error; return; }
     editor.value = d.content;
     editor.readOnly = false;
+    updateGhEditorLineNumbers();
     ghState.filePath = filePath;
     ghState.fileSha  = d.sha;
     ghState.originalContent = d.content;
@@ -4342,8 +5388,15 @@ async function ghOpenFile(filePath, el) {
     editor.oninput = () => {
       const modified = editor.value !== ghState.originalContent;
       document.getElementById('gh-modified-badge').style.display = modified ? '' : 'none';
+      updateGhEditorLineNumbers();
       ghUpdateWorkflow();
     };
+    editor.onscroll = () => {
+      const gutter = document.getElementById('gh-line-gutter');
+      if (gutter) gutter.scrollTop = editor.scrollTop;
+    };
+    editor.onkeyup = updateGhEditorLineNumbers;
+    editor.onpaste = () => setTimeout(updateGhEditorLineNumbers, 0);
   } catch (e) { editor.value = 'Failed: ' + e.message; }
 }
 
@@ -4591,6 +5644,17 @@ function toggleRagSources(uid) {
   list.style.display = open ? 'none' : 'block';
   if (chev) chev.textContent = open ? '›' : '⌄';
 }
+
+window.addEventListener('load', () => {
+  const editor = document.getElementById('gh-file-editor');
+  if (editor) {
+    editor.addEventListener('scroll', () => {
+      const gutter = document.getElementById('gh-line-gutter');
+      if (gutter) gutter.scrollTop = editor.scrollTop;
+    });
+    updateGhEditorLineNumbers();
+  }
+});
 
 window.addEventListener('load', init);
 setInterval(checkHealth, 30000);

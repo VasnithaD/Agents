@@ -117,6 +117,7 @@ export interface LLMGenerateCodeParams {
   prompt: string;
   language?: string;
   context?: string;
+  forceProjectContext?: boolean;
   temperature?: number;
   maxTokens?: number;
   reactMode?: boolean;
@@ -140,6 +141,7 @@ export interface LLMRefactorCodeParams {
   language: string;
   instructions: string;
   context?: string;
+  forceProjectContext?: boolean;
   reactMode?: boolean;
   humanFeedback?: string;
 }
@@ -148,6 +150,7 @@ export interface LLMCodeReviewParams {
   code: string;
   language: string;
   focusAreas?: string[];
+  forceProjectContext?: boolean;
 }
 
 export interface LLMCodeReviewResult {
@@ -168,6 +171,7 @@ export interface LLMChatParams {
   message: string;
   conversationHistory?: ChatMessage[];
   context?: string;
+  forceProjectContext?: boolean;
 }
 
 export interface ChatMessage {

@@ -26,6 +26,10 @@ app.use(express.json({ limit: '10mb' }));
 
 // ─── Mutable workspace state ───
 let workspacePath: string = process.env.VSCODE_WORKSPACE_PATH || 'C:\\Users\\abhishe6\\Downloads\\cpq-ngqc-app\\cpq-ngqc-app';
+const BUILTIN_WORKSPACES = [
+  { name: 'CPQ NGQC App', path: 'C:\\Users\\abhishe6\\Downloads\\cpq-ngqc-app\\cpq-ngqc-app' },
+  { name: 'OCL Base', path: 'C:\\Users\\abhishe6\\Downloads\\ocl-base' },
+];
 
 // ─── Utility: translate common Unix commands for Windows PowerShell ───
 function translateCommand(command: string): { translated: string; blocked: string | null } {
@@ -302,15 +306,64 @@ app.get('/api/workspace', (req: Request, res: Response) => {
   res.json({ success: true, path: workspacePath });
 });
 
-app.post('/api/workspace/change', (req: Request, res: Response) => {
+app.get('/api/workspaces/list', (_req: Request, res: Response) => {
+  const normalizedActive = path.resolve(workspacePath).toLowerCase();
+  const seen = new Set<string>();
+  const rows: Array<{ name: string; path: string; exists: boolean; active: boolean }> = [];
+
+  for (const ws of BUILTIN_WORKSPACES) {
+    const p = path.resolve(ws.path);
+    const key = p.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    rows.push({
+      name: ws.name,
+      path: p,
+      exists: fs.existsSync(p),
+      active: key === normalizedActive,
+    });
+  }
+
+  if (!seen.has(normalizedActive)) {
+    rows.unshift({
+      name: 'Active Workspace',
+      path: workspacePath,
+      exists: fs.existsSync(workspacePath),
+      active: true,
+    });
+  }
+
+  res.json({ success: true, workspaces: rows, activeWorkspace: workspacePath });
+});
+
+app.post('/api/workspace/change', async (req: Request, res: Response) => {
   const { newPath } = req.body;
   if (!newPath) return res.status(400).json({ success: false, error: 'newPath required' });
   if (!fs.existsSync(newPath)) return res.status(400).json({ success: false, error: 'Path does not exist' });
-  workspacePath = newPath;
-  vsCodeHandler.setWorkspace(newPath);
-  agentHandler.setWorkspace(newPath);
-  gitHubHandler.setLocalRepoPath(newPath);
-  res.json({ success: true, path: workspacePath });
+
+  const previousWorkspacePath = workspacePath;
+
+  try {
+    workspacePath = newPath;
+    vsCodeHandler.setWorkspace(newPath);
+    agentHandler.setWorkspace(newPath);
+    gitHubHandler.setLocalRepoPath(newPath);
+    orchestrator.setWorkspace(newPath);
+    await ragRetriever.setWorkspace(newPath);
+  } catch (error) {
+    workspacePath = previousWorkspacePath;
+    vsCodeHandler.setWorkspace(previousWorkspacePath);
+    agentHandler.setWorkspace(previousWorkspacePath);
+    gitHubHandler.setLocalRepoPath(previousWorkspacePath);
+    orchestrator.setWorkspace(previousWorkspacePath);
+    return res.status(500).json({ success: false, error: (error as Error).message });
+  }
+
+  res.json({ success: true, path: workspacePath, rag: ragRetriever.getStatus() });
+});
+
+app.get('/api/rag/status', (_req: Request, res: Response) => {
+  res.json({ success: true, rag: ragRetriever.getStatus(), workspace: workspacePath });
 });
 
 // ── Workspace file helpers (used by UI save/read actions) ──
@@ -351,6 +404,58 @@ app.get('/api/files/list', (req: Request, res: Response) => {
     res.json({ success: true, path: path.relative(workspacePath, abs).replace(/\\/g, '/') || '.', entries });
   } catch (error) {
     console.error('[/api/files/list] Error:', error);
+    res.status(500).json({ success: false, error: (error as Error).message });
+  }
+});
+
+// ── Build recursive file+folder index for fast sidebar search ──
+app.get('/api/files/search-index', (req: Request, res: Response) => {
+  try {
+    const rootAbs = path.resolve(workspacePath);
+    if (!fs.existsSync(rootAbs) || !fs.statSync(rootAbs).isDirectory()) {
+      return res.status(404).json({ success: false, error: `Workspace directory not found: ${rootAbs}` });
+    }
+
+    const entries: { name: string; type: 'dir' | 'file'; path: string }[] = [];
+    const stack: string[] = [rootAbs];
+
+    while (stack.length > 0) {
+      const current = stack.pop()!;
+      let dirents: fs.Dirent[] = [];
+      try {
+        dirents = fs.readdirSync(current, { withFileTypes: true });
+      } catch {
+        // Skip unreadable directories and continue indexing.
+        continue;
+      }
+
+      for (const d of dirents) {
+        const abs = path.join(current, d.name);
+        const rel = path.relative(rootAbs, abs).replace(/\\/g, '/');
+        if (!rel) continue;
+
+        if (d.isDirectory()) {
+          entries.push({ name: d.name, type: 'dir', path: rel });
+          stack.push(abs);
+        } else if (d.isFile()) {
+          entries.push({ name: d.name, type: 'file', path: rel });
+        }
+      }
+    }
+
+    entries.sort((a, b) => {
+      if (a.type !== b.type) return a.type === 'dir' ? -1 : 1;
+      return a.path.localeCompare(b.path);
+    });
+
+    res.json({
+      success: true,
+      workspace: rootAbs,
+      count: entries.length,
+      entries,
+    });
+  } catch (error) {
+    console.error('[/api/files/search-index] Error:', error);
     res.status(500).json({ success: false, error: (error as Error).message });
   }
 });
@@ -1302,7 +1407,7 @@ function startServer(port: number): void {
     console.log(`  POST /rpc                 - MCP JSON-RPC`);
 
     // Boot RAG index (non-blocking — runs in background)
-    initializeRAG().catch(err => console.warn('[RAG] Initialization error:', err));
+    initializeRAG(workspacePath).catch(err => console.warn('[RAG] Initialization error:', err));
   });
 
   server.on('error', (err: NodeJS.ErrnoException) => {

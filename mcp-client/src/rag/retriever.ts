@@ -20,6 +20,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import * as crypto from 'crypto';
 import * as dotenv from 'dotenv';
 import { loadDocuments, RawDocument } from './document-loader';
 import { TFIDFStore, SearchResult } from './tfidf-store';
@@ -122,25 +123,75 @@ class RAGRetriever {
   private docCount = 0;
   private lastSnapshot: Record<string, number> = {};
   private watchTimer: NodeJS.Timeout | null = null;
+  private initialized = false;
+  private workspacePath = path.resolve(WORKSPACE_PATH || RAG_DOCUMENTS_PATH);
+  private documentsPath = path.resolve(RAG_DOCUMENTS_PATH);
+  private indexRootDir = path.resolve(RAG_INDEX_DIR);
+  private indexDir = this.resolveIndexDirForWorkspace(this.workspacePath);
 
-  /** Load docs and build index. Call once at startup. */
-  async initialize(): Promise<void> {
+  private resolveIndexDirForWorkspace(workspace: string): string {
+    const normalized = path.resolve(workspace || this.documentsPath);
+    const hash = crypto.createHash('sha1').update(normalized.toLowerCase()).digest('hex').slice(0, 12);
+    return path.join(this.indexRootDir, 'workspaces', hash);
+  }
+
+  private stopWatcher(): void {
+    if (this.watchTimer) {
+      clearInterval(this.watchTimer);
+      this.watchTimer = null;
+    }
+  }
+
+  async setWorkspace(newWorkspacePath: string): Promise<void> {
+    const nextPath = path.resolve(String(newWorkspacePath || '').trim());
+    if (!nextPath || !fs.existsSync(nextPath) || !fs.statSync(nextPath).isDirectory()) {
+      throw new Error(`Workspace not found: ${newWorkspacePath}`);
+    }
+
+    const current = path.resolve(this.workspacePath);
+    if (current.toLowerCase() === nextPath.toLowerCase() && this.initialized) return;
+
+    this.workspacePath = nextPath;
+    this.documentsPath = nextPath;
+    this.indexDir = this.resolveIndexDirForWorkspace(nextPath);
+    this.stopWatcher();
     await this._rebuild();
     this._startWatcher();
+    this.initialized = true;
+  }
+
+  /** Load docs and build index. Call once at startup. */
+  async initialize(workspaceOverride?: string): Promise<void> {
+    const initialWorkspace = workspaceOverride && String(workspaceOverride).trim().length > 0
+      ? path.resolve(workspaceOverride)
+      : path.resolve(WORKSPACE_PATH || this.documentsPath);
+    this.workspacePath = initialWorkspace;
+    this.documentsPath = this.workspacePath;
+    this.indexDir = this.resolveIndexDirForWorkspace(this.workspacePath);
+    await this._rebuild();
+    this._startWatcher();
+    this.initialized = true;
   }
 
   private async _rebuild(): Promise<void> {
-    console.log(`[RAG] Loading documents from: ${RAG_DOCUMENTS_PATH}`);
-    const docs = loadDocuments(RAG_DOCUMENTS_PATH);
+    this.tfidf = new TFIDFStore();
+    this.neural = new NeuralVectorStore();
+    this.tfidfOk = false;
+    this.neuralOk = false;
+    this.docCount = 0;
+
+    console.log(`[RAG] Loading documents from: ${this.documentsPath}`);
+    const docs = loadDocuments(this.documentsPath);
     if (docs.length === 0) {
       console.warn('[RAG] No documents found — RAG context will be unavailable.');
       this.tfidfOk = false;
+      this.lastSnapshot = buildSnapshot(this.documentsPath);
       return;
     }
 
     const chunks = chunkDocuments(docs);
     this.docCount = docs.length;
-    this.lastSnapshot = buildSnapshot(RAG_DOCUMENTS_PATH);
+    this.lastSnapshot = buildSnapshot(this.documentsPath);
 
     // ── Step 1: TF-IDF index (immediate) ─────────────────────────────────
     this.tfidf.index(chunks);
@@ -149,7 +200,7 @@ class RAGRetriever {
 
     // ── Step 2: Neural index (async, background) ──────────────────────────
     const docsHash = NeuralVectorStore.buildDocsHash(this.lastSnapshot);
-    const loaded   = this.neural.loadFromDisk(RAG_INDEX_DIR, docsHash);
+    const loaded   = this.neural.loadFromDisk(this.indexDir, docsHash);
 
     if (loaded) {
       this.neuralOk = true;
@@ -166,7 +217,7 @@ class RAGRetriever {
 
     // ── Step 3: AST index for symbol-based lookup (immediate) ──────────────────
     // Prefer indexing the active workspace; fallback to the RAG documents path.
-    const astProjectPath = WORKSPACE_PATH || RAG_DOCUMENTS_PATH;
+    const astProjectPath = this.workspacePath || this.documentsPath;
     if (fs.existsSync(astProjectPath)) {
       console.log(`[RAG] Building AST index for workspace: ${astProjectPath}`);
       try {
@@ -205,7 +256,7 @@ class RAGRetriever {
         }, vectors[i]);
       }
       store.finalize();
-      store.saveToDisk(RAG_INDEX_DIR, docsHash);
+      store.saveToDisk(this.indexDir, docsHash);
 
       this.neural   = store;
       this.neuralOk = true;
@@ -217,8 +268,9 @@ class RAGRetriever {
 
   private _startWatcher(): void {
     if (WATCH_MS <= 0) return;
+    this.stopWatcher();
     this.watchTimer = setInterval(async () => {
-      const current = buildSnapshot(RAG_DOCUMENTS_PATH);
+      const current = buildSnapshot(this.documentsPath);
       if (snapshotChanged(this.lastSnapshot, current)) {
         console.log('[RAG] Change detected — rebuilding index...');
         await this._rebuild();
@@ -486,8 +538,8 @@ class RAGRetriever {
       docCount:       this.docCount,
       chunkCount:     this.tfidf.chunkCount,
       vectorCount:    this.neural.size,
-      documentsPath:  RAG_DOCUMENTS_PATH,
-      indexPath:      RAG_INDEX_DIR,
+      documentsPath:  this.documentsPath,
+      indexPath:      this.indexDir,
       astStatus,
     };
   }
@@ -497,6 +549,6 @@ class RAGRetriever {
 export const ragRetriever = new RAGRetriever();
 
 /** Call once when the MCP server starts. */
-export async function initializeRAG(): Promise<void> {
-  await ragRetriever.initialize();
+export async function initializeRAG(workspaceOverride?: string): Promise<void> {
+  await ragRetriever.initialize(workspaceOverride);
 }

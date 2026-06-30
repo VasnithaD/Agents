@@ -66,6 +66,10 @@ export class Orchestrator {
     private workspacePath: string,
   ) {}
 
+  setWorkspace(newPath: string): void {
+    this.workspacePath = newPath;
+  }
+
   async execute(req: OrchestratorRequest): Promise<OrchestratorResponse> {
     const {
       intent,

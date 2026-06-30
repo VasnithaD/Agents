@@ -9,35 +9,35 @@
 
   /* ── DARK THEME (default) ── HPE Black + Green ───────────── */
   :root {
-    --bg:         #f0f2f5;
-    --panel:      #ffffff;
-    --sidebar:    #ffffff;
-    --border:     #dde1e7;
-    --accent:     #1e3a5f;
-    --accent2:    #2a8fa8;
-    --accent-dim: rgba(42,143,168,0.12);
-    --text:       #1a202c;
-    --muted:      #667085;
+    --bg:         #0f141b;
+    --panel:      #171e28;
+    --sidebar:    #141a23;
+    --border:     #293344;
+    --accent:     #62a5d9;
+    --accent2:    #74c2dd;
+    --accent-dim: rgba(98,165,217,0.16);
+    --text:       #e6edf6;
+    --muted:      #9ba9bc;
     --error:      #e74c3c;
     --success:    #2ecc71;
-    --header:     #1d1f27;
-    --header-text:#ffffff;
-    --input-bg:   #ffffff;
-    --hover:      #eef3f8;
-    --active:     #e6edf6;
-    --tab-bg:     #f5f8fc;
-    --tab-act:    #eaf1fa;
-    --btn:        #1e3a5f;
-    --btn-hov:    #14294a;
-    --code-bg:    #f9fbfe;
+    --header:     #121821;
+    --header-text:#e6edf6;
+    --input-bg:   #101722;
+    --hover:      #1d2735;
+    --active:     #243245;
+    --tab-bg:     #141c27;
+    --tab-act:    #1f2a3a;
+    --btn:        #2a4a6d;
+    --btn-hov:    #375b83;
+    --code-bg:    #111923;
     --glow:       0 0 0 rgba(0,0,0,0);
     --glow-sm:    0 0 0 rgba(0,0,0,0);
-    --card-shadow:0 2px 10px rgba(30,58,95,0.08);
+    --card-shadow:0 3px 14px rgba(0,0,0,0.24);
     --scrollbar:  rgba(90,100,115,0.35);
     --scrollbar-hover: rgba(90,100,115,0.55);
-    --toast-bg:   #ffffff;
-    --diff-bg:    #f5f8fc;
-    --editor-modified-bg: #f6f9fe;
+    --toast-bg:   #171e28;
+    --diff-bg:    #111923;
+    --editor-modified-bg: #0f1822;
   }
 
   /* ── LIGHT / HPE THEME ──────────────────────────────────── */
@@ -53,8 +53,8 @@
     --muted:      #667085;
     --error:      #e74c3c;
     --success:    #2ecc71;
-    --header:     #1d1f27;
-    --header-text:#ffffff;
+    --header:     #f7f9fc;
+    --header-text:#1a202c;
     --input-bg:   #ffffff;
     --hover:      #eef3f8;
     --active:     #e6edf6;
@@ -112,7 +112,7 @@
   #header {
     height: 48px;
     background: var(--header);
-    border-bottom: 1px solid rgba(255,255,255,0.12);
+    border-bottom: 1px solid var(--border);
     display: flex; align-items: center; padding: 0 16px; gap: 14px;
     user-select: none; position: relative; z-index: 100;
     box-shadow: none;
@@ -120,7 +120,7 @@
   #header::after {
     content: '';
     position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+    background: linear-gradient(90deg, transparent, rgba(120,138,160,0.28), transparent);
   }
   #header .title {
     color: var(--header-text);
@@ -156,6 +156,150 @@
     margin-left: auto; max-width: 400px;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
+  #activity-bar {
+    width: 54px;
+    min-width: 54px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-right: 1px solid rgba(255,255,255,0.07);
+    background: #181e28;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset -1px 0 0 rgba(255,255,255,0.04);
+    flex-shrink: 0;
+  }
+  .activity-top,
+  .activity-bottom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    z-index: 1;
+  }
+  .activity-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #9fb2c9;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: transform 0.18s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  }
+  .activity-btn[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: calc(100% + 12px);
+    top: 50%;
+    transform: translateY(-50%) translateX(-4px);
+    background: rgba(12,20,30,0.95);
+    color: #e6f0fa;
+    border: 1px solid rgba(139,201,224,0.35);
+    border-radius: 8px;
+    padding: 5px 8px;
+    font-size: 10px;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.14s ease, transform 0.14s ease;
+    transition-delay: 0s;
+    z-index: 80;
+  }
+  .activity-btn[data-tooltip]::before {
+    content: '';
+    position: absolute;
+    left: calc(100% + 6px);
+    top: 50%;
+    width: 6px;
+    height: 6px;
+    transform: translateY(-50%) rotate(45deg);
+    background: rgba(12,20,30,0.95);
+    border-left: 1px solid rgba(139,201,224,0.3);
+    border-top: 1px solid rgba(139,201,224,0.3);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.14s ease;
+    transition-delay: 0s;
+    z-index: 79;
+  }
+  .activity-btn[data-tooltip]:hover::after,
+  .activity-btn[data-tooltip]:focus-visible::after,
+  .activity-btn[data-tooltip]:hover::before,
+  .activity-btn[data-tooltip]:focus-visible::before {
+    opacity: 1;
+    transition-delay: 0.26s;
+  }
+  .activity-btn[data-tooltip]:hover::after,
+  .activity-btn[data-tooltip]:focus-visible::after {
+    transform: translateY(-50%) translateX(0);
+  }
+  .activity-btn::before {
+    content: '';
+    position: absolute;
+    left: -10px;
+    top: 6px;
+    bottom: 6px;
+    width: 2px;
+    border-radius: 2px;
+    background: transparent;
+    transition: background 0.2s ease;
+  }
+  .activity-btn .activity-glyph {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+  }
+  .activity-btn .activity-glyph svg {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .activity-btn:hover {
+    color: #d8e9fb;
+    background: rgba(159,178,201,0.12);
+    transform: translateY(-1px);
+  }
+  .activity-btn.active {
+    color: #eef7ff;
+    background: linear-gradient(155deg, rgba(42,143,168,0.36), rgba(30,58,95,0.38));
+    border-color: rgba(139,201,224,0.28);
+    box-shadow: 0 8px 20px rgba(30,58,95,0.32), inset 0 0 12px rgba(139,201,224,0.15);
+  }
+  .activity-btn.active::before { background: #8bc9e0; }
+  .activity-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #ff7c6c, #ff5d8f);
+    color: #ffffff;
+    border: 1px solid rgba(255,255,255,0.35);
+    font-size: 9px;
+    font-weight: 700;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    line-height: 1;
+    box-shadow: 0 5px 12px rgba(255,93,143,0.35);
+  }
+  .activity-badge.show { display: inline-flex; }
   /* ── VS Code-style Explorer sidebar ── */
   #workspace-sidebar {
     width: 280px; min-width: 200px; max-width: 400px;
@@ -164,6 +308,13 @@
     border-right: 1px solid var(--border);
     overflow: hidden; min-height: 0; flex-shrink: 0;
   }
+  .workspace-side-panel {
+    display: none;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+  }
+  .workspace-side-panel.active { display: flex; }
   #explorer-header {
     display: flex; align-items: center;
     padding: 0 8px 0 12px; height: 35px; flex-shrink: 0;
@@ -202,6 +353,117 @@
     flex: 1; overflow-y: auto; overflow-x: auto;
     padding: 4px 0;
   }
+  #search-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 0 10px 0 12px;
+    height: 35px;
+    border-bottom: 1px solid var(--border);
+  }
+  #search-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--muted);
+  }
+  #search-controls {
+    padding: 8px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  #sidebar-search-input {
+    width: 100%;
+    font-size: 12px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 7px 8px;
+    border-radius: 6px;
+    outline: none;
+  }
+  #sidebar-search-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px rgba(30,58,95,0.12);
+  }
+  .search-filter-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .search-filter-row label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  #sidebar-search-results {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 6px 0;
+  }
+  .search-result-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    color: var(--text);
+    text-align: left;
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+  .search-result-row:hover { background: var(--hover); }
+  .search-result-icon {
+    width: 16px;
+    flex-shrink: 0;
+    text-align: center;
+    font-size: 12px;
+  }
+  .search-result-main {
+    min-width: 0;
+    flex: 1;
+  }
+  .search-result-name {
+    font-size: 12px;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .search-result-path {
+    font-size: 10px;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .search-empty {
+    padding: 10px 12px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  #search-status {
+    padding: 6px 12px;
+    font-size: 10px;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   /* file tree nodes */
   .ft-row {
     display: flex; align-items: center;
@@ -234,8 +496,11 @@
   }
   /* drag handle between sidebar and middle */
   #drag-explorer { width: 4px; }
-  /* keep select ids working for workspace switch logic */
-  #workspace-service-select { display: none; }
+  #app.workspace-collapsed #workspace-sidebar,
+  #app.workspace-collapsed #drag-explorer {
+    display: none;
+  }
+  /* keep legacy hidden fields only for compatibility */
   #workspace-service-path { display: none; }
   #workspace-service-status { display: none; }
   .workspace-service-card { display: none; }
@@ -243,11 +508,16 @@
 
   /* LAYOUT */
   #app { display: flex; flex: 1; min-height: 0; position: relative; z-index: 1; }
+  #app.workspace-collapsed #activity-explorer-btn:not(.active),
+  #app.workspace-collapsed #activity-search-btn:not(.active) {
+    color: #8fa3ba;
+  }
   #middle { flex: 1; min-width: 0; display: flex; flex-direction: column; border-right: 1px solid var(--border); }
 
   /* TABS */
   .tab-bar {
     display: flex;
+    align-items: center;
     background: var(--tab-bg);
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
@@ -272,6 +542,94 @@
     border-bottom: 2px solid var(--accent);
     font-weight: 600;
     box-shadow: inset 0 -2px 0 var(--accent);
+  }
+  .tab-overflow {
+    margin-left: auto;
+    position: relative;
+    padding-right: 8px;
+  }
+  .tab-overflow.active .tab-more-btn {
+    color: var(--accent);
+    background: var(--tab-act);
+    border-color: var(--accent);
+  }
+  .tab-more-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--panel);
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .tab-more-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--hover);
+  }
+  .tab-more-current {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .tab-more-caret {
+    font-size: 10px;
+    color: var(--muted);
+    transition: transform 0.16s ease;
+  }
+  .tab-overflow.open .tab-more-caret { transform: rotate(180deg); }
+  .tab-dropdown {
+    position: absolute;
+    right: 8px;
+    top: calc(100% + 6px);
+    width: min(380px, calc(100vw - 40px));
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 14px 28px rgba(13, 26, 45, 0.12);
+    display: none;
+    z-index: 60;
+    overflow: hidden;
+  }
+  .tab-overflow.open .tab-dropdown { display: block; }
+  .tab-dropdown .tab {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 10px 12px;
+    border-right: none;
+    border-bottom: none;
+    font-size: 12px;
+  }
+  .tab-dropdown .tab + .tab {
+    border-top: 1px solid var(--border);
+  }
+  .tab-dropdown .tab.active {
+    border-bottom: none;
+    box-shadow: none;
+    border-left: 2px solid var(--accent);
+    padding-left: 10px;
+  }
+  @media (max-width: 900px) {
+    .tab {
+      padding: 9px 12px;
+      font-size: 11px;
+    }
+    .tab-more-btn {
+      padding: 6px 8px;
+      font-size: 10px;
+    }
+    .tab-more-current {
+      max-width: 110px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
   }
   .tab-help {
     display: inline-flex;
@@ -1147,6 +1505,55 @@
   }
   #agent-prompt::placeholder { color: var(--muted); }
 
+  .prompt-plus-btn {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--input-bg);
+    color: var(--text);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .prompt-plus-btn:hover {
+    border-color: #4fc3f7;
+    color: #4fc3f7;
+    transform: translateY(-1px);
+  }
+  .prompt-plus-btn:focus-visible {
+    outline: 2px solid #4fc3f7;
+    outline-offset: 2px;
+  }
+  .prompt-row-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .prompt-row-head label {
+    margin-bottom: 0;
+  }
+  .prompt-input-stack {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .prompt-upload-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+
   .send-btn {
     background: var(--btn);
     color: #ffffff; border: none;
@@ -1167,6 +1574,81 @@
     color: var(--muted); cursor: default;
     box-shadow: none; transform: none;
   }
+  .exec-icon-btn {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 14px;
+    border: 1px solid rgba(122, 201, 234, 0.38);
+    background:
+      linear-gradient(140deg, rgba(83, 126, 170, 0.92), rgba(67, 153, 188, 0.88)),
+      linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0.04));
+    box-shadow:
+      0 8px 20px rgba(19, 41, 70, 0.32),
+      inset 0 1px 0 rgba(255,255,255,0.35),
+      inset 0 -10px 18px rgba(0,0,0,0.16);
+    backdrop-filter: blur(8px);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .exec-icon-btn::after {
+    content: '';
+    position: absolute;
+    top: -65%;
+    left: -50%;
+    width: 62%;
+    height: 230%;
+    transform: rotate(18deg);
+    background: linear-gradient(180deg, rgba(255,255,255,0.52), rgba(255,255,255,0));
+    pointer-events: none;
+  }
+  .exec-icon-btn:hover {
+    transform: translateY(-1px) scale(1.02);
+    box-shadow:
+      0 12px 24px rgba(19, 41, 70, 0.38),
+      inset 0 1px 0 rgba(255,255,255,0.42),
+      inset 0 -10px 18px rgba(0,0,0,0.16);
+  }
+  .exec-icon-btn .exec-icon {
+    width: 20px;
+    height: 20px;
+    color: #eaf5ff;
+    z-index: 1;
+    transition: transform 0.18s ease, opacity 0.18s ease;
+  }
+  .exec-icon-btn .exec-icon svg {
+    width: 100%;
+    height: 100%;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .exec-icon-btn .exec-icon.busy {
+    position: absolute;
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  .exec-icon-btn.loading .exec-icon.idle {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  .exec-icon-btn.loading .exec-icon.busy {
+    opacity: 1;
+    transform: scale(1);
+    animation: spinExec 0.9s linear infinite;
+  }
+  .exec-icon-btn:disabled {
+    opacity: 0.85;
+  }
+  @keyframes spinExec {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
 
   /* LLM PANEL */
   #llm-panel { flex: 1; display: none; flex-direction: column; overflow: hidden; }
@@ -1176,6 +1658,34 @@
     padding: 10px 14px; border-bottom: 1px solid var(--border);
     display: flex; gap: 8px; flex-wrap: wrap; flex-shrink: 0;
     background: var(--panel); backdrop-filter: blur(12px);
+  }
+  .llm-context-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    padding: 4px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    background: rgba(255,255,255,0.02);
+    cursor: pointer;
+    transition: transform .12s ease, border-color .2s ease, background .2s ease;
+  }
+  .llm-context-indicator:active {
+    transform: translateY(1px);
+  }
+  .llm-context-indicator.on {
+    border-color: rgba(1,169,130,0.45);
+    color: var(--accent);
+    background: rgba(1,169,130,0.12);
+  }
+  .llm-context-indicator.off {
+    border-color: rgba(148,163,184,0.35);
+    color: #9aa8bc;
+    background: rgba(148,163,184,0.1);
   }
 
   #llm-form {
@@ -1287,6 +1797,9 @@
     background: rgba(1,169,130,0.1);
     color: var(--muted); cursor: default;
     box-shadow: none; transform: none;
+  }
+  .action-btn.exec-icon-btn {
+    align-self: flex-end;
   }
 
   /* FLOATING RESULT BOX */
@@ -1610,14 +2123,34 @@
   <span class="title">AI Coding Assistant</span>
   <div id="status-dot"></div>
   <span id="status-text">Connecting...</span>
-  <button id="theme-toggle" onclick="toggleTheme()" title="Switch between dark and light theme">
-    <span id="theme-icon">☀️</span>
-    <span id="theme-label">Light</span>
-  </button>
 </div>
 
 <div id="app">
+  <div id="activity-bar" aria-label="Sidebar activity bar">
+    <div class="activity-top">
+      <button id="activity-explorer-btn" class="activity-btn active" onclick="toggleWorkspaceSidebar()" title="Explorer" data-tooltip="Explorer (Ctrl/Cmd+B)" aria-label="Explorer" aria-expanded="true" aria-controls="workspace-sidebar">
+        <span id="sidebar-toggle-icon" class="activity-glyph" aria-hidden="true">
+          <svg viewBox="0 0 24 24" role="presentation"><path d="M3 7.5h6l2 2H21v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10.5h18"/></svg>
+        </span>
+      </button>
+      <button id="activity-search-btn" class="activity-btn" onclick="toggleSearchSidebar()" title="Search" data-tooltip="Search (Ctrl/Cmd+F)" aria-label="Search" aria-expanded="false" aria-controls="workspace-sidebar">
+        <span class="activity-glyph" aria-hidden="true">
+          <svg viewBox="0 0 24 24" role="presentation"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg>
+        </span>
+        <span id="activity-search-badge" class="activity-badge">0</span>
+      </button>
+    </div>
+    <div class="activity-bottom">
+      <button id="theme-toggle" class="activity-btn" onclick="toggleTheme()" title="Theme" data-tooltip="Theme" aria-label="Theme toggle">
+        <span id="theme-icon" class="activity-glyph" aria-hidden="true">
+          <svg viewBox="0 0 24 24" role="presentation"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M2.5 12H5M19 12h2.5M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>
+        </span>
+      </button>
+    </div>
+  </div>
+
   <div id="workspace-sidebar">
+    <div id="explorer-panel" class="workspace-side-panel active">
 
     <!-- VS Code-style explorer header -->
     <div id="explorer-header">
@@ -1646,6 +2179,28 @@
 
     <!-- Status bar at bottom of explorer -->
     <div id="explorer-status">No workspace loaded</div>
+    </div>
+
+    <div id="search-panel" class="workspace-side-panel">
+      <div id="search-header">
+        <span id="search-title">Search</span>
+        <button class="icon-btn" onclick="runSidebarSearch(true)" title="Refresh search results">&#x21BB;</button>
+      </div>
+      <div id="search-controls">
+        <input id="sidebar-search-input" type="text" placeholder="Search files and folders" />
+        <div class="search-filter-row">
+          <label><input id="search-filter-files" type="checkbox" checked /> Files</label>
+          <label><input id="search-filter-folders" type="checkbox" checked /> Folders</label>
+          <label><input id="search-filter-path" type="checkbox" checked /> Match path</label>
+          <label><input id="search-filter-content" type="checkbox" checked /> Content</label>
+          <label><input id="search-filter-case" type="checkbox" /> Case sensitive</label>
+        </div>
+      </div>
+      <div id="sidebar-search-results">
+        <div class="search-empty">Type to search the workspace.</div>
+      </div>
+      <div id="search-status">Ready</div>
+    </div>
 
   </div>
 
@@ -1655,14 +2210,23 @@
   <!-- MIDDLE -->
   <div id="middle">
     <div class="tab-bar">
-      <div class="tab" id="tab-smart" onclick="switchTab('smart')">Delivery Hub <span style="font-size:9px;opacity:.6;font-weight:400">(All Sources)</span><span class="tab-help" data-tooltip-title="Orchestrated task execution." data-tooltip-desc="Uses workspace + GitHub + RAG to plan and run end-to-end tasks." tabindex="0">?</span></div>
-      <div class="tab active" id="tab-agent"  onclick="switchTab('agent')">Feature Builder <span style="font-size:9px;opacity:.6;font-weight:400">(Project Changes)</span><span class="tab-help" data-tooltip-title="Feature-level code changes." data-tooltip-desc="Builds or updates project files with context-aware, targeted implementation." tabindex="0">?</span></div>
-      <div class="tab" id="tab-llm"    onclick="switchTab('llm')">Code Studio <span style="font-size:9px;opacity:.6;font-weight:400">(Refactor / Snippets)</span><span class="tab-help" data-tooltip-title="Code refinement workspace." data-tooltip-desc="Refactor, explain, review, or generate snippets from selected code quickly." tabindex="0">?</span></div>
-      <div class="tab" id="tab-github" onclick="switchTab('github')">Repo & PR Hub<span class="tab-help" data-tooltip-title="Repository delivery controls." data-tooltip-desc="Browse files, manage branches, commit updates, and open pull requests." tabindex="0">?</span></div>
+      <div class="tab active" id="tab-smart" onclick="switchTab('smart')"><span id="primary-tab-title">Delivery Hub</span> <span id="primary-tab-sub" style="font-size:9px;opacity:.6;font-weight:400">(All Sources)</span><span class="tab-help" id="primary-tab-help" data-tooltip-title="Orchestrated task execution." data-tooltip-desc="Uses workspace + GitHub + RAG to plan and run end-to-end tasks." tabindex="0">?</span></div>
+      <div class="tab-overflow" id="tab-overflow">
+        <button class="tab-more-btn" id="tab-more-btn" type="button" onclick="toggleTabDropdown(event)" aria-haspopup="true" aria-expanded="false" aria-controls="tab-dropdown">
+          More Views
+          <span class="tab-more-current" id="tab-more-current">Feature Builder</span>
+          <span class="tab-more-caret">▾</span>
+        </button>
+        <div class="tab-dropdown" id="tab-dropdown" role="menu" aria-label="Additional tabs">
+          <div class="tab" id="tab-agent" onclick="switchTab('agent')">Feature Builder <span style="font-size:9px;opacity:.6;font-weight:400">(Project Changes)</span><span class="tab-help" data-tooltip-title="Feature-level code changes." data-tooltip-desc="Builds or updates project files with context-aware, targeted implementation." tabindex="0">?</span></div>
+          <div class="tab" id="tab-llm" onclick="switchTab('llm')">Code Studio <span style="font-size:9px;opacity:.6;font-weight:400">(Refactor / Snippets)</span><span class="tab-help" data-tooltip-title="Code refinement workspace." data-tooltip-desc="Refactor, explain, review, or generate snippets from selected code quickly." tabindex="0">?</span></div>
+          <div class="tab" id="tab-github" onclick="switchTab('github')">Repo & PR Hub<span class="tab-help" data-tooltip-title="Repository delivery controls." data-tooltip-desc="Browse files, manage branches, commit updates, and open pull requests." tabindex="0">?</span></div>
+        </div>
+      </div>
     </div>
 
     <!-- SMART MODE -->
-    <div id="smart-panel">
+    <div id="smart-panel" class="active">
       <div id="smart-chat-history">
         <div class="agent-hero">
           <div class="agent-hero-head">
@@ -1700,32 +2264,32 @@
             </div>
             <div class="smart-pipeline-rail" id="smart-pipeline-rail">
               <div class="smart-pipeline-step pending clickable" data-stage="generate" onclick="smartPipelineStepClick('generate')">
-                <div class="smart-pipeline-kicker">Step 1</div>
+                <div class="smart-pipeline-kicker">Intake</div>
                 <div class="smart-pipeline-name">Generate</div>
                 <div class="smart-pipeline-desc">Create workspace-aware code or file candidates from the prompt.</div>
               </div>
               <div class="smart-pipeline-step pending clickable" data-stage="inspect" onclick="smartPipelineStepClick('inspect')">
-                <div class="smart-pipeline-kicker">Step 2</div>
+                <div class="smart-pipeline-kicker">Review</div>
                 <div class="smart-pipeline-name">Inspect</div>
                 <div class="smart-pipeline-desc">Show diff, sources, and file contents before writing.</div>
               </div>
               <div class="smart-pipeline-step pending clickable" data-stage="apply" onclick="smartPipelineStepClick('apply')">
-                <div class="smart-pipeline-kicker">Step 3</div>
+                <div class="smart-pipeline-kicker">Merge</div>
                 <div class="smart-pipeline-name">Apply</div>
                 <div class="smart-pipeline-desc">Write the resolved files into the correct workspace paths.</div>
               </div>
               <div class="smart-pipeline-step pending clickable" data-stage="commit" onclick="smartPipelineStepClick('commit')">
-                <div class="smart-pipeline-kicker">Step 4</div>
+                <div class="smart-pipeline-kicker">Snapshot</div>
                 <div class="smart-pipeline-name">Commit</div>
                 <div class="smart-pipeline-desc">Persist the result with backups and undo-friendly changesets.</div>
               </div>
               <div class="smart-pipeline-step pending clickable" data-stage="branch" onclick="smartPipelineStepClick('branch')">
-                <div class="smart-pipeline-kicker">Step 5</div>
+                <div class="smart-pipeline-kicker">Isolate</div>
                 <div class="smart-pipeline-name">Branch</div>
                 <div class="smart-pipeline-desc">Separate the work into a reviewable branch when needed.</div>
               </div>
               <div class="smart-pipeline-step pending clickable" data-stage="pr" onclick="smartPipelineStepClick('pr')">
-                <div class="smart-pipeline-kicker">Step 6</div>
+                <div class="smart-pipeline-kicker">Ship</div>
                 <div class="smart-pipeline-name">PR</div>
                 <div class="smart-pipeline-desc">Open a pull request with the generated change summary.</div>
               </div>
@@ -1758,13 +2322,16 @@
           <label style="flex:1;display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);cursor:pointer;min-width:165px">
             <input type="checkbox" id="smart-include-github" checked style="cursor:pointer"> Include GitHub
           </label>
-          <button class="send-btn" id="smart-send-btn" onclick="sendSmartRequest()" style="flex-shrink:0;margin-left:auto">Run Smart</button>
+          <button class="send-btn exec-icon-btn" id="smart-send-btn" onclick="sendSmartRequest()" style="flex-shrink:0;margin-left:auto" title="Run Smart" aria-label="Run Smart">
+            <span class="exec-icon idle" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 5l7 7-7 7"/></svg></span>
+            <span class="exec-icon busy" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.35-5.65"/><path d="M20 4v6h-6"/></svg></span>
+          </button>
         </div>
       </div>
     </div>
 
     <!-- AI AGENT -->
-    <div id="agent-panel" class="active">
+    <div id="agent-panel">
       <div id="chat-history">
         <div class="agent-hero">
           <div class="agent-hero-head">
@@ -1810,8 +2377,15 @@
         <span id="agent-model-desc" style="font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px"></span>
       </div>
       <div id="agent-input-area">
-        <textarea id="agent-prompt" placeholder="Describe what you want to build... or attach a TDS file from the explorer and say: generate production-ready code" rows="2"></textarea>
-        <button class="send-btn" id="send-btn" onclick="sendAgentRequest()">Run</button>
+        <button class="prompt-plus-btn" type="button" onclick="triggerLocalFolderUpload('agent')" title="Upload files from local folder" aria-label="Upload files from local folder">+</button>
+        <div class="prompt-input-stack">
+          <textarea id="agent-prompt" placeholder="Describe what you want to build... or upload local folder files with +" rows="2"></textarea>
+          <div id="agent-prompt-upload-chips" class="prompt-upload-chips" style="display:none"></div>
+        </div>
+        <button class="send-btn exec-icon-btn" id="send-btn" onclick="sendAgentRequest()" title="Run" aria-label="Run">
+          <span class="exec-icon idle" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 5l7 7-7 7"/></svg></span>
+          <span class="exec-icon busy" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.35-5.65"/><path d="M20 4v6h-6"/></svg></span>
+        </button>
       </div>
     </div>
 
@@ -1825,6 +2399,7 @@
             <option value="refactor_code">Refactor</option>
           </select>
         </div>
+        <button type="button" id="llm-project-context-badge" class="llm-context-indicator" onclick="toggleLLMProjectContextMode()" title="Project context mode for Code Studio (click to toggle)">Project Context: --</button>
         <button class="llm-op-btn" id="llm-op-token" onclick="toggleTokenRefresh()" style="margin-left:auto;border-color:#f59e0b;color:#f59e0b" title="HPE token expires every 65 min - paste a fresh one here">Refresh Token</button>
       </div>
       <!-- Token refresh strip (hidden by default) -->
@@ -1840,8 +2415,12 @@
         <!-- Context files bar - shown for Generate & Chat modes -->
         <div id="llm-context-bar" style="display:none;padding:5px 12px;background:rgba(167,139,250,0.08);border-bottom:1px solid var(--border);flex-wrap:wrap;gap:4px;align-items:center"></div>
         <div class="form-row" id="row-prompt">
-          <label>Prompt / Requirements</label>
+          <div class="prompt-row-head">
+            <label>Prompt / Requirements</label>
+            <button class="prompt-plus-btn" type="button" onclick="triggerLocalFolderUpload('llm')" title="Upload files from local folder" aria-label="Upload files from local folder">+</button>
+          </div>
           <textarea id="llm-prompt" rows="4" placeholder="Describe what code you need..."></textarea>
+          <div id="llm-prompt-upload-chips" class="prompt-upload-chips" style="display:none"></div>
         </div>
         <div class="form-row" id="row-code" style="display:none">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
@@ -1880,7 +2459,10 @@
           <span id="llm-model-desc" style="font-size:10px;color:var(--muted);margin-top:3px;display:block"></span>
         </div>
         <div style="display:flex;justify-content:flex-end;margin-top:4px">
-          <button class="action-btn" onclick="runLLMOp()">▶ Execute</button>
+          <button class="action-btn exec-icon-btn" id="llm-exec-btn" onclick="runLLMOp()" title="Execute" aria-label="Execute">
+            <span class="exec-icon idle" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 5l7 7-7 7"/></svg></span>
+            <span class="exec-icon busy" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.35-5.65"/><path d="M20 4v6h-6"/></svg></span>
+          </button>
         </div>
         <div id="llm-result"></div>
       </div>
@@ -2010,19 +2592,29 @@
 
 </div>
 
+<input id="agent-local-folder-input" type="file" webkitdirectory directory multiple style="display:none" onchange="handleAgentLocalFolderUpload(event)">
+<input id="llm-local-folder-input" type="file" webkitdirectory directory multiple style="display:none" onchange="handleLLMLocalFolderUpload(event)">
+
 <script>
 const API = '';
 const WORKSPACE_SERVICES_KEY = 'mcp-workspace-services-v1';
-const DEFAULT_WORKSPACE_SERVICE = {
-  name: 'CPQ NGQC App',
-  path: 'C:\\Users\\abhishe6\\Downloads\\cpq-ngqc-app\\cpq-ngqc-app'
-};
+const DEFAULT_WORKSPACE_SERVICES = [
+  {
+    name: 'CPQ NGQC App',
+    path: 'C:\\Users\\abhishe6\\Downloads\\cpq-ngqc-app\\cpq-ngqc-app'
+  },
+  {
+    name: 'OCL Base',
+    path: 'C:\\Users\\abhishe6\\Downloads\\ocl-base'
+  }
+];
 
 // ── File viewer state ──────────────────────────────────────────
 const agentFileSessions = {};   // sessionId -> { files: [], contents: {} }
 let fvSession = null, fvIndex = 0;
 let currentWorkspacePath = '';
 let workspaceServices = [];
+let serverWorkspaceServices = [];
 const applySessions = {};       // sessionId -> { applied: bool, backups: { [path]: string|null }, highRiskConfirmed?: bool }
 const inspectSessions = {};     // sessionId -> true once diff inspection has been reviewed
 const validationSessions = {};  // sessionId -> { passed: bool, override: bool, command?: string, exitCode?: number }
@@ -2626,6 +3218,7 @@ document.addEventListener('keydown', e => {
 }());
 let currentLLMOp = 'generate_code';
 let llmChatSessionId = null;  // persists session across messages
+let llmProjectContextMode = 'auto'; // auto | on | off
 
 //  TOAST NOTIFICATIONS 
 function toast(msg, type='info', duration=3500) {
@@ -2954,40 +3547,97 @@ function initDragHandle(handleId, leftElId, minLeft, minRight) {
 
 // ── Theme toggle ─────────────────────────────────────────────
 function applyTheme(theme) {
-  document.documentElement.setAttribute('data-theme', 'light');
+  const resolved = theme === 'light' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', resolved);
   const icon  = document.getElementById('theme-icon');
-  const label = document.getElementById('theme-label');
-  icon.textContent  = '🎨';
-  label.textContent = 'Theme';
-  localStorage.setItem('mcp-theme', 'light');
+  if (icon) {
+    icon.innerHTML = resolved === 'light'
+      ? '<svg viewBox="0 0 24 24" role="presentation"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M2.5 12H5M19 12h2.5M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>'
+      : '<svg viewBox="0 0 24 24" role="presentation"><path d="M20.5 14.2A8.8 8.8 0 1 1 9.8 3.5a7.2 7.2 0 1 0 10.7 10.7z"/></svg>';
+  }
+  localStorage.setItem('mcp-theme', resolved);
 }
 function toggleTheme() {
-  applyTheme('light');
+  const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  applyTheme(current === 'light' ? 'dark' : 'light');
 }
 // Apply saved theme immediately on load
 (function() {
-  applyTheme('light');
+  const savedTheme = localStorage.getItem('mcp-theme');
+  applyTheme(savedTheme === 'light' ? 'light' : 'dark');
 }());
 
 async function init() {
+  const savedSidebarMode = localStorage.getItem('workspace-sidebar-mode');
+  if (savedSidebarMode === 'explorer' || savedSidebarMode === 'search' || savedSidebarMode === 'none') {
+    setSidebarMode(savedSidebarMode, false);
+  } else {
+    const savedSidebarState = localStorage.getItem('workspace-sidebar-collapsed') === '1';
+    setSidebarMode(savedSidebarState ? 'none' : 'explorer', false);
+  }
+
   // Init resizable panel drag handles
   // (handleId, leftPanelId, minLeftPx, minRightPx)
   initDragHandle('drag-explorer', 'workspace-sidebar',   160, 400);
   initDragHandle('drag-gh-tree',  'gh-file-tree-panel', 120, 280);
 
+  initSidebarSearchBindings();
+
   const health = await checkHealth();
+  await loadWorkspaceServicesFromServer();
   readWorkspaceServices();
   renderWorkspaceServiceSelect(health && health.workspace ? health.workspace : currentWorkspacePath);
   ftLoadRoot();   // load file tree (non-blocking)
-  await loadModels();
-  await loadGithubStatus();
+  try { await loadModels(); } catch (_) {}
+  try { await loadGithubStatus(); } catch (_) {}
+
   document.getElementById('agent-prompt').addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAgentRequest(); }
   });
   document.getElementById('smart-prompt').addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendSmartRequest(); }
   });
+
+  const llmPromptInput = document.getElementById('llm-prompt');
+  if (llmPromptInput) llmPromptInput.addEventListener('input', updateLLMProjectContextBadge);
+  const llmCodeInput = document.getElementById('llm-code');
+  if (llmCodeInput) llmCodeInput.addEventListener('input', updateLLMProjectContextBadge);
+
+  renderLLMContextBar();
+  renderLLMPromptUploadChips();
+  renderAgentPromptUploadChips();
+  updateLLMProjectContextBadge();
 }
+
+function initSidebarSearchBindings() {
+  if (initSidebarSearchBindings.bound) return;
+  initSidebarSearchBindings.bound = true;
+
+  const searchInput = document.getElementById('sidebar-search-input');
+  const searchFilterFiles = document.getElementById('search-filter-files');
+  const searchFilterFolders = document.getElementById('search-filter-folders');
+  const searchFilterPath = document.getElementById('search-filter-path');
+  const searchFilterContent = document.getElementById('search-filter-content');
+  const searchFilterCase = document.getElementById('search-filter-case');
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      if (sidebarSearchDebounce) clearTimeout(sidebarSearchDebounce);
+      sidebarSearchDebounce = setTimeout(() => runSidebarSearch(false), 160);
+    });
+    searchInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        runSidebarSearch(true);
+      }
+    });
+  }
+  if (searchFilterFiles) searchFilterFiles.addEventListener('change', () => runSidebarSearch(false));
+  if (searchFilterFolders) searchFilterFolders.addEventListener('change', () => runSidebarSearch(false));
+  if (searchFilterPath) searchFilterPath.addEventListener('change', () => runSidebarSearch(false));
+  if (searchFilterContent) searchFilterContent.addEventListener('change', () => runSidebarSearch(false));
+  if (searchFilterCase) searchFilterCase.addEventListener('change', () => runSidebarSearch(false));
+}
+initSidebarSearchBindings.bound = false;
 
 // ── Model picker (like GitHub Copilot) ─────────────────────
 let availableModels = [];
@@ -3080,6 +3730,22 @@ function deriveWorkspaceName(workspacePath) {
   return parts.length > 0 ? parts[parts.length - 1] : 'Workspace';
 }
 
+async function loadWorkspaceServicesFromServer() {
+  try {
+    const r = await fetch(API + '/api/workspaces/list');
+    const d = await r.json();
+    if (!d || !d.success || !Array.isArray(d.workspaces)) return;
+    serverWorkspaceServices = d.workspaces
+      .filter(ws => ws && ws.path && ws.name !== 'Active Workspace')
+      .map(ws => ({
+        name: ws.name || deriveWorkspaceName(ws.path),
+        path: ws.path
+      }));
+  } catch (_) {
+    // fall back to local defaults only
+  }
+}
+
 function readWorkspaceServices() {
   let saved = [];
   try {
@@ -3101,9 +3767,9 @@ function readWorkspaceServices() {
     });
   }
 
-  pushService(DEFAULT_WORKSPACE_SERVICE);
-  if (currentWorkspacePath) {
-    pushService({ name: 'Active Workspace', path: currentWorkspacePath });
+  DEFAULT_WORKSPACE_SERVICES.forEach(pushService);
+  if (Array.isArray(serverWorkspaceServices)) {
+    serverWorkspaceServices.forEach(pushService);
   }
   if (Array.isArray(saved)) {
     saved.forEach(pushService);
@@ -3121,7 +3787,7 @@ function renderWorkspaceServiceSelect(selectedPath) {
   workspaceServices.forEach(service => {
     const option = document.createElement('option');
     option.value = service.path;
-    option.textContent = `${service.name} — ${service.path}`;
+    option.textContent = `${service.name}`;
     if (normalizeWorkspacePath(service.path) === normalizedSelected) option.selected = true;
     select.appendChild(option);
   });
@@ -3166,11 +3832,17 @@ async function activateSelectedWorkspaceService() {
     if (!d.success) throw new Error(d.error || 'Workspace switch failed');
     currentWorkspacePath = d.path || newPath;
     document.getElementById('workspace-service-path-value').textContent = currentWorkspacePath;
-    status.textContent = 'Workspace activated';
+    const ragDoc = d.rag && d.rag.documentsPath ? d.rag.documentsPath : '';
+    status.textContent = ragDoc ? `Workspace activated (RAG: ${deriveWorkspaceName(ragDoc)})` : 'Workspace activated';
+    await loadWorkspaceServicesFromServer();
     readWorkspaceServices();
     renderWorkspaceServiceSelect(currentWorkspacePath);
+    sidebarSearchWorkspace = '';
+    sidebarSearchIndex = [];
+    sidebarSearchContentCache.clear();
     ftOpenDirs.clear();
     ftLoadRoot();
+    updateLLMProjectContextBadge();
     toast(`Workspace switched to ${deriveWorkspaceName(currentWorkspacePath)}`, 'success');
   } catch (error) {
     status.textContent = 'Workspace switch failed';
@@ -3179,7 +3851,8 @@ async function activateSelectedWorkspaceService() {
 }
 
 function addWorkspaceServiceFromPrompt() {
-  const pathValue = prompt('Enter the absolute path of the workspace you want to add:', currentWorkspacePath || DEFAULT_WORKSPACE_SERVICE.path);
+  const defaultPath = (DEFAULT_WORKSPACE_SERVICES[0] && DEFAULT_WORKSPACE_SERVICES[0].path) || currentWorkspacePath || '';
+  const pathValue = prompt('Enter the absolute path of the workspace you want to add:', currentWorkspacePath || defaultPath);
   const normalized = normalizeWorkspacePath(pathValue);
   if (!normalized) return;
   const nameValue = prompt('Workspace name for the selector:', deriveWorkspaceName(normalized));
@@ -3201,6 +3874,12 @@ function onWsPickerChange(val) {
 // ─────────────────────────────────────────────────────────────
 const ftOpenDirs = new Set();   // tracks expanded dir paths
 let   ftSelectedPath = null;    // currently selected entry path
+let   sidebarMode = 'explorer';
+let   sidebarSearchIndex = [];
+let   sidebarSearchWorkspace = '';
+const sidebarSearchContentCache = new Map();
+let sidebarSearchDebounce = null;
+let sidebarSearchRunId = 0;
 
 function ftFileIcon(name) {
   const ext = name.split('.').pop().toLowerCase();
@@ -3418,30 +4097,464 @@ function setStatus(ok, msg) {
   document.getElementById('status-text').textContent = msg;
 }
 
+function setWorkspaceSidebarCollapsed(collapsed, persist = true) {
+  setSidebarMode(collapsed ? 'none' : 'explorer', persist);
+}
+
+function toggleWorkspaceSidebar() {
+  setSidebarMode(sidebarMode === 'explorer' ? 'none' : 'explorer');
+}
+
+function toggleSearchSidebar() {
+  setSidebarMode(sidebarMode === 'search' ? 'none' : 'search');
+}
+
+function setSidebarMode(mode, persist = true) {
+  const app = document.getElementById('app');
+  const explorerPanel = document.getElementById('explorer-panel');
+  const searchPanel = document.getElementById('search-panel');
+  const explorerBtn = document.getElementById('activity-explorer-btn');
+  const searchBtn = document.getElementById('activity-search-btn');
+  const icon = document.getElementById('sidebar-toggle-icon');
+  if (!app || !explorerPanel || !searchPanel || !explorerBtn || !searchBtn || !icon) return;
+
+  const resolvedMode = ['explorer', 'search', 'none'].includes(mode) ? mode : 'explorer';
+  sidebarMode = resolvedMode;
+
+  app.classList.toggle('workspace-collapsed', resolvedMode === 'none');
+  explorerPanel.classList.toggle('active', resolvedMode === 'explorer');
+  searchPanel.classList.toggle('active', resolvedMode === 'search');
+
+  explorerBtn.classList.toggle('active', resolvedMode === 'explorer');
+  searchBtn.classList.toggle('active', resolvedMode === 'search');
+  explorerBtn.setAttribute('aria-expanded', resolvedMode !== 'none' ? 'true' : 'false');
+  searchBtn.setAttribute('aria-expanded', resolvedMode === 'search' ? 'true' : 'false');
+  icon.style.opacity = resolvedMode === 'none' ? '0.78' : '1';
+
+  if (resolvedMode === 'search') {
+    const searchInput = document.getElementById('sidebar-search-input');
+    if (searchInput) {
+      searchInput.focus();
+      runSidebarSearch(false);
+    }
+  }
+
+  if (persist) {
+    localStorage.setItem('workspace-sidebar-mode', resolvedMode);
+    localStorage.setItem('workspace-sidebar-collapsed', resolvedMode === 'none' ? '1' : '0');
+  }
+}
+
+function updateSearchBadge(count) {
+  const badge = document.getElementById('activity-search-badge');
+  if (!badge) return;
+  if (!count || count < 1) {
+    badge.classList.remove('show');
+    badge.textContent = '0';
+    return;
+  }
+  badge.textContent = count > 99 ? '99+' : String(count);
+  badge.classList.add('show');
+}
+
+async function getSidebarSearchFileContent(filePath, caseSensitive) {
+  const cacheEntry = sidebarSearchContentCache.get(filePath);
+  if (cacheEntry) {
+    return caseSensitive ? cacheEntry.raw : cacheEntry.lower;
+  }
+
+  try {
+    const r = await fetch(API + '/api/files/read?path=' + encodeURIComponent(filePath));
+    const d = await r.json();
+    if (!d.success) return '';
+    const raw = String(d.content || '');
+    const lower = raw.toLowerCase();
+    sidebarSearchContentCache.set(filePath, { raw, lower });
+    return caseSensitive ? raw : lower;
+  } catch (_) {
+    return '';
+  }
+}
+
+async function buildSidebarSearchIndex(forceRebuild = false) {
+  const workspaceKey = normalizeWorkspacePath(currentWorkspacePath || 'default');
+  if (!forceRebuild && sidebarSearchWorkspace === workspaceKey && sidebarSearchIndex.length) {
+    return sidebarSearchIndex;
+  }
+
+  try {
+    const r = await fetch(API + '/api/files/search-index');
+    const d = await r.json();
+    if (d && d.success && Array.isArray(d.entries)) {
+      sidebarSearchWorkspace = workspaceKey;
+      sidebarSearchIndex = d.entries;
+      return d.entries;
+    }
+  } catch (_) {
+    // Fallback to incremental listing below.
+  }
+
+  const stack = [''];
+  const collected = [];
+  let traversed = 0;
+
+  while (stack.length > 0) {
+    const dirPath = stack.pop();
+    let entries = [];
+    try {
+      entries = await ftLoadDir(dirPath);
+    } catch (_) {
+      continue;
+    }
+
+    for (const entry of entries) {
+      traversed += 1;
+      collected.push(entry);
+      const entryType = String(entry.type || '').toLowerCase();
+      if (entryType === 'dir' || entryType === 'directory' || entryType === 'folder') stack.push(entry.path);
+    }
+  }
+
+  sidebarSearchWorkspace = workspaceKey;
+  sidebarSearchIndex = collected;
+  return collected;
+}
+
+function renderSidebarSearchResults(results, queryText) {
+  const wrap = document.getElementById('sidebar-search-results');
+  const status = document.getElementById('search-status');
+  if (!wrap || !status) return;
+
+  if (!queryText) {
+    wrap.innerHTML = '<div class="search-empty">Type to search the workspace.</div>';
+    status.textContent = 'Ready';
+    updateSearchBadge(0);
+    return;
+  }
+
+  if (!results.length) {
+    wrap.innerHTML = '<div class="search-empty">No matching files or folders.</div>';
+    status.textContent = '0 matches';
+    updateSearchBadge(0);
+    return;
+  }
+
+  const limited = results.slice(0, 250);
+  wrap.innerHTML = limited.map(entry => {
+    const entryName = entry.name || entry.path || '(unnamed)';
+    const entryType = String(entry.type || '').toLowerCase();
+    const isDir = entryType === 'dir' || entryType === 'directory' || entryType === 'folder';
+    const iconGlyph = isDir ? '📁' : ftFileIcon(entryName);
+    return `<button class="search-result-row" type="button" data-path="${esc(entry.path)}" data-type="${isDir ? 'dir' : 'file'}">`
+      + `<span class="search-result-icon">${iconGlyph}</span>`
+      + '<span class="search-result-main">'
+      + `<span class="search-result-name">${esc(entryName)}</span>`
+      + `<span class="search-result-path">${esc(entry.path)}</span>`
+      + '</span></button>';
+  }).join('');
+
+  wrap.querySelectorAll('.search-result-row').forEach(row => {
+    row.addEventListener('click', async () => {
+      const path = row.dataset.path || '';
+      const type = row.dataset.type || 'file';
+      if (!path) return;
+      if (type === 'dir') {
+        setSidebarMode('explorer');
+        ftOpenDirs.add(path);
+        await ftLoadRoot();
+        const statusEl = document.getElementById('explorer-status');
+        if (statusEl) statusEl.textContent = 'Selected folder: ' + path;
+      } else {
+        await ftOpenFile({ type: 'file', path, name: path.split('/').pop() || path });
+      }
+    });
+  });
+
+  status.textContent = `${results.length} match${results.length === 1 ? '' : 'es'}${results.length > limited.length ? ' (showing first 250)' : ''}`;
+  updateSearchBadge(results.length);
+}
+
+async function runSidebarSearch(forceRefresh = false) {
+  const runId = ++sidebarSearchRunId;
+  const input = document.getElementById('sidebar-search-input');
+  const fileFilter = document.getElementById('search-filter-files');
+  const folderFilter = document.getElementById('search-filter-folders');
+  const pathFilter = document.getElementById('search-filter-path');
+  const contentFilter = document.getElementById('search-filter-content');
+  const caseFilter = document.getElementById('search-filter-case');
+  const status = document.getElementById('search-status');
+  if (!input || !status) return;
+
+  const rawQuery = (input.value || '').trim();
+  const caseSensitive = caseFilter ? !!caseFilter.checked : false;
+  const query = caseSensitive ? rawQuery : rawQuery.toLowerCase();
+  if (!rawQuery) {
+    renderSidebarSearchResults([], '');
+    return;
+  }
+
+  const includeFiles = fileFilter ? !!fileFilter.checked : true;
+  const includeFolders = folderFilter ? !!folderFilter.checked : true;
+  const matchPath = pathFilter ? !!pathFilter.checked : true;
+  const matchContent = contentFilter ? !!contentFilter.checked : false;
+
+  if (!includeFiles && !includeFolders) {
+    const wrap = document.getElementById('sidebar-search-results');
+    if (wrap) wrap.innerHTML = '<div class="search-empty">Enable Files and/or Folders filters to run search.</div>';
+    status.textContent = 'Enable Files or Folders to search.';
+    updateSearchBadge(0);
+    return;
+  }
+
+  status.textContent = 'Searching workspace...';
+  let entries = await buildSidebarSearchIndex(forceRefresh);
+  if (runId !== sidebarSearchRunId) return;
+  if ((!entries || entries.length === 0) && !forceRefresh) {
+    entries = await buildSidebarSearchIndex(true);
+    if (runId !== sidebarSearchRunId) return;
+  }
+  if (!entries || entries.length === 0) {
+    const scope = currentWorkspacePath || '(workspace not set)';
+    const wrap = document.getElementById('sidebar-search-results');
+    if (wrap) wrap.innerHTML = `<div class="search-empty">No files discovered under search scope: ${esc(scope)}</div>`;
+    status.textContent = 'No searchable entries found.';
+    updateSearchBadge(0);
+    return;
+  }
+
+  const preliminary = entries.filter(entry => {
+    const entryType = String(entry.type || '').toLowerCase();
+    const isDir = entryType === 'dir' || entryType === 'directory' || entryType === 'folder';
+    const isFile = entryType === 'file' || !isDir;
+    if (isFile && !includeFiles) return false;
+    if (isDir && !includeFolders) return false;
+    const nameRaw = String(entry.name || '');
+    const pathRaw = String(entry.path || '');
+    const nameText = caseSensitive ? nameRaw : nameRaw.toLowerCase();
+    const pathText = caseSensitive ? pathRaw : pathRaw.toLowerCase();
+    return nameText.includes(query) || (matchPath && pathText.includes(query));
+  });
+
+  // Show fast path/name/folder matches immediately like VS Code,
+  // then enrich with content matches in the background.
+  renderSidebarSearchResults(preliminary, rawQuery);
+
+  if (!matchContent || !includeFiles) {
+    return;
+  }
+
+  const matchedByPath = new Set(preliminary.map(item => item.path));
+  const contentMatches = [];
+  const files = entries.filter(entry => {
+    const entryType = String(entry.type || '').toLowerCase();
+    const isDir = entryType === 'dir' || entryType === 'directory' || entryType === 'folder';
+    return includeFiles && !isDir;
+  });
+  const candidates = files.filter(fileEntry => !matchedByPath.has(fileEntry.path));
+  status.textContent = `Searching code content in ${candidates.length} files...`;
+
+  const batchSize = 12;
+  for (let i = 0; i < candidates.length; i += batchSize) {
+    if (runId !== sidebarSearchRunId) return;
+    const slice = candidates.slice(i, i + batchSize);
+    const checks = await Promise.all(slice.map(async (fileEntry) => {
+      const content = await getSidebarSearchFileContent(fileEntry.path, caseSensitive);
+      return content && content.includes(query) ? fileEntry : null;
+    }));
+    checks.forEach(item => { if (item) contentMatches.push(item); });
+    if (i % (batchSize * 6) === 0) {
+      status.textContent = `Searching code content... ${Math.min(i + batchSize, candidates.length)}/${candidates.length}`;
+    }
+  }
+
+  if (runId !== sidebarSearchRunId) return;
+  const merged = preliminary.concat(contentMatches);
+  renderSidebarSearchResults(merged, rawQuery);
+}
+
+function isTypingContext(target) {
+  if (!target) return false;
+  const tag = ((target.tagName || '') + '').toLowerCase();
+  if (tag === 'input' || tag === 'textarea' || tag === 'select') return true;
+  if (target.isContentEditable) return true;
+  if (target.closest && target.closest('[contenteditable="true"], .monaco-editor, .CodeMirror')) return true;
+  return false;
+}
+
 //  TABS 
+function closeTabDropdown() {
+  const overflow = document.getElementById('tab-overflow');
+  const btn = document.getElementById('tab-more-btn');
+  if (overflow) overflow.classList.remove('open');
+  if (btn) btn.setAttribute('aria-expanded', 'false');
+}
+
+function toggleTabDropdown(event) {
+  if (event) event.stopPropagation();
+  const overflow = document.getElementById('tab-overflow');
+  const btn = document.getElementById('tab-more-btn');
+  if (!overflow) return;
+  const isOpen = overflow.classList.toggle('open');
+  if (btn) btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+
+function updateTabOverflowState(activeTab) {
+  const overflow = document.getElementById('tab-overflow');
+  const current = document.getElementById('tab-more-current');
+  const primaryTitle = document.getElementById('primary-tab-title');
+  const primarySub = document.getElementById('primary-tab-sub');
+  const primaryHelp = document.getElementById('primary-tab-help');
+  if (!overflow || !current) return;
+  const labels = {
+    smart: 'Feature Builder',
+    agent: 'Feature Builder',
+    llm: 'Code Studio',
+    github: 'Repo & PR Hub',
+  };
+  const primaryMap = {
+    smart: {
+      title: 'Delivery Hub',
+      sub: '(All Sources)',
+      helpTitle: 'Orchestrated task execution.',
+      helpDesc: 'Uses workspace + GitHub + RAG to plan and run end-to-end tasks.'
+    },
+    agent: {
+      title: 'Feature Builder',
+      sub: '(Project Changes)',
+      helpTitle: 'Feature-level code changes.',
+      helpDesc: 'Builds or updates project files with context-aware, targeted implementation.'
+    },
+    llm: {
+      title: 'Code Studio',
+      sub: '(Refactor / Snippets)',
+      helpTitle: 'Code refinement workspace.',
+      helpDesc: 'Refactor, explain, review, or generate snippets from selected code quickly.'
+    },
+    github: {
+      title: 'Repo & PR Hub',
+      sub: '(Delivery Controls)',
+      helpTitle: 'Repository delivery controls.',
+      helpDesc: 'Browse files, manage branches, commit updates, and open pull requests.'
+    }
+  };
+  const activeMeta = primaryMap[activeTab] || primaryMap.smart;
+  if (primaryTitle) primaryTitle.textContent = activeMeta.title;
+  if (primarySub) primarySub.textContent = activeMeta.sub;
+  if (primaryHelp) {
+    primaryHelp.dataset.tooltipTitle = activeMeta.helpTitle;
+    primaryHelp.dataset.tooltipDesc = activeMeta.helpDesc;
+  }
+  current.textContent = labels[activeTab] || 'Feature Builder';
+  overflow.classList.toggle('active', activeTab !== 'smart');
+}
+
 function switchTab(name) {
-  ['smart','agent','llm','github'].forEach(t => {
+  const tabs = ['smart','agent','llm','github'];
+  const resolvedTab = tabs.includes(name) ? name : 'smart';
+  tabs.forEach(t => {
     const tabEl = document.getElementById('tab-'+t);
     const panelEl = document.getElementById(t+'-panel');
-    if (tabEl) tabEl.classList.toggle('active', t===name);
-    if (panelEl) panelEl.classList.toggle('active', t===name);
+    if (tabEl) tabEl.classList.toggle('active', t===resolvedTab);
+    if (panelEl) panelEl.classList.toggle('active', t===resolvedTab);
   });
+  updateTabOverflowState(resolvedTab);
+  closeTabDropdown();
 }
 
 //  AI AGENT 
 // Track files attached as context (e.g. TDS)
 let agentContextFiles = [];
+const agentInlineContextContent = new Map();
+const agentContextMeta = new Map();
+const MAX_LOCAL_UPLOAD_FILES = 25;
+const MAX_LOCAL_UPLOAD_CHARS = 120000;
 
-function attachContextFile(filePath) {
-  if (!agentContextFiles.includes(filePath)) {
-    agentContextFiles.push(filePath);
-    renderContextChips();
+function triggerLocalFolderUpload(target) {
+  const id = target === 'agent' ? 'agent-local-folder-input' : 'llm-local-folder-input';
+  const input = document.getElementById(id);
+  if (!input) return;
+  input.value = '';
+  input.click();
+}
+
+async function readLocalUploadFiles(fileList) {
+  const files = Array.from(fileList || []).slice(0, MAX_LOCAL_UPLOAD_FILES);
+  const out = [];
+  for (const file of files) {
+    try {
+      const text = await file.text();
+      const trimmed = String(text || '').slice(0, MAX_LOCAL_UPLOAD_CHARS);
+      out.push({
+        name: file.webkitRelativePath || file.name,
+        content: trimmed,
+      });
+    } catch (_) {}
   }
+  return out;
+}
+
+async function handleAgentLocalFolderUpload(event) {
+  const files = await readLocalUploadFiles(event && event.target ? event.target.files : null);
+  if (!files.length) {
+    toast('No readable local files were selected', 'warn');
+    return;
+  }
+  const ts = Date.now();
+  files.forEach((f, idx) => {
+    const key = `local://agent/${ts}/${idx}/${f.name}`;
+    attachContextFile(key, f.content, { name: f.name, sourceLabel: 'Local Upload' });
+  });
+  toast(`Attached ${files.length} local file(s) to Feature Builder`, 'success');
+}
+
+async function handleLLMLocalFolderUpload(event) {
+  const files = await readLocalUploadFiles(event && event.target ? event.target.files : null);
+  if (!files.length) {
+    toast('No readable local files were selected', 'warn');
+    return;
+  }
+  const ts = Date.now();
+  files.forEach((f, idx) => {
+    const key = `local://llm/${ts}/${idx}/${f.name}`;
+    attachLLMContextFile(key, f.content, { name: f.name, sourceLabel: 'Local Upload' });
+  });
+  toast(`Attached ${files.length} local file(s) to Code Studio`, 'success');
+}
+
+function attachContextFile(filePath, inlineContent = null, meta = null) {
+  const key = String(filePath || '');
+  if (!key) return;
+  if (!agentContextFiles.includes(key)) {
+    agentContextFiles.push(key);
+  }
+  if (typeof inlineContent === 'string') {
+    agentInlineContextContent.set(key, inlineContent);
+  }
+  if (meta) {
+    agentContextMeta.set(key, meta);
+  }
+  renderContextChips();
 }
 
 function removeContextFile(filePath) {
   agentContextFiles = agentContextFiles.filter(f => f !== filePath);
+  agentInlineContextContent.delete(filePath);
+  agentContextMeta.delete(filePath);
   renderContextChips();
+  renderAgentPromptUploadChips();
+}
+
+function buildAgentInlineContextAppendix() {
+  let out = '';
+  for (const key of agentContextFiles) {
+    const content = agentInlineContextContent.get(key);
+    if (typeof content !== 'string') continue;
+    const meta = agentContextMeta.get(key) || {};
+    const fileName = meta.name || key;
+    const sourceLabel = meta.sourceLabel || 'Attached context';
+    out += `\n\n[${sourceLabel}: ${fileName}]\n\`\`\`\n${content}\n\`\`\``;
+  }
+  return out;
 }
 
 function renderContextChips() {
@@ -3455,11 +4568,36 @@ function renderContextChips() {
   bar.className = 'has-files';
   let html = '<span class="attach-hint"> Context:</span> ';
   for (const f of agentContextFiles) {
-    const name = f.split('/').pop();
-    html += `<span class="ctx-chip">${esc(name)} <button onclick="removeContextFile('${esc(f)}')" title="Remove">x</button></span> `;
+    const meta = agentContextMeta.get(f) || null;
+    const name = (meta && meta.name) ? meta.name : (f.split('/').pop() || f.split('\\').pop());
+    const sourceLabel = (meta && meta.sourceLabel) ? ` <span style="font-size:10px;color:#4fc3f7">${esc(meta.sourceLabel)}</span>` : '';
+    html += `<span class="ctx-chip">${esc(name)} <button onclick="removeContextFile(decodeURIComponent('${encodeURIComponent(f)}'))" title="Remove">x</button></span>${sourceLabel} `;
   }
   html += '<span class="attach-hint" style="margin-left:4px">- file content will be sent to the agent</span>';
   bar.innerHTML = html;
+  renderAgentPromptUploadChips();
+}
+
+function renderAgentPromptUploadChips() {
+  const wrap = document.getElementById('agent-prompt-upload-chips');
+  if (!wrap) return;
+  const localKeys = agentContextFiles.filter(k => {
+    const meta = agentContextMeta.get(k);
+    return meta && meta.sourceLabel === 'Local Upload';
+  });
+  if (!localKeys.length) {
+    wrap.style.display = 'none';
+    wrap.innerHTML = '';
+    return;
+  }
+  wrap.style.display = 'flex';
+  let html = '';
+  localKeys.forEach(k => {
+    const meta = agentContextMeta.get(k) || {};
+    const label = meta.name || k;
+    html += `<span class="ctx-chip">${esc(label)} <button onclick="removeContextFile(decodeURIComponent('${encodeURIComponent(k)}'))" title="Remove">x</button></span>`;
+  });
+  wrap.innerHTML = html;
 }
 
 function fillPrompt(text) {
@@ -3484,7 +4622,7 @@ async function sendSmartRequest() {
 
   const btn = document.getElementById('smart-send-btn');
   btn.disabled = true;
-  btn.textContent = 'Orchestrating…';
+  btn.classList.add('loading');
 
   const includeWorkspace = document.getElementById('smart-include-workspace').checked;
   const includeRAG = document.getElementById('smart-include-rag').checked;
@@ -3613,6 +4751,7 @@ async function sendSmartRequest() {
         agentFileSessions[sessionId] = {
           files: fileNames,
           contents: orchestration.fileContents,
+          source: smartPipelineLaunchRoute === 'llm' ? 'llm' : 'agent'
         };
         html += '<div style="margin-top:12px">';
         html += `<strong>${files.length} file${files.length > 1 ? 's' : ''} generated:</strong><br>`;
@@ -3660,7 +4799,7 @@ async function sendSmartRequest() {
     addChatMsg('error', 'Network error: ' + ((err && err.message) ? err.message : String(err)), true, null, null, userMsgId);
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Run Smart';
+    btn.classList.remove('loading');
   }
 }
 
@@ -3689,8 +4828,11 @@ async function sendAgentRequest(rawPromptOverride, contextFilesOverride, request
 
   const btn = document.getElementById('send-btn');
   btn.disabled = true;
-  btn.textContent = '';
+  btn.classList.add('loading');
   const contextFiles = contextFilesOverride !== undefined ? contextFilesOverride : [...agentContextFiles];
+  const inlineAppendix = buildAgentInlineContextAppendix();
+  const effectivePrompt = inlineAppendix ? `${rawPrompt}${inlineAppendix}` : rawPrompt;
+  const diskContextFiles = contextFiles.filter(f => !agentInlineContextContent.has(f));
 
   let displayQuestion = typeof requestMeta.displayPrompt === 'string' && requestMeta.displayPrompt.trim()
     ? requestMeta.displayPrompt.trim()
@@ -3709,7 +4851,8 @@ async function sendAgentRequest(rawPromptOverride, contextFilesOverride, request
   }
   if (contextFiles.length > 0) {
     contextFiles.forEach(f => {
-      const name = f.split(/[\\\/]/).pop() || f;
+      const meta = agentContextMeta.get(f) || null;
+      const name = (meta && meta.name) ? meta.name : (f.split(/[\\\/]/).pop() || f);
       userHtml += `<span class="chat-file-chip">&#x1F4CE; ${esc(name)}</span> `;
     });
     userHtml += '<br>';
@@ -3732,8 +4875,8 @@ async function sendAgentRequest(rawPromptOverride, contextFilesOverride, request
 
   const thinkId = addChatMsg('assistant', '<span class="spinner"></span> Generating code…', true);
   try {
-    const body = { prompt: rawPrompt, saveToWorkspace: false };
-    if (contextFiles.length > 0) body.contextFiles = contextFiles;
+    const body = { prompt: effectivePrompt, saveToWorkspace: false };
+    if (diskContextFiles.length > 0) body.contextFiles = diskContextFiles;
     const agentModelSel = document.getElementById('agent-model');
     if (agentModelSel && agentModelSel.value) body.modelId = agentModelSel.value;
     body.reactMode = reactMode;
@@ -3750,7 +4893,7 @@ async function sendAgentRequest(rawPromptOverride, contextFilesOverride, request
     if (d.confirmationRequired) {
       showOverwriteModal(d.existingFiles || [], () => {
         const modelId = agentModelSel && agentModelSel.value ? agentModelSel.value : undefined;
-        sendAgentRequestForce(rawPrompt, contextFiles, modelId, linkedUserMsgId, {
+        sendAgentRequestForce(effectivePrompt, diskContextFiles, modelId, linkedUserMsgId, {
           reactMode,
           humanFeedback,
         });
@@ -3798,7 +4941,7 @@ async function sendAgentRequest(rawPromptOverride, contextFilesOverride, request
 
       if (d.filesWritten && d.filesWritten.length > 0) {
         const sessionId = 'fs_' + Date.now();
-        agentFileSessions[sessionId] = { files: d.filesWritten, contents: d.fileContents || {} };
+        agentFileSessions[sessionId] = { files: d.filesWritten, contents: d.fileContents || {}, source: 'agent' };
 
         html += '<br><br><strong>Generated files (not auto-saved):</strong><br>';
         for (const f of d.filesWritten) {
@@ -3820,7 +4963,7 @@ async function sendAgentRequest(rawPromptOverride, contextFilesOverride, request
     addChatMsg('error', `<strong>Network error:</strong> ${esc(e.message)}<br>Is the MCP server running?`, true, null, null, linkedUserMsgId);
   }
   btn.disabled = false;
-  btn.textContent = 'Run';
+  btn.classList.remove('loading');
 }
 
 function showOverwriteModal(files, onConfirm) {
@@ -3866,7 +5009,7 @@ function showOverwriteModal(files, onConfirm) {
 async function sendAgentRequestForce(rawPrompt, contextFiles, modelId, userMsgId, requestOptions = {}) {
   const btn = document.getElementById('send-btn');
   btn.disabled = true;
-  btn.textContent = '';
+  btn.classList.add('loading');
   const thinkId = addChatMsg('assistant', '<span class="spinner"></span> Generating code…', true);
   try {
     const body = { prompt: rawPrompt, forceOverwrite: true, saveToWorkspace: false };
@@ -3914,7 +5057,7 @@ async function sendAgentRequestForce(rawPrompt, contextFiles, modelId, userMsgId
       }
       if (d.filesWritten && d.filesWritten.length > 0) {
         const sessionId = 'fs_' + Date.now();
-        agentFileSessions[sessionId] = { files: d.filesWritten, contents: d.fileContents || {} };
+        agentFileSessions[sessionId] = { files: d.filesWritten, contents: d.fileContents || {}, source: 'agent' };
         html += '<br><br><strong>Generated files (not auto-saved):</strong><br>';
         for (const f of d.filesWritten) html += `<span class="file-badge" title="Click to view ${esc(f)}" onclick="openFileViewer('${sessionId}','${esc(f)}')">${esc(f)}</span> `;
         html += `<br><button class="qa-btn" style="margin-top:6px;margin-right:6px" onclick="applyGeneratedFiles('${sessionId}')">Apply</button>`;
@@ -3931,7 +5074,7 @@ async function sendAgentRequestForce(rawPrompt, contextFiles, modelId, userMsgId
     addChatMsg('error', `<strong>Network error:</strong> ${esc(e.message)}`, true, null, null, userMsgId);
   }
   btn.disabled = false;
-  btn.textContent = 'Run';
+  btn.classList.remove('loading');
 }
 
 function ghPrefillCommit(filePath, content) {
@@ -4185,35 +5328,410 @@ async function submitRefreshToken() {
 
 //  LLM context files (for Generate / Chat modes) 
 let llmContextFiles = [];
+const llmInlineContextContent = new Map();
+const llmContextMeta = new Map();
+let llmPickerCurrentItems = [];
 
-function attachLLMContextFile(filePath) {
-  if (!llmContextFiles.includes(filePath)) {
-    llmContextFiles.push(filePath);
-    renderLLMContextBar();
+function llmSourceLabel(source) {
+  if (source === 'code') return 'Code Studio';
+  if (source === 'feature') return 'Feature Builder';
+  return 'Local Folder';
+}
+
+function llmInferSessionSource(sessionId, session) {
+  if (session && session.source === 'llm') return 'code';
+  if (session && session.source === 'agent') return 'feature';
+  if (String(sessionId || '').startsWith('llm_')) return 'code';
+  return 'feature';
+}
+
+function llmExtractSessionItems(source) {
+  const out = [];
+  for (const [sessionId, session] of Object.entries(agentFileSessions || {})) {
+    if (!session || !Array.isArray(session.files) || session.files.length === 0) continue;
+    const inferred = llmInferSessionSource(sessionId, session);
+    if (source && inferred !== source) continue;
+    for (const filePath of session.files) {
+      const content = session.contents && typeof session.contents[filePath] === 'string'
+        ? session.contents[filePath]
+        : null;
+      const name = String(filePath || '').split('/').pop() || String(filePath || '').split('\\').pop() || 'file';
+      out.push({
+        source: inferred,
+        sessionId,
+        path: String(filePath || ''),
+        name,
+        content,
+        contextKey: `[${llmSourceLabel(inferred)}] ${String(filePath || '')}`
+      });
+    }
   }
+  return out;
+}
+
+function llmFileExtToLanguage(filePath) {
+  const ext = (filePath || '').split('.').pop().toLowerCase();
+  const map = {
+    java: 'java',
+    py: 'python',
+    ts: 'typescript',
+    js: 'javascript',
+    go: 'go',
+    rs: 'rust',
+    cpp: 'c++',
+    cxx: 'c++',
+    cc: 'c++',
+    sql: 'sql',
+    yml: 'yaml',
+    yaml: 'yaml',
+    sh: 'bash'
+  };
+  return map[ext] || '';
+}
+
+async function llmLoadWorkspaceFileIntoCode(filePath) {
+  try {
+    const r = await fetch(API + '/api/files/read?path=' + encodeURIComponent(filePath));
+    const d = await r.json();
+    if (!d.success) throw new Error(d.error || 'Failed to read file');
+
+    if (currentLLMOp !== 'refactor_code') {
+      setLLMOp('refactor_code');
+    }
+    document.getElementById('llm-code').value = String(d.content || '');
+    const detectedLanguage = llmFileExtToLanguage(filePath);
+    if (detectedLanguage) {
+      document.getElementById('llm-lang').value = detectedLanguage;
+    }
+    toast('Loaded file into LLM code editor', 'success');
+  } catch (error) {
+    toast('Could not load file: ' + ((error && error.message) || 'Unknown error'), 'error');
+  }
+}
+
+function llmLoadInlineContentIntoCode(content, filePath, sourceLabel) {
+  if (currentLLMOp !== 'refactor_code') {
+    setLLMOp('refactor_code');
+  }
+  document.getElementById('llm-code').value = String(content || '');
+  const detectedLanguage = llmFileExtToLanguage(filePath);
+  if (detectedLanguage) {
+    document.getElementById('llm-lang').value = detectedLanguage;
+  }
+  toast(`Loaded file from ${sourceLabel || 'context'} into LLM code editor`, 'success');
+}
+
+async function llmFetchWorkspaceFileList() {
+  const entries = await buildSidebarSearchIndex();
+  return (entries || []).filter(e => {
+    const t = String(e.type || '').toLowerCase();
+    return t !== 'dir' && t !== 'directory' && t !== 'folder';
+  });
+}
+
+async function openLLMFilePicker(preferredMode = 'attach', target = 'llm') {
+  const existing = document.getElementById('llm-file-picker-modal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'llm-file-picker-modal';
+  modal.className = 'overwrite-modal-bg';
+  modal.innerHTML = `
+    <div class="overwrite-modal-box" style="width:min(920px,95vw)">
+      <div class="overwrite-modal-header" style="color:#a78bfa;border-bottom-color:rgba(167,139,250,0.25);background:rgba(167,139,250,0.08)">
+        <span>${target === 'agent' ? 'Feature Builder File Picker' : 'Code Studio File Picker'}</span>
+      </div>
+      <div class="overwrite-modal-body" style="display:flex;flex-direction:column;gap:10px;max-height:70vh">
+        <div style="font-size:11px;color:var(--muted)">Choose source: Local Folder, Code Studio, or Feature Builder.</div>
+        <div id="llm-file-picker-sources" style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="editor-btn" type="button" data-source="local">Local Folder</button>
+          <button class="editor-btn" type="button" data-source="code">Code Studio</button>
+          <button class="editor-btn" type="button" data-source="feature">Feature Builder</button>
+        </div>
+        <input id="llm-file-picker-search" type="text" placeholder="Search files by name or path..." style="background:var(--input-bg);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:6px;outline:none;font-size:12px">
+        <div id="llm-file-picker-list" style="border:1px solid var(--border);border-radius:8px;overflow:auto;max-height:46vh;background:var(--panel)">
+          <div style="padding:12px;color:var(--muted);font-size:11px">Loading files...</div>
+        </div>
+      </div>
+      <div class="overwrite-modal-footer">
+        <button class="overwrite-btn-cancel" onclick="closeLLMFilePicker()">Close</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeLLMFilePicker(); });
+
+  const listEl = document.getElementById('llm-file-picker-list');
+  const searchEl = document.getElementById('llm-file-picker-search');
+  const sourcesEl = document.getElementById('llm-file-picker-sources');
+
+  let activeSource = 'local';
+
+  function paintSourceButtons() {
+    if (!sourcesEl) return;
+    sourcesEl.querySelectorAll('[data-source]').forEach(btn => {
+      const selected = btn.getAttribute('data-source') === activeSource;
+      btn.style.borderColor = selected ? '#a78bfa' : 'var(--border)';
+      btn.style.color = selected ? '#a78bfa' : 'var(--text)';
+      btn.style.background = selected ? 'rgba(167,139,250,0.12)' : 'transparent';
+    });
+  }
+
+  async function loadItemsForSource(source) {
+    if (source === 'local') {
+      const files = await llmFetchWorkspaceFileList();
+      return files.map(f => ({
+        source: 'local',
+        sessionId: null,
+        path: String(f.path || ''),
+        name: String(f.name || f.path || ''),
+        content: null,
+        contextKey: String(f.path || '')
+      }));
+    }
+    return llmExtractSessionItems(source);
+  }
+
+  async function switchSource(source) {
+    activeSource = source;
+    paintSourceButtons();
+    listEl.innerHTML = '<div style="padding:12px;color:var(--muted);font-size:11px">Loading files...</div>';
+    try {
+      llmPickerCurrentItems = await loadItemsForSource(source);
+      renderFilteredList();
+    } catch (error) {
+      listEl.innerHTML = `<div style="padding:12px;color:var(--error);font-size:11px">Could not load files: ${esc((error && error.message) || 'Unknown error')}</div>`;
+    }
+  }
+
+  window.llmPickerAttachByIndex = async function(index) {
+    const item = llmPickerCurrentItems[index];
+    if (!item) return;
+    const sourceLabel = llmSourceLabel(item.source);
+
+    if (target === 'agent') {
+      if (item.source === 'local') {
+        attachContextFile(item.path, null, { source: 'local', name: item.name, path: item.path, sourceLabel });
+        toast('Attached to Feature Builder prompt', 'success');
+        return;
+      }
+      let inlineContent = typeof item.content === 'string' ? item.content : null;
+      if (inlineContent === null) {
+        inlineContent = await readWorkspaceFileOrNull(item.path);
+      }
+      if (inlineContent === null) {
+        toast('This generated file is not available in memory or workspace yet.', 'warn');
+        return;
+      }
+      const key = `[${sourceLabel}] ${String(item.path || item.name || 'context')}`;
+      attachContextFile(key, inlineContent, {
+        source: item.source,
+        name: item.name,
+        path: item.path,
+        sourceLabel
+      });
+      toast(`Attached from ${sourceLabel} to Feature Builder`, 'success');
+      return;
+    }
+
+    if (item.source === 'local') {
+      attachLLMContextFile(item.path, null, { source: 'local', name: item.name, path: item.path });
+      toast('Attached to LLM context', 'success');
+      return;
+    }
+
+    let inlineContent = typeof item.content === 'string' ? item.content : null;
+    if (inlineContent === null) {
+      inlineContent = await readWorkspaceFileOrNull(item.path);
+    }
+    if (inlineContent === null) {
+      toast('This generated file is not available in memory or workspace yet.', 'warn');
+      return;
+    }
+    attachLLMContextFile(item.contextKey, inlineContent, {
+      source: item.source,
+      name: item.name,
+      path: item.path,
+      sourceLabel: llmSourceLabel(item.source)
+    });
+    toast(`Attached from ${llmSourceLabel(item.source)}`, 'success');
+  };
+
+  window.llmPickerGetByIndex = async function(index) {
+    const item = llmPickerCurrentItems[index];
+    if (!item) return;
+    if (target === 'agent') {
+      let snippet = '';
+      if (item.source === 'local') {
+        snippet = `Use this local file in the update: ${item.path}`;
+      } else {
+        let content = typeof item.content === 'string' ? item.content : null;
+        if (content === null) content = await readWorkspaceFileOrNull(item.path);
+        if (content === null) {
+          toast('This generated file is not available in memory or workspace yet.', 'warn');
+          return;
+        }
+        snippet = `Consider this ${llmSourceLabel(item.source)} file in the update:\n\nFile: ${item.path}\n\`\`\`\n${content}\n\`\`\``;
+      }
+      const promptEl = document.getElementById('agent-prompt');
+      if (promptEl) {
+        promptEl.value = (promptEl.value ? promptEl.value + '\n\n' : '') + snippet;
+      }
+      closeLLMFilePicker();
+      toast('Inserted file context into Feature Builder prompt', 'success');
+      return;
+    }
+    if (item.source === 'local') {
+      await llmLoadWorkspaceFileIntoCode(item.path);
+      closeLLMFilePicker();
+      return;
+    }
+    let content = typeof item.content === 'string' ? item.content : null;
+    if (content === null) {
+      content = await readWorkspaceFileOrNull(item.path);
+    }
+    if (content === null) {
+      toast('This generated file is not available in memory or workspace yet.', 'warn');
+      return;
+    }
+    llmLoadInlineContentIntoCode(content, item.path, llmSourceLabel(item.source));
+    closeLLMFilePicker();
+  };
+
+  function renderFilteredList() {
+    const q = (searchEl.value || '').trim().toLowerCase();
+    const matched = q ? llmPickerCurrentItems.filter(f => {
+      const p = String(f.path || '').toLowerCase();
+      const n = String(f.name || '').toLowerCase();
+      return p.includes(q) || n.includes(q);
+    }) : llmPickerCurrentItems;
+
+    if (!matched.length) {
+      listEl.innerHTML = '<div style="padding:12px;color:var(--muted);font-size:11px">No files matched.</div>';
+      return;
+    }
+
+    const top = matched.slice(0, 300);
+    let html = '';
+    for (let i = 0; i < top.length; i++) {
+      const file = top[i];
+      const itemIndex = llmPickerCurrentItems.indexOf(file);
+      const path = String(file.path || '');
+      const name = String(file.name || path.split('/').pop() || 'file');
+      const canGet = true;
+      html += `
+        <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--border)">
+          <div style="min-width:0;display:flex;flex-direction:column;gap:2px">
+            <div style="font-size:11px;color:var(--text);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(name)} <span style="font-size:10px;color:#a78bfa">${esc(llmSourceLabel(file.source))}</span></div>
+            <div style="font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(path)}</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            <button class="editor-btn" type="button" onclick="llmPickerAttachByIndex(${itemIndex})" style="font-size:10px;padding:3px 8px">Attach</button>
+            <button class="editor-btn" type="button" onclick="llmPickerGetByIndex(${itemIndex})" style="font-size:10px;padding:3px 8px;border-color:#4fc3f7;color:#4fc3f7">${target === 'agent' ? 'Insert' : 'Get in Code'}</button>
+          </div>
+        </div>`;
+    }
+    if (matched.length > top.length) {
+      html += `<div style="padding:8px 10px;font-size:10px;color:var(--muted)">Showing ${top.length} of ${matched.length} files. Refine search to narrow down.</div>`;
+    }
+    listEl.innerHTML = html;
+  }
+
+  renderFilteredList();
+  searchEl.addEventListener('input', renderFilteredList);
+  if (sourcesEl) {
+    sourcesEl.querySelectorAll('[data-source]').forEach(btn => {
+      btn.addEventListener('click', () => switchSource(btn.getAttribute('data-source')));
+    });
+  }
+  await switchSource('local');
+  if (preferredMode === 'get') {
+    searchEl.placeholder = 'Search file to load into LLM code editor...';
+  }
+  searchEl.focus();
+}
+
+function closeLLMFilePicker() {
+  const modal = document.getElementById('llm-file-picker-modal');
+  if (modal) modal.remove();
+}
+
+function clearLLMContextFiles() {
+  llmContextFiles = [];
+  llmInlineContextContent.clear();
+  llmContextMeta.clear();
+  renderLLMContextBar();
+  renderLLMPromptUploadChips();
+  toast('LLM context cleared', 'info');
+}
+
+function attachLLMContextFile(filePath, inlineContent = null, meta = null) {
+  const key = String(filePath || '');
+  if (!key) return;
+  if (!llmContextFiles.includes(key)) {
+    llmContextFiles.push(key);
+  }
+  if (typeof inlineContent === 'string') {
+    llmInlineContextContent.set(key, inlineContent);
+  }
+  if (meta) {
+    llmContextMeta.set(key, meta);
+  }
+  renderLLMContextBar();
+  renderLLMPromptUploadChips();
+  updateLLMProjectContextBadge();
 }
 
 function removeLLMContextFile(filePath) {
   llmContextFiles = llmContextFiles.filter(f => f !== filePath);
+  llmInlineContextContent.delete(filePath);
+  llmContextMeta.delete(filePath);
   renderLLMContextBar();
+  renderLLMPromptUploadChips();
+  updateLLMProjectContextBadge();
 }
 
 function renderLLMContextBar() {
   const bar = document.getElementById('llm-context-bar');
   if (!bar) return;
-  const forPromptModes = ['generate_code', 'chat'].includes(currentLLMOp);
-  if (!forPromptModes || llmContextFiles.length === 0) {
+  if (llmContextFiles.length === 0) {
     bar.style.display = 'none';
     bar.innerHTML = '';
     return;
   }
+
   bar.style.display = 'flex';
-  let html = '<span class="attach-hint" style="color:#a78bfa"> Context:</span> ';
+  let html = '<span class="attach-hint" style="color:#a78bfa;margin-left:4px">Context:</span> ';
+
   for (const f of llmContextFiles) {
-    const name = f.split('/').pop() || f.split('\\').pop();
-    html += `<span class="ctx-chip" style="border-color:#a78bfa">${esc(name)} <button onclick="removeLLMContextFile('${esc(f)}')" title="Remove">x</button></span> `;
+    const meta = llmContextMeta.get(f) || null;
+    const name = (meta && meta.name) ? meta.name : (f.split('/').pop() || f.split('\\').pop());
+    const sourceSuffix = meta && meta.sourceLabel ? ` <span style="font-size:10px;color:#a78bfa">${esc(meta.sourceLabel)}</span>` : '';
+    html += `<span class="ctx-chip" style="border-color:#a78bfa">${esc(name)} <button onclick="removeLLMContextFile(decodeURIComponent('${encodeURIComponent(f)}'))" title="Remove">x</button></span> `;
+    if (sourceSuffix) html += sourceSuffix + ' ';
   }
   bar.innerHTML = html;
+}
+
+function renderLLMPromptUploadChips() {
+  const wrap = document.getElementById('llm-prompt-upload-chips');
+  if (!wrap) return;
+  const localKeys = llmContextFiles.filter(k => {
+    const meta = llmContextMeta.get(k);
+    return meta && meta.sourceLabel === 'Local Upload';
+  });
+  if (!localKeys.length) {
+    wrap.style.display = 'none';
+    wrap.innerHTML = '';
+    return;
+  }
+  wrap.style.display = 'flex';
+  let html = '';
+  localKeys.forEach(k => {
+    const meta = llmContextMeta.get(k) || {};
+    const label = meta.name || k;
+    html += `<span class="ctx-chip" style="border-color:#a78bfa">${esc(label)} <button onclick="removeLLMContextFile(decodeURIComponent('${encodeURIComponent(k)}'))" title="Remove">x</button></span>`;
+  });
+  wrap.innerHTML = html;
 }
 
 /**
@@ -4236,6 +5754,69 @@ async function loadFileIntoLLM(content, filePath) {
 
 function clearLLMCode() {
   document.getElementById('llm-code').value = '';
+  updateLLMProjectContextBadge();
+}
+
+function shouldUseProjectContextForGenerateUI(promptText, hasAttachedContext) {
+  if (hasAttachedContext) return true;
+  const p = String(promptText || '').toLowerCase();
+  const projectSignals = [
+    'codebase', 'project', 'workspace', 'repo', 'repository', 'module', 'package',
+    'existing file', 'update file', 'modify file', 'in this app', 'in our app',
+    'src/', 'pom.xml', 'aoe_', 'cpq', 'checklistserviceimpl', 'omui', 's4', 'deal version'
+  ];
+  return projectSignals.some(s => p.includes(s));
+}
+
+function toggleLLMProjectContextMode() {
+  if (llmProjectContextMode === 'auto') {
+    llmProjectContextMode = 'on';
+  } else if (llmProjectContextMode === 'on') {
+    llmProjectContextMode = 'off';
+  } else {
+    llmProjectContextMode = 'auto';
+  }
+  updateLLMProjectContextBadge();
+}
+
+function updateLLMProjectContextBadge() {
+  const badge = document.getElementById('llm-project-context-badge');
+  if (!badge) return;
+
+  const op = currentLLMOp || 'generate_code';
+  const hasContext = llmContextFiles.length > 0;
+  let isOn = false;
+  let detail = '';
+
+  if (op === 'generate_code') {
+    const prompt = (document.getElementById('llm-prompt')?.value || '').trim();
+    isOn = shouldUseProjectContextForGenerateUI(prompt, hasContext);
+    detail = isOn ? 'ON' : 'OFF';
+  } else if (op === 'refactor_code') {
+    isOn = true;
+    detail = 'ON';
+  } else {
+    isOn = hasContext;
+    detail = isOn ? 'ON' : 'AUTO';
+  }
+
+  if (llmProjectContextMode === 'on') {
+    isOn = true;
+    detail = 'ON';
+  } else if (llmProjectContextMode === 'off') {
+    isOn = false;
+    detail = 'OFF';
+  }
+
+  badge.classList.remove('on', 'off');
+  badge.classList.add(isOn ? 'on' : 'off');
+  const modeLabel = llmProjectContextMode === 'auto' ? 'Auto' : 'Manual';
+  badge.textContent = `Project Context: ${detail} (${modeLabel})`;
+  badge.title = llmProjectContextMode === 'auto'
+    ? 'Auto mode: context is inferred from operation and prompt. Click to force ON, click again to force OFF, click once more to return Auto.'
+    : (isOn
+      ? 'Manual ON: this request will use active workspace retrieval context.'
+      : 'Manual OFF: this request will skip workspace retrieval context.');
 }
 
 //  LLM TOOLS 
@@ -4248,6 +5829,7 @@ function setLLMOp(op) {
   document.getElementById('row-code').style.display = op === 'refactor_code' ? '' : 'none';
   document.getElementById('row-instructions').style.display = op === 'refactor_code' ? '' : 'none';
   renderLLMContextBar();
+  updateLLMProjectContextBadge();
 }
 
 async function runTestAndCheck() {
@@ -4443,7 +6025,7 @@ async function pushForReview(codeJson, resJson, lang, filePath) {
   if (btn) { btn.textContent = ' Creating branch...'; btn.disabled = true; }
 
   try {
-    // Step 1 - create branch
+    // Phase: create branch
     const br = await fetch(API + '/api/github/branch', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ branchName })
@@ -4453,7 +6035,7 @@ async function pushForReview(codeJson, resJson, lang, filePath) {
 
     if (btn) btn.textContent = ' Committing code...';
 
-    // Step 2 - build rich PR description
+    // Phase: build rich PR description
     const secFindings = (sec.owaspFindings||[]);
     const critHigh = secFindings.filter(f => ['critical','high'].includes(f.severity));
     const prBody = [
@@ -4490,7 +6072,7 @@ async function pushForReview(codeJson, resJson, lang, filePath) {
       `*Generated by AI Test & PR Check engine - ${new Date().toISOString()}*`
     ].join('\n');
 
-    // Step 3 - commit code to new branch
+    // Phase: commit code to new branch
     const cr = await fetch(API+'/rpc', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({jsonrpc:'2.0',id:'1',method:'tools/call',params:{name:'github',arguments:{
@@ -4505,7 +6087,7 @@ async function pushForReview(codeJson, resJson, lang, filePath) {
 
     if (btn) btn.textContent = ' Creating PR...';
 
-    // Step 4 - create PR
+    // Phase: create PR
     const pr = await fetch(API+'/rpc', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({jsonrpc:'2.0',id:'1',method:'tools/call',params:{name:'github',arguments:{
@@ -4591,14 +6173,29 @@ function computeDiff(original, refactored) {
 }
 
 async function runLLMOp() {
+  const execBtn = document.getElementById('llm-exec-btn');
+  if (execBtn) {
+    execBtn.disabled = true;
+    execBtn.classList.add('loading');
+  }
+
   const op   = currentLLMOp;
   const lang = document.getElementById('llm-lang').value;
   const args = { operation: op };
+  if (llmProjectContextMode === 'on') args.forceProjectContext = true;
+  if (llmProjectContextMode === 'off') args.forceProjectContext = false;
 
   // Build context string from attached context files
   let contextStr = '';
   if (llmContextFiles.length > 0) {
     for (const fp of llmContextFiles) {
+      const inline = llmInlineContextContent.get(fp);
+      if (typeof inline === 'string') {
+        const meta = llmContextMeta.get(fp) || null;
+        const fileName = (meta && meta.name) ? meta.name : (fp.split('/').pop() || fp.split('\\').pop());
+        contextStr += `\n\n[File: ${fileName}]\n\`\`\`\n${inline}\n\`\`\``;
+        continue;
+      }
       try {
         const r = await fetch(API + '/api/files/read?path=' + encodeURIComponent(fp));
         const d = await r.json();
@@ -4669,7 +6266,8 @@ async function runLLMOp() {
             if (llmFiles.length > 0) {
               agentFileSessions[llmSessionId] = {
                 files: llmFiles.map(f => f.path),
-                contents: llmFiles.reduce((acc, f) => { acc[f.path] = f.content; return acc; }, {})
+                contents: llmFiles.reduce((acc, f) => { acc[f.path] = f.content; return acc; }, {}),
+                source: 'llm'
               };
               // Flatten multi-file output so existing Save/Copy/ZIP actions work as expected.
               outputCode = llmFiles.map(f => `// File: ${f.path}\n${f.content}`).join('\n\n');
@@ -4717,7 +6315,8 @@ async function runLLMOp() {
             const generatedName = `generated.${extMap[lang] || 'txt'}`;
             agentFileSessions[llmSessionId] = {
               files: [generatedName],
-              contents: { [generatedName]: res.code }
+              contents: { [generatedName]: res.code },
+              source: 'llm'
             };
             await smartPipelineFinalizeGeneratedSession(llmSessionId, 'llm');
             html += `<div style="margin-top:8px;font-size:11px;color:var(--muted)">Smart pipeline captured <strong>${esc(generatedName)}</strong> for workspace update.</div>`;
@@ -5102,6 +6701,11 @@ async function llmCommitToGithub(btn) {
     btn.textContent = 'Commit to GitHub';
     btn.disabled = false;
     toast('Commit failed: ' + e.message, 'error');
+  } finally {
+    if (execBtn) {
+      execBtn.disabled = false;
+      execBtn.classList.remove('loading');
+    }
   }
 }
 
@@ -5569,6 +7173,30 @@ window.addEventListener('load', () => {
     });
     updateGhEditorLineNumbers();
   }
+});
+
+document.addEventListener('click', (event) => {
+  const overflow = document.getElementById('tab-overflow');
+  if (!overflow) return;
+  if (!overflow.contains(event.target)) closeTabDropdown();
+});
+
+document.addEventListener('keydown', (event) => {
+  if ((event.ctrlKey || event.metaKey) && !event.altKey && String(event.key || '').toLowerCase() === 'b') {
+    if (isTypingContext(event.target)) return;
+    event.preventDefault();
+    toggleWorkspaceSidebar();
+    return;
+  }
+
+  if ((event.ctrlKey || event.metaKey) && !event.altKey && String(event.key || '').toLowerCase() === 'f') {
+    if (isTypingContext(event.target)) return;
+    event.preventDefault();
+    setSidebarMode('search');
+    return;
+  }
+
+  if (event.key === 'Escape') closeTabDropdown();
 });
 
 window.addEventListener('load', init);

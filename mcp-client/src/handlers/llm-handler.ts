@@ -66,7 +66,8 @@ export class LLMHandler {
       const language = params.language || '';   // empty = auto-detect
       const modelId  = (params as any).model || getDefaultModelId();
       const modelDef = getModel(modelId);
-      const useProjectContext = this.shouldUseProjectContextForGenerate(params.prompt || '', params.context || '');
+      const defaultProjectContext = this.shouldUseProjectContextForGenerate(params.prompt || '', params.context || '');
+      const useProjectContext = this.resolveProjectContextMode(params as any, defaultProjectContext);
       const promptWithGuidance = this.applyIterationGuidance(
         params.prompt,
         params.reactMode === true,
@@ -168,6 +169,13 @@ export class LLMHandler {
       'src/', 'pom.xml', 'aoe_', 'cpq', 'checklistserviceimpl', 'omui', 's4', 'deal version'
     ];
     return projectSignals.some(s => p.includes(s));
+  }
+
+  private resolveProjectContextMode(params: any, defaultValue: boolean): boolean {
+    if (typeof params?.forceProjectContext === 'boolean') {
+      return params.forceProjectContext;
+    }
+    return defaultValue;
   }
 
   private rewritePathsForGenericPrompt(output: StructuredGenerateOutput, language: string): StructuredGenerateOutput {
@@ -530,6 +538,7 @@ ${repaired}`;
       const lang       = params.language || 'auto';  // auto = LLM detects from code
       const modelId    = (params as any).model || getDefaultModelId();
       const modelDef   = getModel(modelId);
+      const useProjectContext = this.resolveProjectContextMode(params as any, true);
       const userInstructions = this.applyIterationGuidance(
         params.instructions?.trim() || 'Apply all best-practice improvements.',
         params.reactMode === true,
@@ -538,7 +547,7 @@ ${repaired}`;
 
       // ── RAG: retrieve project-specific context ──────────────────────────
       const ragQuery   = `${userInstructions} ${params.context ?? ''} ${lang} ${params.code.slice(0, 300)}`;
-      const ragContext = await ragRetriever.retrieve(ragQuery, 3); // fewer chunks — code itself uses the budget
+      const ragContext = useProjectContext ? await ragRetriever.retrieve(ragQuery, 3) : ''; // fewer chunks — code itself uses the budget
 
       // Trim RAG to fit: code + prompts are already large
       const codeTokens = estimateTokens(params.code);
@@ -713,9 +722,10 @@ Return ONLY a JSON object — no markdown, no prose:
     try {
       const focusAreas = params.focusAreas?.join(', ') || 'all aspects';      const modelId    = (params as any).model || getDefaultModelId();
       const modelDef   = getModel(modelId);
+      const useProjectContext = this.resolveProjectContextMode(params as any, true);
       // ── RAG: retrieve project-specific context ─────────────────────────────
       const ragQuery = `${params.language} code review ${focusAreas} ${params.code.slice(0, 300)}`;
-      const ragContext = await ragRetriever.retrieve(ragQuery, 4);
+      const ragContext = useProjectContext ? await ragRetriever.retrieve(ragQuery, 4) : '';
 
       const systemPrompt = [
         ragContext ? `${ragContext}\n` : '',
@@ -770,6 +780,7 @@ Return ONLY a JSON object — no markdown, no prose:
       const sessionId = (params as any).sessionId || this.generateSessionId();
       const modelId   = (params as any).model || getDefaultModelId();
       const modelDef  = getModel(modelId);
+      const useProjectContext = this.resolveProjectContextMode(params as any, true);
       const history   = this.conversationHistory.get(sessionId) || [];
 
       // ── Inject system identity on first message ──────────────────────
@@ -789,7 +800,7 @@ Respond in well-structured markdown with clear sections, code blocks, and bullet
       }
 
       // ── RAG: inject project context as a system message ────────────────
-      const ragContext = await ragRetriever.retrieve(params.message, 8);
+      const ragContext = useProjectContext ? await ragRetriever.retrieve(params.message, 8) : '';
       if (ragContext) {
         // Trim RAG to respect budget — leave room for history + user message
         const historyTokens = estimateTokens(

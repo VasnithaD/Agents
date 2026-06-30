@@ -396,6 +396,12 @@ export class ASTIndexer {
    */
   indexDirectory(rootPath: string): void {
     console.log(`[AST] Indexing directory: ${rootPath}`);
+    this.index = {
+      symbols: new Map(),
+      files: new Map(),
+      classes: new Map(),
+      methods: new Map(),
+    };
     this.walkAndIndex(rootPath);
     console.log(
       `[AST] Index built: ${this.index.files.size} files, ` +

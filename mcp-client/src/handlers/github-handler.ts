@@ -343,16 +343,32 @@ export class GitHubHandler {
     const { repo, newBranch, fromBranch, filePath, content, message } = params;
     const owner = this.owner;
 
-    // Get source branch SHA
-    const { data: refData } = await this.octokit.rest.git.getRef({
-      owner, repo, ref: `heads/${fromBranch}`,
-    });
-    const baseSha = refData.object.sha;
+    // Resolve source branch SHA with fallback to repo default branch.
+    let baseSha = '';
+    try {
+      const { data: refData } = await this.octokit.rest.git.getRef({
+        owner, repo, ref: `heads/${fromBranch}`,
+      });
+      baseSha = refData.object.sha;
+    } catch (err: any) {
+      if (err?.status !== 404) throw err;
+      const { data: repoInfo } = await this.octokit.rest.repos.get({ owner, repo });
+      const fallback = repoInfo.default_branch;
+      const { data: refData } = await this.octokit.rest.git.getRef({
+        owner, repo, ref: `heads/${fallback}`,
+      });
+      baseSha = refData.object.sha;
+    }
 
-    // Create new branch
-    await this.octokit.rest.git.createRef({
-      owner, repo, ref: `refs/heads/${newBranch}`, sha: baseSha,
-    });
+    // Create branch only if it does not already exist.
+    try {
+      await this.octokit.rest.git.getRef({ owner, repo, ref: `heads/${newBranch}` });
+    } catch (err: any) {
+      if (err?.status !== 404) throw err;
+      await this.octokit.rest.git.createRef({
+        owner, repo, ref: `refs/heads/${newBranch}`, sha: baseSha,
+      });
+    }
 
     // Check if file already exists on new branch (need SHA for updates)
     let existingSha: string | undefined;

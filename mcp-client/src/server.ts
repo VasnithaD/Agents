@@ -1058,9 +1058,17 @@ app.post('/api/github/branch', async (req: Request, res: Response) => {
       const { data: repoInfo } = await octokit.rest.repos.get({ owner, repo: repoName });
       sourceBranch = repoInfo.default_branch;
     }
+    // Idempotent behavior: if branch already exists, return success.
+    try {
+      const { data: existingRef } = await octokit.rest.git.getRef({ owner, repo: repoName, ref: `heads/${branchName}` });
+      return res.json({ success: true, branch: branchName, sha: existingRef.object.sha.substring(0, 8), basedOn: sourceBranch, alreadyExists: true });
+    } catch (err: any) {
+      if (err?.status !== 404) throw err;
+    }
+
     const { data: refData } = await octokit.rest.git.getRef({ owner, repo: repoName, ref: `heads/${sourceBranch}` });
     const { data: newRef }  = await octokit.rest.git.createRef({ owner, repo: repoName, ref: `refs/heads/${branchName}`, sha: refData.object.sha });
-    res.json({ success: true, branch: branchName, sha: newRef.object.sha.substring(0, 8), basedOn: sourceBranch });
+    res.json({ success: true, branch: branchName, sha: newRef.object.sha.substring(0, 8), basedOn: sourceBranch, alreadyExists: false });
   } catch (error) {
     res.status(500).json({ success: false, error: (error as Error).message });
   }
@@ -1129,7 +1137,27 @@ app.post('/api/github/create-pr', async (req: Request, res: Response) => {
       pr: { number: prData.number, url: prData.html_url, title: prData.title, state: prData.state },
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: (error as Error).message });
+    const err = error as any;
+    // GitHub returns 422 if a PR already exists for head->base.
+    if (err?.status === 422) {
+      try {
+        const owner   = process.env.GITHUB_OWNER || '';
+        const octokit = (gitHubHandler as any).octokit;
+        const { repo, head, base } = req.body;
+        const { data: prs } = await octokit.rest.pulls.list({ owner, repo, state: 'open', head: `${owner}:${head}`, base, per_page: 10 });
+        if (prs.length > 0) {
+          const pr = prs[0] as any;
+          return res.json({
+            success: true,
+            alreadyExists: true,
+            pr: { number: pr.number, url: pr.html_url, title: pr.title, state: pr.state },
+          });
+        }
+      } catch {
+        // fall through to default error below
+      }
+    }
+    res.status(500).json({ success: false, error: err?.message || 'Failed to create pull request' });
   }
 });
 
